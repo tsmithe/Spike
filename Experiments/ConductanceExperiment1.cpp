@@ -394,5 +394,6 @@ int main (int argc, char *argv[]){
 	/////////// END OF EXPERIMENT ///////////
 	experiment_timer->stop_timer_and_log_time_and_message("Experiment Completed.", true);
 
+	system("pause");
 	return 0;
 }
