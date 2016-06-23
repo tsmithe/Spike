@@ -69,7 +69,7 @@ void IzhikevichSpikingSynapses::set_threads_per_block_and_blocks_per_grid(int th
 
 void IzhikevichSpikingSynapses::calculate_postsynaptic_current_injection(SpikingNeurons * neurons, float current_time_in_seconds) {
 
-	izhikevich_calculate_postsynaptic_current_injection_kernal<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_synaptic_efficacies_or_weights,
+	izhikevich_calculate_postsynaptic_current_injection_kernel<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_synaptic_efficacies_or_weights,
 																	d_time_of_last_spike_to_reach_synapse,
 																	d_postsynaptic_neuron_indices,
 																	neurons->d_current_injections,
@@ -81,7 +81,7 @@ void IzhikevichSpikingSynapses::calculate_postsynaptic_current_injection(Spiking
 
 void IzhikevichSpikingSynapses::apply_ltd_to_synapse_weights(float* d_last_spike_time_of_each_neuron, float current_time_in_seconds) {
 
-	izhikevich_apply_ltd_to_synapse_weights_kernal<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_time_of_last_spike_to_reach_synapse,
+	izhikevich_apply_ltd_to_synapse_weights_kernel<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_time_of_last_spike_to_reach_synapse,
 																	d_synaptic_efficacies_or_weights,
 																	d_stdp,
 																	d_last_spike_time_of_each_neuron,
@@ -96,7 +96,7 @@ void IzhikevichSpikingSynapses::apply_ltd_to_synapse_weights(float* d_last_spike
 
 void IzhikevichSpikingSynapses::apply_ltp_to_synapse_weights(float* d_last_spike_time_of_each_neuron, float current_time_in_seconds) {
 	// Carry out the last step, LTP!
-	izhikevich_apply_ltp_to_synapse_weights_kernal<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_postsynaptic_neuron_indices,
+	izhikevich_apply_ltp_to_synapse_weights_kernel<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_postsynaptic_neuron_indices,
 																	d_last_spike_time_of_each_neuron,
 																	d_stdp,
 																	d_time_of_last_spike_to_reach_synapse,
@@ -109,7 +109,7 @@ void IzhikevichSpikingSynapses::apply_ltp_to_synapse_weights(float* d_last_spike
 }
 
 
-__global__ void izhikevich_calculate_postsynaptic_current_injection_kernal(float* d_synaptic_efficacies_or_weights,
+__global__ void izhikevich_calculate_postsynaptic_current_injection_kernel(float* d_synaptic_efficacies_or_weights,
 							float* d_time_of_last_spike_to_reach_synapse,
 							int* d_postsynaptic_neuron_indices,
 							float* d_neurons_current_injections,
@@ -129,7 +129,7 @@ __global__ void izhikevich_calculate_postsynaptic_current_injection_kernal(float
 }
 
 
-__global__ void izhikevich_apply_ltd_to_synapse_weights_kernal(float* d_time_of_last_spike_to_reach_synapse,
+__global__ void izhikevich_apply_ltd_to_synapse_weights_kernel(float* d_time_of_last_spike_to_reach_synapse,
 							float* d_synaptic_efficacies_or_weights,
 							bool* d_stdp,
 							float* d_last_spike_time_of_each_neuron,
@@ -156,7 +156,7 @@ __global__ void izhikevich_apply_ltd_to_synapse_weights_kernal(float* d_time_of_
 
 
 // LTP on synapses
-__global__ void izhikevich_apply_ltp_to_synapse_weights_kernal(int* d_postsyns,
+__global__ void izhikevich_apply_ltp_to_synapse_weights_kernel(int* d_postsyns,
 							float* d_last_spike_time_of_each_neuron,
 							bool* d_stdp,
 							float* d_time_of_last_spike_to_reach_synapse,
