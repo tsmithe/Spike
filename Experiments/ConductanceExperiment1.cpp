@@ -390,10 +390,13 @@ int main (int argc, char *argv[]){
 
 	// writing_network_score_to_results_file_timer->stop_timer_and_log_time_and_message("Network Score Written to File.", true);
 
+	////////^^^^^^^^ This write mechanism is not cross-platform. Must rethink.
+
 
 	/////////// END OF EXPERIMENT ///////////
 	experiment_timer->stop_timer_and_log_time_and_message("Experiment Completed.", true);
 
+	// FOR WINDOWS
 	system("pause");
 	return 0;
 }
