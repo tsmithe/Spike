@@ -5,6 +5,8 @@
 #include "../Helpers/TimerWithMessages.h"
 
 #include <stdlib.h>
+#include <algorithm>
+#include <functional>
 
 // SpikeAnalyser Constructor
 SpikeAnalyser::SpikeAnalyser(Neurons * neurons_parameter, ImagePoissonSpikingNeurons * input_neurons_parameter) {

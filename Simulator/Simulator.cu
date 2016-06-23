@@ -223,7 +223,9 @@ void Simulator::RunSimulation(float presentation_time_per_stimulus_per_epoch, in
 	srand(43);
 
 	// STIMULUS ORDER (Put into function + variable)
-	int stimuli_presentation_order[number_of_stimuli];
+	int* stimuli_presentation_order;
+	stimuli_presentation_order = (int *)malloc(number_of_stimuli*sizeof(int));
+
 	for (int i = 0; i < number_of_stimuli; i++){
 		stimuli_presentation_order[i] = i;
 	}

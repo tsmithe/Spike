@@ -4,6 +4,9 @@
 
 // To create the executable for this network, run:
 // make FILE='ConductanceExperiment1' EXPERIMENT_DIRECTORY='Experiments'  model -j8
+//
+// In Windows (using make for windows):
+// make FILE=ConductanceExperiment1 EXPERIMENT_DIRECTORY=Experiments model -j8
 
 
 #include "../Simulator/Simulator.h"
@@ -377,15 +380,15 @@ int main (int argc, char *argv[]){
 
 
 	/////////// WRITE NETWORK SCORE TO RESULTS FILE FOR DAKOTA OPTIMISATION ///////////
-	TimerWithMessages * writing_network_score_to_results_file_timer = new TimerWithMessages("Writing Network Score to Results File for Dakota Optimisation...\n");
-	// float combined_information_score_training_increase = spike_analyser_for_trained_network->maximum_information_score_count_multiplied_by_sum_of_information_scores - spike_analyser_for_untrained_network->maximum_information_score_count_multiplied_by_sum_of_information_scores;
-	// printf("combined_information_score_training_increase: %f\n", combined_information_score_training_increase);
-	std::ofstream resultsfile;
-	resultsfile.open(argv[1], std::ios::out | std::ios::binary);
-	resultsfile << std::to_string(single_score_to_write_to_file_for_dakota_optimisation) << std::endl;
-	resultsfile.close();
+	// TimerWithMessages * writing_network_score_to_results_file_timer = new TimerWithMessages("Writing Network Score to Results File for Dakota Optimisation...\n");
+	// // float combined_information_score_training_increase = spike_analyser_for_trained_network->maximum_information_score_count_multiplied_by_sum_of_information_scores - spike_analyser_for_untrained_network->maximum_information_score_count_multiplied_by_sum_of_information_scores;
+	// // printf("combined_information_score_training_increase: %f\n", combined_information_score_training_increase);
+	// std::ofstream resultsfile;
+	// resultsfile.open(argv[1], std::ios::out | std::ios::binary);
+	// resultsfile << std::to_string(single_score_to_write_to_file_for_dakota_optimisation) << std::endl;
+	// resultsfile.close();
 
-	writing_network_score_to_results_file_timer->stop_timer_and_log_time_and_message("Network Score Written to File.", true);
+	// writing_network_score_to_results_file_timer->stop_timer_and_log_time_and_message("Network Score Written to File.", true);
 
 
 	/////////// END OF EXPERIMENT ///////////
