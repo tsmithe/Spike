@@ -44,6 +44,9 @@
     case Backend::SPIKE_DEVICE_DUMMY:                                   \
       ptr = new Backend::Dummy::TYPE(this);                             \
       break;                                                            \
+    case Backend::SPIKE_DEVICE_VIENNA:                                  \
+      ptr = new Backend::Vienna::TYPE(this);                            \
+      break;                                                            \
     case Backend::SPIKE_DEVICE_CUDA:                                    \
       ptr = new Backend::CUDA::TYPE(this);                              \
       break;                                                            \
@@ -62,16 +65,19 @@
     case Backend::SPIKE_DEVICE_DUMMY:                                   \
       ptr = new Backend::Dummy::TYPE(this);                             \
       break;                                                            \
+    case Backend::SPIKE_DEVICE_VIENNA:                                  \
+      ptr = new Backend::Vienna::TYPE(this);                            \
+      break;                                                            \
     default:                                                            \
       assert("Unsupported backend" && false);                           \
     };                                                                  \
-    backend(ptr);                                                       \
+    backend(std::shared_ptr<::Backend::TYPE>(ptr));                     \
     backend()->context = ctx;                                           \
     prepare_backend();                                                  \
   }
 #endif
 
-#define SPIKE_MAKE_STUB_INIT_BACKEND(TYPE)                                   \
+#define SPIKE_MAKE_STUB_INIT_BACKEND(TYPE)                             \
   void TYPE::init_backend(Context* ctx) {                              \
     assert("This type's backend cannot be instantiated!" && false);    \
   }

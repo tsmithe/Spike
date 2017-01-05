@@ -35,6 +35,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/STDP/HigginsSTDP.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/STDP/HigginsSTDP.hpp"
+#endif
 
 
 // STDP Parameters

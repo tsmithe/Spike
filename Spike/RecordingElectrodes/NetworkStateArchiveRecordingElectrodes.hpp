@@ -17,6 +17,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/RecordingElectrodes/NetworkStateArchiveRecordingElectrodes.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/RecordingElectrodes/NetworkStateArchiveRecordingElectrodes.hpp"
+#endif
 
 
 struct Network_State_Archive_Optional_Parameters {

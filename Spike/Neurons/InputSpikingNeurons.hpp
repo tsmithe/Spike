@@ -15,6 +15,9 @@ namespace Backend {
 }
 
 #include "Spike/Backend/Dummy/Neurons/InputSpikingNeurons.hpp"
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Neurons/InputSpikingNeurons.hpp"
+#endif
 
 class InputSpikingNeurons : public SpikingNeurons {
 public:

@@ -28,6 +28,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Helpers/RandomStateManager.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Helpers/RandomStateManager.hpp"
+#endif
 
 
 class RandomStateManager : public virtual SpikeBase {

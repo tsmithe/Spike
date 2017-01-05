@@ -349,6 +349,7 @@ CLOSED: [2016-12-22 Thu 14:25]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2016-12-22 Thu 14:25]
 :END:
+** TODO Make SPIKE_MAKE_INIT_BACKEND more general (fewer ifdefs for sustainability...)
 * Style / interface design
 ** TODO Unify coding style (discuss this)
 ** PROGRESS Check for unused member pointers
@@ -365,6 +366,14 @@ CLOSED: [2016-12-22 Thu 14:25]
 :END:
 ** TODO Put external dependencies (eg mgl) into git submodules
 * Next stages
+** TODO Allow partial backends
++ Currently, a backend must implement (at least stubs for) all frontend classes.
+  - In fact, the CUDA backend assumes that it is used uniquely (no backend mixing).
++ Ultimately, we might want some code to run on one backend, and other code on another.
++ This will require work to ensure data synchronisation
+  - as well as restructuring to allow incomplete backends to be declared and instantiated
++ The upside will be that this will facilitate hybrid models
+** TODO To improve compile times, stop having each backend depend on the headers of all the others
 ** TODO Write SYCL backend.
 ** TODO Write plain C++ backend. (Use ViennaCL for linalg acceleration?)
 ** TODO Support for backend fall-back

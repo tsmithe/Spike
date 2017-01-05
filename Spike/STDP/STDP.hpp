@@ -39,6 +39,9 @@ static_assert(std::has_virtual_destructor<Backend::STDP>::value,
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/STDP/STDP.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/STDP/STDP.hpp"
+#endif
 
 
 // STDP Parameters

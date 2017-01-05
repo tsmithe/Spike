@@ -42,6 +42,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/STDP/MasquelierSTDP.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/STDP/MasquelierSTDP.hpp"
+#endif
 
 // STDP Parameters
 struct masquelier_stdp_parameters_struct : stdp_parameters_struct {

@@ -26,7 +26,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Synapses/ConductanceSpikingSynapses.hpp"
 #endif
-
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Synapses/ConductanceSpikingSynapses.hpp"
+#endif
 
 class ConductanceSpikingSynapses : public SpikingSynapses {
 

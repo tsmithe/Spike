@@ -31,6 +31,14 @@ option(BUILD_WITH_CUDA
   "Enable CUDA backend"
   ON)
 
+option(BUILD_WITH_OPENCL
+  "Enable OpenCL backend"
+  ON)
+
+option(BUILD_WITH_VIENNACL
+  "Enable Vienna backend"
+  ON)
+
 option(BUILD_EXAMPLES
   "Build examples"
   ON)
@@ -68,6 +76,21 @@ if(BUILD_WITH_CUDA)
   include_directories(BEFORE SYSTEM "${CUDA_INCLUDE_DIRS}")
 endif()
 
+if(BUILD_WITH_OPENCL)
+  find_package(OpenCL REQUIRED)
+  # target_link_libraries(SpikeOpenCL ${OPENCL_LIBRARIES})
+endif()
+
+if(BUILD_WITH_VIENNACL)
+  add_definitions(-DSPIKE_WITH_VIENNACL)
+  if(BUILD_WITH_OPENCL)
+    add_definitions(-DVIENNACL_WITH_OPENCL)
+  endif()
+  if(BUILD_WITH_CUDA)
+    add_definitions(-DVIENNACL_WITH_CUDA)
+  endif()
+  include_directories(BEFORE "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
+endif()
 
 # Compile options
 #################

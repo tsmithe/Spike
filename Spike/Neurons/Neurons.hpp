@@ -35,6 +35,9 @@ static_assert(std::has_virtual_destructor<Backend::Neurons>::value,
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Neurons/Neurons.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Neurons/Neurons.hpp"
+#endif
 
 #define PRESYNAPTIC_IS_INPUT( id ) (id < 0 ? true : false)
 #define CORRECTED_PRESYNAPTIC_ID(id, is_input) (is_input ? (-1 * (id)) - 1 : id) 

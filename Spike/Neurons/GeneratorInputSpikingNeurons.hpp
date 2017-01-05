@@ -20,6 +20,10 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Neurons/GeneratorInputSpikingNeurons.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Neurons/GeneratorInputSpikingNeurons.hpp"
+#endif
+
 
 class GeneratorInputSpikingNeurons : public InputSpikingNeurons {
 public:

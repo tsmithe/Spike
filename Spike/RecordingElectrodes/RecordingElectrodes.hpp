@@ -27,6 +27,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/RecordingElectrodes/RecordingElectrodes.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/RecordingElectrodes/RecordingElectrodes.hpp"
+#endif
 
 class RecordingElectrodes : public virtual SpikeBase {
 public:

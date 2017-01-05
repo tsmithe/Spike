@@ -21,6 +21,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/RecordingElectrodes/CollectNeuronSpikesRecordingElectrodes.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/RecordingElectrodes/CollectNeuronSpikesRecordingElectrodes.hpp"
+#endif
 
 struct Collect_Neuron_Spikes_Optional_Parameters {
 

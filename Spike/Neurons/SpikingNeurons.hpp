@@ -28,6 +28,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Neurons/SpikingNeurons.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Neurons/SpikingNeurons.hpp"
+#endif
 
 
 class SpikingNeurons : public Neurons {

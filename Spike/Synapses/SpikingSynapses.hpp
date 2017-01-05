@@ -19,6 +19,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Synapses/SpikingSynapses.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Synapses/SpikingSynapses.hpp"
+#endif
 
 struct spiking_synapse_parameters_struct : synapse_parameters_struct {
   spiking_synapse_parameters_struct(): stdp_on(true) { synapse_parameters_struct(); }

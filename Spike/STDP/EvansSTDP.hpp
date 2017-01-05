@@ -35,6 +35,9 @@ namespace Backend {
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/STDP/EvansSTDP.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/STDP/EvansSTDP.hpp"
+#endif
 
 // STDP Parameters
 struct evans_stdp_parameters_struct : stdp_parameters_struct {

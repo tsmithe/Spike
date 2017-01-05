@@ -1,0 +1,3 @@
+[submodule "Submodules/viennacl-dev"]
+	path = Submodules/viennacl-dev
+	url = https://github.com/viennacl/viennacl-dev.git

@@ -46,6 +46,12 @@ if (BUILD_WITH_CUDA)
     )
 endif()
 
+if (BUILD_WITH_VIENNACL)
+  target_link_libraries(Spike
+    SpikeViennaModels
+    )
+endif()
+
 if (ENABLE_PLOTTING)
   target_link_libraries(Spike SpikePlotting)
 endif()

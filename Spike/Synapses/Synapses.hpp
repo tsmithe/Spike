@@ -52,6 +52,9 @@ static_assert(std::has_virtual_destructor<Backend::Synapses>::value, "contract v
 #ifdef SPIKE_WITH_CUDA
 #include "Spike/Backend/CUDA/Synapses/Synapses.hpp"
 #endif
+#ifdef SPIKE_WITH_VIENNACL
+#include "Spike/Backend/Vienna/Synapses/Synapses.hpp"
+#endif
 
 enum CONNECTIVITY_TYPE
 {

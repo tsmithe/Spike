@@ -18,6 +18,6 @@ public:
 extern Context* _global_ctx;
 
 namespace Backend {
-  void init_global_context();
+  void init_global_context(Device default_device=SPIKE_DEVICE_DEFAULT);
   Context* get_current_context();
 }
