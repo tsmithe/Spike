@@ -378,3 +378,15 @@ CLOSED: [2016-12-22 Thu 14:25]
 ** TODO Write plain C++ backend. (Use ViennaCL for linalg acceleration?)
 ** TODO Support for backend fall-back
 ** TODO Write rate-coded neuron/synapse/model classes.
+
+Something like this:
+
++ RateNeurons contains vectors of activation / rate
++ RateSynapses contains (sparse?) connection matrices
++ RatePlasticity contains rules to update the synapse strengths
++ RateModel contains vectors of
+  - constituent RateNeurons
+  - pairs of RateSynapses and associated RatePlasticity
+    - defines the connectivity
+
+----

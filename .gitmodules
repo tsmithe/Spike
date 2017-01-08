@@ -1,3 +1,7 @@
 [submodule "Submodules/viennacl-dev"]
 	path = Submodules/viennacl-dev
 	url = https://github.com/viennacl/viennacl-dev.git
+[submodule "Submodules/eigen"]
+	path = Submodules/eigen
+	url = https://github.com/tsmithe/eigen.git
+	branch = 3.3

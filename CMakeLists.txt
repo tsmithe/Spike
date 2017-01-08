@@ -81,14 +81,16 @@ if(BUILD_WITH_OPENCL)
   # target_link_libraries(SpikeOpenCL ${OPENCL_LIBRARIES})
 endif()
 
+# find Eigen
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/Submodules/eigen")
+find_path(EIGEN_INCLUDE_DIR Eigen/Dense)
+if(NOT EIGEN_INCLUDE_DIR)
+  message(SEND_ERROR "Failed to find Eigen; make sure you got the submodules!")
+endif()
+mark_as_advanced(EIGEN_INCLUDE_DIR)
+
 if(BUILD_WITH_VIENNACL)
   add_definitions(-DSPIKE_WITH_VIENNACL)
-  if(BUILD_WITH_OPENCL)
-    add_definitions(-DVIENNACL_WITH_OPENCL)
-  endif()
-  if(BUILD_WITH_CUDA)
-    add_definitions(-DVIENNACL_WITH_CUDA)
-  endif()
   include_directories(BEFORE "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
 endif()
 
