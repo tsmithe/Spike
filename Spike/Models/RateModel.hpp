@@ -7,7 +7,9 @@
 #include "Spike/Backend/Backend.hpp"
 #include "Spike/Backend/Device.hpp"
 
+#include <utility>
 #include <vector>
+
 #include <Eigen/Dense>
 
 class RateNeurons;    // Forward definition
@@ -19,21 +21,28 @@ namespace Backend {
   class RateNeurons : public virtual SpikeBackendBase {
   public:
     ~RateNeurons() override = default;
+    SPIKE_ADD_FRONTEND_GETTER(RateNeurons);
+    virtual void update_rate(float dt) = 0;
   };
 
   class RateSynapses : public virtual SpikeBackendBase {
   public:
     ~RateSynapses() override = default;
+    SPIKE_ADD_FRONTEND_GETTER(RateSynapses);
+    virtual void update_activation(float dt) = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
   public:
     ~RatePlasticity() override = default;
+    SPIKE_ADD_FRONTEND_GETTER(RatePlasticity);
+    virtual void apply_plasticity(float dt) = 0;
   };
 
   class RateModel : public virtual SpikeBackendBase {
   public:
     ~RateModel() override = default;
+    SPIKE_ADD_FRONTEND_GETTER(RateModel);
   };
 }
 
@@ -62,7 +71,7 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RateNeurons, SpikeBase);
 
-  void reset_state() override {}
+  void reset_state() override;
 
   void assert_dendritic_consistency() const;
   void update(float dt);
@@ -90,7 +99,7 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RateSynapses, SpikeBase);
 
-  void reset_state() override {}
+  void reset_state() override;
 
   void update_activation(float dt);
 
@@ -99,6 +108,7 @@ public:
 
 private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
+  Eigen::VectorXf _activation;
   Eigen::MatrixXf _weights; // just single, instantaneous dense weights for now
 };
 
@@ -110,7 +120,7 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RatePlasticity, SpikeBase);
 
-  void reset_state() override {}
+  void reset_state() override;
 
   void apply_plasticity(float dt);
 
@@ -128,7 +138,7 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RateModel, SpikeBase);
 
-  void reset_state() override {}
+  void reset_state() override;
 
   std::vector<RateNeurons*> neuron_groups;
 

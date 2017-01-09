@@ -52,6 +52,10 @@ if (BUILD_WITH_VIENNACL)
     )
 endif()
 
+if (BUILD_WITH_OPENCL)
+  target_link_libraries(Spike OpenCL)
+endif()
+
 if (ENABLE_PLOTTING)
   target_link_libraries(Spike SpikePlotting)
 endif()

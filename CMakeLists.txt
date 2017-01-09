@@ -88,10 +88,11 @@ if(NOT EIGEN_INCLUDE_DIR)
   message(SEND_ERROR "Failed to find Eigen; make sure you got the submodules!")
 endif()
 mark_as_advanced(EIGEN_INCLUDE_DIR)
+include_directories(BEFORE SYSTEM "${EIGEN_INCLUDE_DIR}")
 
 if(BUILD_WITH_VIENNACL)
   add_definitions(-DSPIKE_WITH_VIENNACL)
-  include_directories(BEFORE "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
+  include_directories(BEFORE SYSTEM "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
 endif()
 
 # Compile options

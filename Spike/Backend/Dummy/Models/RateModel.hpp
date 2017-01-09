@@ -20,6 +20,9 @@ namespace Backend {
 
       void pull_data_back() override {
       }
+
+      void update_rate(float dt) override {
+      }
     };
 
     class RateSynapses : public virtual ::Backend::RateSynapses {
@@ -38,6 +41,9 @@ namespace Backend {
 
       void pull_data_back() override {
       }
+
+      void update_activation(float dt) override {
+      }
     };
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
@@ -55,6 +61,9 @@ namespace Backend {
       }
 
       void pull_data_back() override {
+      }
+
+      void apply_plasticity(float dt) override {
       }
     };
 
