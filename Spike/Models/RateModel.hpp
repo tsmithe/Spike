@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -123,7 +124,7 @@ struct EigenBuffer {
 
 class BufferWriter {
 public:
-  BufferWriter(const std::string& filename_, EigenBuffer* buf_);
+  BufferWriter(const std::string& filename_, EigenBuffer& buf_);
   ~BufferWriter();
 
   void write_buffer();
@@ -131,8 +132,8 @@ public:
 
   void start();
   void stop();
-private:
-  EigenBuffer* buffer = nullptr;
+
+  EigenBuffer& buffer;
   std::string filename;
   std::ofstream file;
   std::thread othread;
@@ -141,7 +142,7 @@ private:
 
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx);
+  RateNeurons(Context* ctx, int size_);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -150,17 +151,20 @@ public:
   void reset_state() override;
 
   void assert_dendritic_consistency() const;
+  void connect_input(RateSynapses* synapses,
+                     RatePlasticity* plasticity=nullptr);
   void update(float dt);
 
   std::string label;
 
   int size = 0;
   int timesteps = 0;
-  std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
   Eigen::VectorXf rates;
 
   int rates_buffer_interval = 0;
   EigenBuffer rates_history;
+
+  std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
 
 protected:
   void update_rate(float dt);
@@ -173,7 +177,8 @@ private:
 
 class RateSynapses : public virtual SpikeBase {
 public:
-  RateSynapses(Context* ctx);
+  RateSynapses(Context* ctx,
+               RateNeurons* neurons_pre_, RateNeurons* neurons_post_);
   ~RateSynapses() override;
 
   void init_backend(Context* ctx) override;
@@ -202,7 +207,7 @@ private:
 
 class RatePlasticity : public virtual SpikeBase {
 public:
-  RatePlasticity(Context* ctx);
+  RatePlasticity(Context* ctx, RateSynapses* syns);
   ~RatePlasticity() override;
 
   void init_backend(Context* ctx) override;
@@ -220,7 +225,7 @@ private:
 
 class RateElectrodes : public virtual SpikeBase {
 public:
-  RateElectrodes(Context* ctx);
+  RateElectrodes(Context* ctx, std::string prefix, RateNeurons* neurons_);
   ~RateElectrodes() override;
 
   void init_backend(Context* ctx) override;
@@ -231,7 +236,7 @@ public:
   std::string output_prefix;
 
   RateNeurons* neurons;
-  std::vector<BufferWriter> writers;
+  std::vector<std::unique_ptr<BufferWriter> > writers;
 
   void start();
   void stop();

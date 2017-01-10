@@ -9,9 +9,8 @@ endif(COMMAND cmake_policy)
 
 project(Spike)
 
-# set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 14)
 # set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_CXX_FLAGS "-std=c++11")
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
@@ -71,7 +70,7 @@ endif()
 
 if(BUILD_WITH_CUDA)
   find_package(CUDA REQUIRED)
-  #list(APPEND CUDA_NVCC_FLAGS "-std=c++14")
+  list(APPEND CUDA_NVCC_FLAGS "-std=c++11") # Shame that we can't use C++14!
   add_definitions(-DSPIKE_WITH_CUDA)
   include_directories(BEFORE SYSTEM "${CUDA_INCLUDE_DIRS}")
 endif()
