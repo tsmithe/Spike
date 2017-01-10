@@ -59,6 +59,7 @@ namespace Backend {
     }
 
     void RateSynapses::update_activation(float dt) {
+      // TODO:: Generalise activation function
       activation = viennacl::linalg::prod(weights, neurons_pre->rates);
     }
 
@@ -83,6 +84,23 @@ namespace Backend {
       // TODO
     }
 
+    void RateElectrodes::prepare() {
+      // TODO
+    }
+
+    void RateElectrodes::reset_state() {
+      // TODO
+    }
+
+    void RateElectrodes::push_data_front() {
+      // TODO
+    }
+
+    void RateElectrodes::pull_data_back() {
+      // TODO
+    }
+
+    /*
     void RateModel::prepare() {
       // TODO
     }
@@ -98,5 +116,6 @@ namespace Backend {
     void RateModel::pull_data_back() {
       // TODO
     }
+    */
   }
 }

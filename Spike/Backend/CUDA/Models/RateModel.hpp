@@ -67,6 +67,25 @@ namespace Backend {
       }
     };
 
+    class RateElectrodes : public virtual ::Backend::RateElectrodes {
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateElectrodes);
+      ~RateElectrodes() override = default;
+
+      void prepare() override {
+      }
+
+      void reset_state() override {
+      }
+
+      void push_data_front() override {
+      }
+
+      void pull_data_back() override {
+      }
+    };
+
+    /*
     class RateModel : public virtual ::Backend::RateModel {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateModel);
@@ -84,6 +103,7 @@ namespace Backend {
       void pull_data_back() override {
       }
     };
+    */
   } // namespace CUDA
 } // namespace Backend
 
