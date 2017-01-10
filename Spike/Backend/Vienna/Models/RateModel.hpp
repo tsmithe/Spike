@@ -4,28 +4,11 @@
 
 #include <viennacl/matrix.hpp>
 #include <viennacl/vector.hpp>
+#include <viennacl/linalg/prod.hpp>
 
 namespace Backend {
   namespace Vienna {
-    class RateSyapses;    // forward def
-    class RatePlasticity; // forward def
-
-    class RateNeurons : public virtual ::Backend::RateNeurons {
-    public:
-      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
-      ~RateNeurons() override = default;
-
-      void prepare() override;
-      void reset_state() override;
-      void push_data_front() override;
-      void pull_data_back() override;
-
-      void update_rate(float dt) override;
-
-    private:
-      std::vector<std::pair<RateSynapses*, RatePlasticity*> > _dendrites;
-      viennacl::vector<float> _rates;
-    };
+    class RateNeurons;
 
     class RateSynapses : public virtual ::Backend::RateSynapses {
     public:
@@ -39,10 +22,12 @@ namespace Backend {
 
       void update_activation(float dt) override;
 
+      viennacl::vector<float> activation; // TODO: Need an explicit temporary?
+      viennacl::matrix<float> weights; // TODO: Generalize synapse types
+
     private:
-      viennacl::vector<float> _activation; // TODO: Need an explicit temporary?
-      viennacl::matrix<float> _weights;
-    };
+      ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
+     };
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
@@ -55,6 +40,28 @@ namespace Backend {
       void pull_data_back() override;
 
       void apply_plasticity(float dt) override;
+
+    private:
+      ::Backend::Vienna::RateSynapses* synapses = nullptr;
+    };
+
+    class RateNeurons : public virtual ::Backend::RateNeurons {
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
+      ~RateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+      void push_data_front() override;
+      void pull_data_back() override;
+
+      void update_rate(float dt) override;
+
+      viennacl::vector<float> rates;
+
+    private:
+      std::vector<std::pair<::Backend::Vienna::RateSynapses*,
+                            ::Backend::Vienna::RatePlasticity*> > _dendrites;
     };
 
     class RateModel : public virtual ::Backend::RateModel {

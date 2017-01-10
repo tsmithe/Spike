@@ -75,11 +75,11 @@ public:
 
   void assert_dendritic_consistency() const;
   void update(float dt);
-  Eigen::VectorXf rates() const;
 
   int size = 0;
   int timesteps = 0;
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
+  Eigen::VectorXf rates;
 
 protected:
   void update_rate(float dt);
@@ -88,7 +88,6 @@ protected:
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
-  Eigen::MatrixXf _rates;
 };
 
 class RateSynapses : public virtual SpikeBase {
@@ -106,10 +105,11 @@ public:
   RateNeurons* neurons_pre = nullptr;
   RateNeurons* neurons_post = nullptr;
 
+  Eigen::VectorXf activation;
+  Eigen::MatrixXf weights; // just single, instantaneous dense weights for now
+
 private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
-  Eigen::VectorXf _activation;
-  Eigen::MatrixXf _weights; // just single, instantaneous dense weights for now
 };
 
 class RatePlasticity : public virtual SpikeBase {
