@@ -7,6 +7,9 @@
 #include "Spike/Backend/Backend.hpp"
 #include "Spike/Backend/Device.hpp"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -62,13 +65,6 @@ class RateElectrodes; // Forward definition
 // class RateModel;      // Forward definition
 
 namespace Backend {
-  class RateNeurons : public virtual SpikeBackendBase {
-  public:
-    ~RateNeurons() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RateNeurons);
-    virtual void update_rate(float dt) = 0;
-  };
-
   class RateSynapses : public virtual SpikeBackendBase {
   public:
     ~RateSynapses() override = default;
@@ -81,6 +77,15 @@ namespace Backend {
     ~RatePlasticity() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RatePlasticity);
     virtual void apply_plasticity(float dt) = 0;
+  };
+
+  class RateNeurons : public virtual SpikeBackendBase {
+  public:
+    ~RateNeurons() override = default;
+    SPIKE_ADD_FRONTEND_GETTER(RateNeurons);
+    virtual void connect_input(RateSynapses* synapses,
+                               RatePlasticity* plasticity) = 0;
+    virtual void update_rate(float dt) = 0;
   };
 
   class RateElectrodes : public virtual SpikeBackendBase {
@@ -127,7 +132,7 @@ public:
   BufferWriter(const std::string& filename_, EigenBuffer& buf_);
   ~BufferWriter();
 
-  void write_buffer();
+  void write_output();
   void write_loop();
 
   void start();
@@ -142,7 +147,7 @@ public:
 
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx, int size_);
+  RateNeurons(Context* ctx, int size_, std::string label_);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -150,14 +155,17 @@ public:
 
   void reset_state() override;
 
+  void assert_dendritic_consistency(RateSynapses* synapses,
+                                    RatePlasticity* plasticity) const;
   void assert_dendritic_consistency() const;
   void connect_input(RateSynapses* synapses,
                      RatePlasticity* plasticity=nullptr);
   void update(float dt);
 
+  int size = 0;
+
   std::string label;
 
-  int size = 0;
   int timesteps = 0;
   Eigen::VectorXf rates;
 
@@ -178,7 +186,8 @@ private:
 class RateSynapses : public virtual SpikeBase {
 public:
   RateSynapses(Context* ctx,
-               RateNeurons* neurons_pre_, RateNeurons* neurons_post_);
+               RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
+               std::string label_="");
   ~RateSynapses() override;
 
   void init_backend(Context* ctx) override;
@@ -190,6 +199,8 @@ public:
 
   RateNeurons* neurons_pre = nullptr;
   RateNeurons* neurons_post = nullptr;
+
+  std::string label;
 
   Eigen::VectorXf activation;
   Eigen::MatrixXf weights; // just single, instantaneous dense weights for now

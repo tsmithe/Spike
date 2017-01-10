@@ -4,27 +4,6 @@
 
 namespace Backend {
   namespace Dummy {
-    class RateNeurons : public virtual ::Backend::RateNeurons {
-    public:
-      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
-      ~RateNeurons() override = default;
-
-      void prepare() override {
-      }
-
-      void reset_state() override {
-      }
-
-      void push_data_front() override {
-      }
-
-      void pull_data_back() override {
-      }
-
-      void update_rate(float dt) override {
-      }
-    };
-
     class RateSynapses : public virtual ::Backend::RateSynapses {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateSynapses);
@@ -64,6 +43,31 @@ namespace Backend {
       }
 
       void apply_plasticity(float dt) override {
+      }
+    };
+
+    class RateNeurons : public virtual ::Backend::RateNeurons {
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
+      ~RateNeurons() override = default;
+
+      void prepare() override {
+      }
+
+      void reset_state() override {
+      }
+
+      void push_data_front() override {
+      }
+
+      void pull_data_back() override {
+      }
+
+      void connect_input(::Backend::RateSynapses* synapses,
+                         ::Backend::RatePlasticity* plasticity) override {
+      }
+
+      void update_rate(float dt) override {
       }
     };
 

@@ -2,7 +2,7 @@
 
 BufferWriter::BufferWriter(const std::string& filename_, EigenBuffer& buf_)
   : buffer(buf_), filename(filename_) {
-  file.open(filename);
+  file.open(filename, std::ofstream::out | std::ofstream::binary);
 }
 
 BufferWriter::~BufferWriter() {
@@ -10,7 +10,7 @@ BufferWriter::~BufferWriter() {
   file.close();
 }
 
-void BufferWriter::write_buffer() {
+void BufferWriter::write_output() {
 }
 
 void BufferWriter::write_loop() {
@@ -22,7 +22,9 @@ void BufferWriter::start() {
 void BufferWriter::stop() {
 }
 
-RateNeurons::RateNeurons(Context* ctx, int size_) : size(size_) {
+RateNeurons::RateNeurons(Context* ctx, int size_,
+                         std::string label_)
+  : size(size_), label(label_) {
   init_backend(ctx);
   reset_state();
 }
@@ -35,20 +37,25 @@ void RateNeurons::reset_state() {
   backend()->reset_state();
 }
 
+void RateNeurons::assert_dendritic_consistency
+(RateSynapses* synapses, RatePlasticity* plasticity) const {
+  // Ensure that this set of neurons is post-synaptic:
+  assert(synapses->neurons_post == this);
+  // Ensure that plasticity is paired correctly with synapses:
+  assert(plasticity->synapses == synapses);
+}
+
 void RateNeurons::assert_dendritic_consistency() const {
-  for (auto& dendrite_pair : dendrites) {
-    // Ensure that this set of neurons is post-synaptic:
-    assert(dendrite_pair.first->neurons_post == this);
-    // Ensure that plasticity is paired correctly with synapses:
-    assert(dendrite_pair.second->synapses == dendrite_pair.first);
-  }
+  for (auto& dendrite_pair : dendrites)
+    assert_dendritic_consistency(dendrite_pair.first, dendrite_pair.second);
 }
 
 void RateNeurons::connect_input(RateSynapses* synapses,
                                 RatePlasticity* plasticity) {
-  // TODO: think about best form for this ...
+  assert_dendritic_consistency(synapses, plasticity);
+  // Connect the synapses to the dendrites:
   dendrites.push_back(std::make_pair(synapses, plasticity));
-  // TODO: what about backend? currently only prepared in prepare... !
+  backend()->connect_input(synapses->backend(), plasticity->backend());
 }
 
 void RateNeurons::update(float dt) {
@@ -73,10 +80,13 @@ void RateNeurons::apply_plasticity(float dt) {
 
 RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_pre_,
-                           RateNeurons* neurons_post_)
-  : neurons_pre(neurons_pre_), neurons_post(neurons_post_) {
+                           RateNeurons* neurons_post_,
+                           std::string label_)
+  : neurons_pre(neurons_pre_), neurons_post(neurons_post_), label(label_) {
   init_backend(ctx);
   reset_state();
+  if(!(label.length()))
+    label = neurons_pre->label;
 }
 
 RateSynapses::~RateSynapses() {
@@ -111,18 +121,47 @@ void RatePlasticity::apply_plasticity(float dt) {
 RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
                                RateNeurons* neurons_)
   : output_prefix(prefix), neurons(neurons_) {
+
   init_backend(ctx);
-  std::string tmp_fname = "TODO"; // TODO!
+
+  std::string dirname = output_prefix + "/" + neurons->label;
+  const int err = mkdir(dirname.c_str(),
+                        S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (-1 == err && EEXIST != errno)
+    std::cout << "\nTrouble making output directory "
+                << dirname << "\n";
+
+  std::ofstream output_info_file(dirname + "/output.info");
+  output_info_file << "size = " << neurons->size << "\n"
+                   << "rates_buffer_interval = "
+                   << neurons->rates_buffer_interval << "\n";
+
+  std::string rates_fname = dirname + "/rates.bin";
   writers.push_back
-    (std::make_unique<BufferWriter>(tmp_fname, neurons->rates_history));
+    (std::make_unique<BufferWriter>(rates_fname, neurons->rates_history));
+
   for (auto& d : neurons->dendrites) {
     auto synapses = d.first;
+    output_info_file << "[" << synapses->label << "]\n"
+                     << "neurons_pre->size = "
+                     << synapses->neurons_pre->size << "\n"
+                     << "activation_buffer_interval = "
+                     << synapses->activation_buffer_interval << "\n"
+                     << "weights_buffer_interval = "
+                     << synapses->weights_buffer_interval << "\n";
+    std::string activation_fname
+      = dirname + "/activation_" + synapses->label + ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
-       (tmp_fname, synapses->activation_history));
+       (activation_fname, synapses->activation_history));
+    std::string weights_fname
+      = dirname + "/weights_" + synapses->label + ".bin";
     writers.push_back
-      (std::make_unique<BufferWriter>(tmp_fname, synapses->weights_history));
+      (std::make_unique<BufferWriter>
+       (weights_fname, synapses->weights_history));
   }
+  output_info_file.close();
+
   reset_state();
 }
 

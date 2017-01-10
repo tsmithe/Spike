@@ -55,6 +55,8 @@ namespace Backend {
       void push_data_front() override;
       void pull_data_back() override;
 
+      void connect_input(::Backend::RateSynapses* synapses,
+                         ::Backend::RatePlasticity* plasticity) override;
       void update_rate(float dt) override;
 
       viennacl::vector<float> rates;

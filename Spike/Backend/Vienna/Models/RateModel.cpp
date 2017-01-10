@@ -3,16 +3,6 @@
 namespace Backend {
   namespace Vienna {
     void RateNeurons::prepare() {
-      for (const auto& front_dendrite_pair : frontend()->dendrites) {
-        // NB: Here assume backend is Vienna throughout:
-        ::Backend::Vienna::RateSynapses* synapses
-          = dynamic_cast<::Backend::Vienna::RateSynapses*>
-              (front_dendrite_pair.first->backend());
-        ::Backend::Vienna::RatePlasticity* plasticity
-          = dynamic_cast<::Backend::Vienna::RatePlasticity*>
-              (front_dendrite_pair.second->backend());
-        _dendrites.push_back(std::make_pair(synapses, plasticity));
-      }
       reset_state();
     }
 
@@ -26,6 +16,15 @@ namespace Backend {
 
     void RateNeurons::pull_data_back() {
       viennacl::copy(frontend()->rates, rates);
+    }
+
+    void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
+                                    ::Backend::RatePlasticity* plasticity) {
+      ::Backend::Vienna::RateSynapses* synapses_
+        = dynamic_cast<::Backend::Vienna::RateSynapses*>(synapses);
+      ::Backend::Vienna::RatePlasticity* plasticity_
+        = dynamic_cast<::Backend::Vienna::RatePlasticity*>(plasticity);
+      _dendrites.push_back(std::make_pair(synapses_, plasticity_));
     }
 
     void RateNeurons::update_rate(float dt) {
