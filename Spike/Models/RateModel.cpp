@@ -6,7 +6,10 @@ BufferWriter::BufferWriter(const std::string& filename_, EigenBuffer& buf_)
 }
 
 BufferWriter::~BufferWriter() {
-  file.flush();
+  if (running)
+    stop();
+  if (othread.joinable())
+    othread.join();
   file.close();
 }
 
@@ -52,7 +55,8 @@ void BufferWriter::stop() {
     return;
 
   running = false;
-  othread.join();
+  if (othread.joinable())
+    othread.join();
   file.flush();
 }
 
@@ -67,9 +71,9 @@ RateNeurons::~RateNeurons() {
 }
 
 void RateNeurons::reset_state() {
-  rates = Eigen::VectorXf::Zero(size);
+  // rates = Eigen::VectorXf::Zero(size);
   timesteps = 0;
-  rates_history.clear();
+  rate_history.clear();
   backend()->reset_state();
   for (auto& d : dendrites) {
     d.first->reset_state(); // TODO: should the weights be zeroed here?!
@@ -106,6 +110,13 @@ void RateNeurons::update(float dt) {
 
 void RateNeurons::update_rate(float dt) {
   backend()->update_rate(dt);
+  timesteps += 1;
+  if (!(timesteps % rate_buffer_interval))
+    rate_history.push_back(timesteps, rate());
+}
+
+const Eigen::VectorXf& RateNeurons::rate() const {
+  return backend()->rate();
 }
 
 void RateNeurons::update_dendritic_activation(float dt) {
@@ -133,19 +144,30 @@ RateSynapses::~RateSynapses() {
 }
 
 void RateSynapses::reset_state() {
-  activation = Eigen::VectorXf::Zero(neurons_post->size);
+  // activation = Eigen::VectorXf::Zero(neurons_post->size);
   // TODO: reset_state should revert the network to the state at t=0
-  assert(false && "TODO: think about weights and resetting..."); // TODO!
-  weights = Eigen::MatrixXf::Zero(neurons_pre->size,
-                                  neurons_post->size);
+  // assert(false && "TODO: think about weights and resetting..."); // TODO!
+  // weights = Eigen::MatrixXf::Zero(neurons_pre->size,
+  //                                 neurons_post->size);
   timesteps = 0;
   activation_history.clear();
   weights_history.clear();
   backend()->reset_state();
 }
 
+const Eigen::VectorXf& RateSynapses::activation() const {
+  return backend()->activation();
+}
+
+const Eigen::MatrixXf& RateSynapses::weights() const {
+  return backend()->weights();
+}
+
 void RateSynapses::update_activation(float dt) {
   backend()->update_activation(dt);
+  timesteps += 1;
+  if (!(timesteps % activation_buffer_interval))
+    activation_history.push_back(timesteps, activation());
 }
 
 RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
@@ -163,6 +185,7 @@ void RatePlasticity::reset_state() {
 
 void RatePlasticity::apply_plasticity(float dt) {
   backend()->apply_plasticity(dt);
+  // TODO: Buffer weights
 }
 
 RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
@@ -171,21 +194,32 @@ RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
 
   init_backend(ctx);
 
+  {
+    const int err = mkdir(output_prefix.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
+                << output_prefix << "\n";
+  }  
+
   std::string dirname = output_prefix + "/" + neurons->label;
-  const int err = mkdir(dirname.c_str(),
-                        S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  if (-1 == err && EEXIST != errno)
-    std::cout << "\nTrouble making output directory "
+
+  {
+    const int err = mkdir(dirname.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
                 << dirname << "\n";
+  }
 
   std::ofstream output_info_file(dirname + "/output.info");
   output_info_file << "size = " << neurons->size << "\n"
-                   << "rates_buffer_interval = "
-                   << neurons->rates_buffer_interval << "\n";
+                   << "rate_buffer_interval = "
+                   << neurons->rate_buffer_interval << "\n";
 
-  std::string rates_fname = dirname + "/rates.bin";
+  std::string rate_fname = dirname + "/rate.bin";
   writers.push_back
-    (std::make_unique<BufferWriter>(rates_fname, neurons->rates_history));
+    (std::make_unique<BufferWriter>(rate_fname, neurons->rate_history));
 
   for (auto& d : neurons->dendrites) {
     auto synapses = d.first;
@@ -213,6 +247,7 @@ RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
 }
 
 RateElectrodes::~RateElectrodes() {
+  stop();
 }
 
 void RateElectrodes::reset_state() {
@@ -244,6 +279,10 @@ RateModel::RateModel(Context* ctx) {
 }
 
 RateModel::~RateModel() {
+  if (running)
+    stop();
+  if (simulation_thread.joinable())
+    simulation_thread.join();
 }
 
 void RateModel::add(RateNeurons* neurons) {
@@ -276,7 +315,7 @@ void RateModel::simulation_loop() {
 
     // Print simulation time every 0.1s:
     if (!((timesteps * 10) % timesteps_per_second))
-      std::cout << "\r" << t;
+      printf("\r%.1f", t);
 
     if (stop_trigger) {
       if (*stop_trigger)
@@ -293,7 +332,7 @@ void RateModel::simulation_loop() {
   // (so as to block the program from exiting prematurely):
   stop_electrodes();
 
-  std::cout << std::endl;
+  printf("\r%.1f\n", t);
   running = false;
 }
 
@@ -344,7 +383,8 @@ void RateModel::stop() {
     return;
 
   running = false;
-  simulation_thread.join();
+  if (simulation_thread.joinable())
+    simulation_thread.join();
 
   // Stop recording only once simulation is stopped:
   stop_electrodes();

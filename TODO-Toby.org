@@ -350,6 +350,8 @@ CLOSED: [2016-12-22 Thu 14:25]
 - State "DONE"       from "TODO"       [2016-12-22 Thu 14:25]
 :END:
 ** TODO Make SPIKE_MAKE_INIT_BACKEND more general (fewer ifdefs for sustainability...)
+** TODO Remove push_ / pull_ functions
++ replace them with more expressive -- more specific -- alternatives
 * Style / interface design
 ** TODO Unify coding style (discuss this)
 ** PROGRESS Check for unused member pointers

@@ -8,9 +8,12 @@
 
 namespace Backend {
   namespace Vienna {
-    class RateNeurons;
+    class RateNeurons;    // forward
+    class RatePlasticity; // forward
 
     class RateSynapses : public virtual ::Backend::RateSynapses {
+      friend class RateNeurons;
+      friend class RatePlasticity;
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateSynapses);
       ~RateSynapses() override = default;
@@ -21,11 +24,18 @@ namespace Backend {
       void pull_data_back() override;
 
       void update_activation(float dt) override;
-
-      viennacl::vector<float> activation; // TODO: Need an explicit temporary?
-      viennacl::matrix<float> weights; // TODO: Generalize synapse types
+      const Eigen::VectorXf& activation() override;
+      const Eigen::MatrixXf& weights() override;
 
     private:
+      viennacl::vector<float> _activation; // TODO: Need an explicit temporary?
+      Eigen::VectorXf _activation_cpu;
+      int _activation_cpu_timestep = 0;
+
+      viennacl::matrix<float> _weights;    // TODO: Generalize synapse types
+      Eigen::MatrixXf _weights_cpu;
+      int _weights_cpu_timestep = 0;
+
       ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
      };
 
@@ -46,6 +56,7 @@ namespace Backend {
     };
 
     class RateNeurons : public virtual ::Backend::RateNeurons {
+      friend class RateSynapses;
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
       ~RateNeurons() override = default;
@@ -59,9 +70,12 @@ namespace Backend {
                          ::Backend::RatePlasticity* plasticity) override;
       void update_rate(float dt) override;
 
-      viennacl::vector<float> rates;
+      const Eigen::VectorXf& rate() override;
 
     private:
+      viennacl::vector<float> _rate;
+      Eigen::VectorXf _rate_cpu;
+      int _rate_cpu_timestep = 0;
       std::vector<std::pair<::Backend::Vienna::RateSynapses*,
                             ::Backend::Vienna::RatePlasticity*> > _dendrites;
     };

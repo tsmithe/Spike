@@ -23,6 +23,18 @@ namespace Backend {
 
       void update_activation(float dt) override {
       }
+
+      inline const Eigen::VectorXf& activation() override {
+        return _activation;
+      }
+
+      inline const Eigen::MatrixXf& weights() override {
+        return _weights;
+      }
+
+    private:
+      Eigen::VectorXf _activation;
+      Eigen::MatrixXf _weights;
     };
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
@@ -69,6 +81,13 @@ namespace Backend {
 
       void update_rate(float dt) override {
       }
+
+      inline const Eigen::VectorXf& rate() override {
+        return _rate;
+      }
+
+    private:
+      Eigen::VectorXf _rate;
     };
 
     class RateElectrodes : public virtual ::Backend::RateElectrodes {

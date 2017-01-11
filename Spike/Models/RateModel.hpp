@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -76,6 +77,8 @@ namespace Backend {
     ~RateSynapses() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RateSynapses);
     virtual void update_activation(float dt) = 0;
+    virtual const Eigen::VectorXf& activation() = 0;
+    virtual const Eigen::MatrixXf& weights() = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -92,6 +95,7 @@ namespace Backend {
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
     virtual void update_rate(float dt) = 0;
+    virtual const Eigen::VectorXf& rate() = 0;
   };
 
   class RateElectrodes : public virtual SpikeBackendBase {
@@ -132,6 +136,13 @@ struct EigenBuffer {
   std::list<std::pair<int, Eigen::MatrixXf> > buf;
   std::mutex lock;
 
+  template<typename T>
+  inline void push_back(int n, T const& b) {
+    lock.lock();
+    buf.push_back(std::make_pair(n, b));
+    lock.unlock();
+  }
+
   inline void clear() {
     lock.lock();
     buf.clear();
@@ -167,6 +178,7 @@ public:
                        //       seeking on disk, thus slowing things down?
                        // Perhaps better just to have one global thread?
                        // Or one thread per Electrodes?
+private:
   bool running = false;
 };
 
@@ -192,10 +204,10 @@ public:
   std::string label;
 
   int timesteps = 0;
-  Eigen::VectorXf rates;
 
-  int rates_buffer_interval = 0;
-  EigenBuffer rates_history;
+  const Eigen::VectorXf& rate() const;
+  int rate_buffer_interval = 0;
+  EigenBuffer rate_history;
 
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
 
@@ -227,8 +239,8 @@ public:
 
   std::string label;
 
-  Eigen::VectorXf activation;
-  Eigen::MatrixXf weights; // just single, instantaneous dense weights for now
+  const Eigen::VectorXf& activation() const;
+  const Eigen::MatrixXf& weights() const; // just single, instantaneous dense weights for now
 
   int timesteps = 0;
   int activation_buffer_interval = 0;
@@ -325,7 +337,6 @@ public:
   void set_dump_trigger(bool* trigger);
   void set_stop_trigger(bool* trigger);
 
-  bool running;
   std::thread simulation_thread;
   void simulation_loop();
   void update_model_per_dt();
@@ -337,6 +348,7 @@ public:
 
 private:
   int timesteps_per_second = 0;
+  bool running = false;
 
   void stop_electrodes();
   void wait_for_electrodes();
