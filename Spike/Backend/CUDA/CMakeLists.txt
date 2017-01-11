@@ -1,5 +1,5 @@
 if(BUILD_SHARED_LIBS)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}" "-Xcompiler -fPIC")
+  list(APPEND CUDA_NVCC_FLAGS "-Xcompiler -fPIC")
 endif()
 
 add_subdirectory(Helpers)

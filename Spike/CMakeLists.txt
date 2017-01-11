@@ -49,6 +49,7 @@ endif()
 if (BUILD_WITH_VIENNACL)
   target_link_libraries(Spike
     SpikeViennaModels
+    pthread
     )
 endif()
 

@@ -10,6 +10,10 @@ endif(COMMAND cmake_policy)
 project(Spike)
 
 set (CMAKE_CXX_STANDARD 14)
+if (${CMAKE_C_COMPILER} MATCHES "icc.*$") 
+  list(APPEND CMAKE_CXX_FLAGS -std=c++14)
+endif()
+  
 # set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(VERSION_MAJOR 1)
