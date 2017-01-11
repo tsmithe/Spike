@@ -266,6 +266,10 @@ void RateModel::simulation_loop() {
   while (running && t < t_stop) {
     update_model_per_dt();
 
+    // Print simulation time every 0.1s:
+    if (!((timesteps * 10) % timesteps_per_second))
+      std::cout << "\r" << t;
+
     if (stop_trigger) {
       if (*stop_trigger)
         stop();
@@ -280,6 +284,8 @@ void RateModel::simulation_loop() {
   // Stop electrodes before declaring simulation done
   // (so as to block the program from exiting prematurely):
   stop_electrodes();
+
+  std::cout << std::endl;
   running = false;
 }
 
@@ -303,6 +309,14 @@ void RateModel::update_model_per_dt() {
   //       However, if dt is small, does this matter? ...
   for (auto& n : neuron_groups)
     n->update(dt);
+  t += dt;
+  timesteps += 1;
+}
+
+void RateModel::set_simulation_time(float t_stop_, float dt_) {
+  t_stop = t_stop_;
+  dt = dt_;
+  timesteps_per_second = ceil(1 / dt);
 }
 
 void RateModel::start() {

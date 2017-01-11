@@ -1,6 +1,7 @@
 # if (ENABLE_UBLAS)
 # include_directories(${Boost_INCLUDE_DIRS})
 foreach(example
+    SimpleRateModel
     CPUTest
     TSCSOptimiseFourLayerVisionSpikingModelFiringRates
     VogelsAbbotNet

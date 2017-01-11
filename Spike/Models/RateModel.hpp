@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -64,6 +65,10 @@ class RateSynapses;   // Forward definition
 class RatePlasticity; // Forward definition
 class RateElectrodes; // Forward definition
 class RateModel;      // Forward definition
+
+// TODO: Be more protective about friends!
+//        -- That is, make more class members protected / private,
+//           and specify friendship relationships to allow proper access.
 
 namespace Backend {
   class RateSynapses : public virtual SpikeBackendBase {
@@ -236,6 +241,10 @@ private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
 };
 
+
+// TODO: Some nice Synapse factories for random initializations
+
+
 class RatePlasticity : public virtual SpikeBase {
 public:
   RatePlasticity(Context* ctx, RateSynapses* syns);
@@ -253,6 +262,10 @@ public:
 private:
   std::shared_ptr<::Backend::RatePlasticity> _backend;
 };
+
+
+// TODO: Various RatePlasiticity specialisations for different learning rules
+
 
 class RateElectrodes : public virtual SpikeBase {
   friend class RateModel;
@@ -299,6 +312,8 @@ public:
   float dt = 0;
   float t_stop = infinity<float>();
 
+  int timesteps = 0;
+
   std::vector<RateNeurons*> neuron_groups;
   std::vector<RateElectrodes*> electrodes;
 
@@ -312,10 +327,14 @@ public:
   void simulation_loop();
   void update_model_per_dt();
 
+  void set_simulation_time(float t_stop_, float dt_);
+
   void start();
   void stop();
 
 private:
+  int timesteps_per_second = 0;
+
   void stop_electrodes();
   void wait_for_electrodes();
   /*
