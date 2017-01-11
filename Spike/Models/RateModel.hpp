@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -123,7 +124,7 @@ static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
 #endif
 
 struct EigenBuffer {
-  std::vector<std::pair<int, Eigen::MatrixXf> > buf;
+  std::list<std::pair<int, Eigen::MatrixXf> > buf;
   std::mutex lock;
 };
 

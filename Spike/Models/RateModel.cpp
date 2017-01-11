@@ -11,15 +11,49 @@ BufferWriter::~BufferWriter() {
 }
 
 void BufferWriter::write_output() {
+  buffer.lock.lock();
+  int buffer_size = buffer.buf.size();
+  buffer.lock.unlock();
+
+  while (buffer_size > 0) {
+    auto& front = buffer.buf.front();
+    // int timestep = front.first; // TODO: perhaps write this out, too?
+
+    auto data = front.second.data();
+    int n_bytes = front.second.size() * sizeof(decltype(front.second)::Scalar);
+
+    file.write((char*) data, n_bytes);
+
+    buffer.lock.lock();
+    buffer.buf.pop_front();
+    buffer_size = buffer.buf.size();
+    buffer.lock.unlock();
+  }
 }
 
 void BufferWriter::write_loop() {
+  while (running) {
+    // TODO: why 200ms?
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    write_output();
+  }
 }
 
 void BufferWriter::start() {
+  if (running)
+    return;
+
+  running = true;
+  othread = std::thread(&BufferWriter::write_loop, this);
 }
 
 void BufferWriter::stop() {
+  if (!running)
+    return;
+
+  running = false;
+  othread.join();
+  file.flush();
 }
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
