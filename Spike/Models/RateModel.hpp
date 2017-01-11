@@ -317,6 +317,9 @@ public:
   std::vector<RateNeurons*> neuron_groups;
   std::vector<RateElectrodes*> electrodes;
 
+  void add(RateNeurons* neurons);
+  void add(RateElectrodes* elecs);
+
   bool* dump_trigger = nullptr; // used for signal handling
   bool* stop_trigger = nullptr; // used for signal handling
   void set_dump_trigger(bool* trigger);

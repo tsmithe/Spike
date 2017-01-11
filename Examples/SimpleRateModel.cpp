@@ -3,8 +3,8 @@
 // TODO: Add signal handlers
 
 int main() {
-  // Create Context
+  // Create Model
   // Set up some Neurons, Synapses and Electrodes
-  // Construct Model
+  // Add Neurons and Electrodes to Model
   // Run!
 }

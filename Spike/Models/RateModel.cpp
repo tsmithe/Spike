@@ -246,6 +246,14 @@ RateModel::RateModel(Context* ctx) {
 RateModel::~RateModel() {
 }
 
+void RateModel::add(RateNeurons* neurons) {
+  neuron_groups.push_back(neurons);
+}
+
+void RateModel::add(RateElectrodes* elecs) {
+  electrodes.push_back(elecs);
+}
+
 void RateModel::set_dump_trigger(bool* trigger) {
   dump_trigger = trigger;
 }
