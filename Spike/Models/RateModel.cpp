@@ -11,11 +11,7 @@ BufferWriter::~BufferWriter() {
 }
 
 void BufferWriter::write_output() {
-  buffer.lock.lock();
-  int buffer_size = buffer.buf.size();
-  buffer.lock.unlock();
-
-  while (buffer_size > 0) {
+  while (buffer.size() > 0) {
     auto& front = buffer.buf.front();
     // int timestep = front.first; // TODO: perhaps write this out, too?
 
@@ -26,9 +22,13 @@ void BufferWriter::write_output() {
 
     buffer.lock.lock();
     buffer.buf.pop_front();
-    buffer_size = buffer.buf.size();
     buffer.lock.unlock();
   }
+}
+
+void BufferWriter::block_until_empty() {
+  while (buffer.size() > 0)
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void BufferWriter::write_loop() {
@@ -68,7 +68,13 @@ RateNeurons::~RateNeurons() {
 
 void RateNeurons::reset_state() {
   rates = Eigen::VectorXf::Zero(size);
+  timesteps = 0;
+  rates_history.clear();
   backend()->reset_state();
+  for (auto& d : dendrites) {
+    d.first->reset_state(); // TODO: should the weights be zeroed here?!
+    d.second->reset_state();
+  }
 }
 
 void RateNeurons::assert_dendritic_consistency
@@ -128,8 +134,14 @@ RateSynapses::~RateSynapses() {
 
 void RateSynapses::reset_state() {
   activation = Eigen::VectorXf::Zero(neurons_post->size);
+  // TODO: reset_state should revert the network to the state at t=0
+  assert(false && "TODO: think about weights and resetting..."); // TODO!
   weights = Eigen::MatrixXf::Zero(neurons_pre->size,
                                   neurons_post->size);
+  timesteps = 0;
+  activation_history.clear();
+  weights_history.clear();
+  backend()->reset_state();
 }
 
 void RateSynapses::update_activation(float dt) {
@@ -146,6 +158,7 @@ RatePlasticity::~RatePlasticity() {
 }
 
 void RatePlasticity::reset_state() {
+  backend()->reset_state();
 }
 
 void RatePlasticity::apply_plasticity(float dt) {
@@ -206,9 +219,20 @@ void RateElectrodes::reset_state() {
 }
 
 void RateElectrodes::start() {
+  for (auto& writer : writers) {
+    writer->start();
+  }
 }
 
 void RateElectrodes::stop() {
+  for (auto& writer : writers) {
+    writer->stop();
+  }
+}
+
+void RateElectrodes::block_until_empty() {
+  for (auto& writer : writers)
+    writer->block_until_empty();
 }
 
 RateModel::RateModel(Context* ctx) {
@@ -222,19 +246,91 @@ RateModel::RateModel(Context* ctx) {
 RateModel::~RateModel() {
 }
 
+void RateModel::set_dump_trigger(bool* trigger) {
+  dump_trigger = trigger;
+}
+
+void RateModel::set_stop_trigger(bool* trigger) {
+  stop_trigger = trigger;
+}
+
 void RateModel::reset_state() {
+  for (auto& n : neuron_groups)
+    n->reset_state();
+  for (auto& e : electrodes)
+    e->reset_state();
+  t = 0;
 }
 
 void RateModel::simulation_loop() {
+  while (running && t < t_stop) {
+    update_model_per_dt();
+
+    if (stop_trigger) {
+      if (*stop_trigger)
+        stop();
+    }
+
+    if (dump_trigger) {
+      if (*dump_trigger)
+        wait_for_electrodes();
+    }
+  }
+
+  // Stop electrodes before declaring simulation done
+  // (so as to block the program from exiting prematurely):
+  stop_electrodes();
+  running = false;
+}
+
+void RateModel::wait_for_electrodes() {
+  for (auto& e : electrodes)
+    e->block_until_empty();
 }
 
 void RateModel::update_model_per_dt() {
+  // TODO: Currently, neuron groups are updated in (some) sequence.
+  //       But should they be updated all simultaneously?
+  //
+  //       The problem with using a sequence is that
+  //          neuron_groups[2](t)
+  //       sees
+  //          neuron_groups[0](t+dt)
+  //       when it should see
+  //          neuron_groups[0](t)
+  //       !!
+  //
+  //       However, if dt is small, does this matter? ...
+  for (auto& n : neuron_groups)
+    n->update(dt);
 }
 
 void RateModel::start() {
+  if (running)
+    return;
+
+  // Start `recording' before simulation starts:
+  for (auto& e : electrodes)
+    e->start();
+
+  running = true;
+  simulation_thread = std::thread(&RateModel::simulation_loop, this);
 }
 
 void RateModel::stop() {
+  if (!running)
+    return;
+
+  running = false;
+  simulation_thread.join();
+
+  // Stop recording only once simulation is stopped:
+  stop_electrodes();
+}
+
+void RateModel::stop_electrodes() {
+  for (auto& e : electrodes)
+    e->stop();
 }
 
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);

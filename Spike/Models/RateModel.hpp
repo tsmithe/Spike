@@ -63,7 +63,7 @@ class RateNeurons;    // Forward definition
 class RateSynapses;   // Forward definition
 class RatePlasticity; // Forward definition
 class RateElectrodes; // Forward definition
-// class RateModel;      // Forward definition
+class RateModel;      // Forward definition
 
 namespace Backend {
   class RateSynapses : public virtual SpikeBackendBase {
@@ -126,6 +126,19 @@ static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
 struct EigenBuffer {
   std::list<std::pair<int, Eigen::MatrixXf> > buf;
   std::mutex lock;
+
+  inline void clear() {
+    lock.lock();
+    buf.clear();
+    lock.unlock();
+  }
+
+  inline int size() {
+    lock.lock();
+    int size_ = buf.size();
+    lock.unlock();
+    return size_;
+  }
 };
 
 class BufferWriter {
@@ -139,10 +152,16 @@ public:
   void start();
   void stop();
 
+  void block_until_empty();
+
   EigenBuffer& buffer;
   std::string filename;
   std::ofstream file;
-  std::thread othread;
+  std::thread othread; // TODO: Perhaps having too many
+                       //       output threads will cause too much
+                       //       seeking on disk, thus slowing things down?
+                       // Perhaps better just to have one global thread?
+                       // Or one thread per Electrodes?
   bool running = false;
 };
 
@@ -236,6 +255,8 @@ private:
 };
 
 class RateElectrodes : public virtual SpikeBase {
+  friend class RateModel;
+
 public:
   RateElectrodes(Context* ctx, std::string prefix, RateNeurons* neurons_);
   ~RateElectrodes() override;
@@ -252,6 +273,9 @@ public:
 
   void start();
   void stop();
+
+protected:
+  void block_until_empty();
 
 private:
   std::shared_ptr<::Backend::RateElectrodes> _backend;
@@ -280,7 +304,10 @@ public:
 
   bool* dump_trigger = nullptr; // used for signal handling
   bool* stop_trigger = nullptr; // used for signal handling
+  void set_dump_trigger(bool* trigger);
+  void set_stop_trigger(bool* trigger);
 
+  bool running;
   std::thread simulation_thread;
   void simulation_loop();
   void update_model_per_dt();
@@ -288,6 +315,9 @@ public:
   void start();
   void stop();
 
+private:
+  void stop_electrodes();
+  void wait_for_electrodes();
   /*
 private:
   std::shared_ptr<::Backend::RateModel> _backend;
