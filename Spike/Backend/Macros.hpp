@@ -27,6 +27,7 @@
 #define SPIKE_MAKE_BACKEND_CONSTRUCTOR(TYPE)            \
   TYPE(::TYPE* front) {                                 \
     _frontend = (void*)front;                           \
+    std::cout << "TODO@@@ " << TYPEID_NAME(this) << " @ " << this << " with front " << _frontend << "\n"; \
   }
 
 #define SPIKE_ADD_FRONTEND_GETTER(TYPE)                 \
@@ -60,19 +61,20 @@
 #else
 #define SPIKE_MAKE_INIT_BACKEND(TYPE)                                   \
   void TYPE::init_backend(Context* ctx) {                               \
-    ::Backend::TYPE* ptr = nullptr;                                     \
     switch (ctx->device) {                                              \
     case Backend::SPIKE_DEVICE_DUMMY:                                   \
-      ptr = new Backend::Dummy::TYPE(this);                             \
+      backend(std::make_shared<Backend::Dummy::TYPE>(this));            \
       break;                                                            \
     case Backend::SPIKE_DEVICE_VIENNA:                                  \
-      ptr = new Backend::Vienna::TYPE(this);                            \
+      backend(std::make_shared<Backend::Vienna::TYPE>(this));           \
       break;                                                            \
     default:                                                            \
       assert("Unsupported backend" && false);                           \
     };                                                                  \
-    backend(std::shared_ptr<::Backend::TYPE>(ptr));                     \
     backend()->context = ctx;                                           \
+    std::cout << "TODO??? " << backend() << ": " << dynamic_cast<::Backend::Vienna::TYPE*>(backend())->frontend() << "\n"; \
+    backend()->_frontend = (void*)this;                                   \
+    std::cout << "TODO??? " << backend() << ": " << dynamic_cast<::Backend::Vienna::TYPE*>(backend())->frontend() << "\n"; \
     prepare_backend();                                                  \
   }
 #endif

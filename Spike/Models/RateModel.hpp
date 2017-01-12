@@ -76,6 +76,8 @@ namespace Backend {
   public:
     ~RateSynapses() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RateSynapses);
+    void prepare() override = 0;
+    void reset_state() override = 0;
     virtual void update_activation(float dt) = 0;
     virtual const Eigen::VectorXf& activation() = 0;
     virtual const Eigen::MatrixXf& weights() = 0;
@@ -85,6 +87,8 @@ namespace Backend {
   public:
     ~RatePlasticity() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RatePlasticity);
+    void prepare() override = 0;
+    void reset_state() override = 0;
     virtual void apply_plasticity(float dt) = 0;
   };
 
@@ -92,19 +96,21 @@ namespace Backend {
   public:
     ~RateNeurons() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
     virtual void update_rate(float dt) = 0;
     virtual const Eigen::VectorXf& rate() = 0;
   };
 
+  /*
   class RateElectrodes : public virtual SpikeBackendBase {
   public:
     ~RateElectrodes() override = default;
     SPIKE_ADD_FRONTEND_GETTER(RateElectrodes);
   };
 
-  /*
   class RateModel : public virtual SpikeBackendBase {
   public:
     ~RateModel() override = default;
@@ -279,17 +285,19 @@ private:
 // TODO: Various RatePlasiticity specialisations for different learning rules
 
 
-class RateElectrodes : public virtual SpikeBase {
+class RateElectrodes /* : public virtual SpikeBase */ {
   friend class RateModel;
 
 public:
-  RateElectrodes(Context* ctx, std::string prefix, RateNeurons* neurons_);
-  ~RateElectrodes() override;
+  RateElectrodes(/*Context* ctx,*/ std::string prefix, RateNeurons* neurons_);
+  ~RateElectrodes() /*override*/;
 
+  /*
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RateElectrodes, SpikeBase);
+  */
 
-  void reset_state() override;
+  void reset_state() /*override*/;
 
   std::string output_prefix;
 
@@ -302,8 +310,10 @@ public:
 protected:
   void block_until_empty();
 
+/*
 private:
   std::shared_ptr<::Backend::RateElectrodes> _backend;
+*/
 };
 
 class RateModel /* : public virtual SpikeBase */ {
@@ -345,6 +355,7 @@ public:
 
   void start();
   void stop();
+  void wait_for_simulation();
 
 private:
   int timesteps_per_second = 0;

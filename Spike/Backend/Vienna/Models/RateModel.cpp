@@ -3,7 +3,8 @@
 namespace Backend {
   namespace Vienna {
     void RateNeurons::prepare() {
-      reset_state();
+      // std::cout << frontend() << "\n";
+      // reset_state();
     }
 
     void RateNeurons::reset_state() {
@@ -29,18 +30,29 @@ namespace Backend {
 
     void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
                                     ::Backend::RatePlasticity* plasticity) {
-      ::Backend::Vienna::RateSynapses* synapses_
+      ::Backend::Vienna::RateSynapses* _vienna_synapses
         = dynamic_cast<::Backend::Vienna::RateSynapses*>(synapses);
-      ::Backend::Vienna::RatePlasticity* plasticity_
+      ::Backend::Vienna::RatePlasticity* _vienna_plasticity
         = dynamic_cast<::Backend::Vienna::RatePlasticity*>(plasticity);
-      _dendrites.push_back(std::make_pair(synapses_, plasticity_));
+      // std::cout << synapses_ << ", " << plasticity_ << "\n";
+      /*
+      std::pair<::Backend::Vienna::RateSynapses*,
+        ::Backend::Vienna::RatePlasticity*> p(synapses_, plasticity_);
+      _dendrites.push_back(p); // {synapses_, plasticity_});
+      */
+      _synapses.push_back(_vienna_synapses);
+      // _plasticity.push_back(_vienna_plasticity);
     }
 
     void RateNeurons::update_rate(float dt) {
       viennacl::vector<float> total_activation
         = viennacl::zero_vector<float>(frontend()->size);
+      /*
       for (const auto& dendrite_pair : _dendrites)
         total_activation += dendrite_pair.first->_activation;
+      */
+      for (const auto& synapse : _synapses)
+        total_activation += synapse->_activation;
 
       // TODO: Generalize transfer function
       _rate += dt * viennacl::linalg::element_tanh(total_activation);
@@ -49,13 +61,15 @@ namespace Backend {
     void RateSynapses::prepare() {
       neurons_pre = dynamic_cast<::Backend::Vienna::RateNeurons*>
         (frontend()->neurons_pre->backend());
-      reset_state();
+      // reset_state();
     }
 
     void RateSynapses::reset_state() {
       int size_post = frontend()->neurons_post->size;
       int size_pre = frontend()->neurons_pre->size;
       int timesteps = frontend()->timesteps;
+
+      std::cout << "size: " << size_pre << ", " << size_post << "\n";
 
       _activation = viennacl::zero_vector<float>(size_post);
       _activation_cpu = Eigen::VectorXf::Zero(size_post);
@@ -112,9 +126,11 @@ namespace Backend {
       // TODO
     }
 
+    /*
     void RateElectrodes::prepare() {}
     void RateElectrodes::reset_state() {}
     void RateElectrodes::push_data_front() {}
     void RateElectrodes::pull_data_back() {}
+    */
   }
 }

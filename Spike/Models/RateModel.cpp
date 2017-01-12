@@ -63,8 +63,8 @@ void BufferWriter::stop() {
 RateNeurons::RateNeurons(Context* ctx, int size_,
                          std::string label_)
   : size(size_), label(label_) {
-  init_backend(ctx);
-  reset_state();
+  // init_backend(ctx);
+  // reset_state();
 }
 
 RateNeurons::~RateNeurons() {
@@ -134,8 +134,8 @@ RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_post_,
                            std::string label_)
   : neurons_pre(neurons_pre_), neurons_post(neurons_post_), label(label_) {
-  init_backend(ctx);
-  reset_state();
+  // init_backend(ctx);
+  // reset_state();
   if(!(label.length()))
     label = neurons_pre->label;
 }
@@ -172,8 +172,8 @@ void RateSynapses::update_activation(float dt) {
 
 RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
   : synapses(syns) {
-  init_backend(ctx);
-  reset_state();
+  // init_backend(ctx);
+  // reset_state();
 }
 
 RatePlasticity::~RatePlasticity() {
@@ -188,11 +188,11 @@ void RatePlasticity::apply_plasticity(float dt) {
   // TODO: Buffer weights
 }
 
-RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
+RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
                                RateNeurons* neurons_)
   : output_prefix(prefix), neurons(neurons_) {
 
-  init_backend(ctx);
+  // init_backend(ctx);
 
   {
     const int err = mkdir(output_prefix.c_str(),
@@ -243,7 +243,7 @@ RateElectrodes::RateElectrodes(Context* ctx, std::string prefix,
   }
   output_info_file.close();
 
-  reset_state();
+  // reset_state();
 }
 
 RateElectrodes::~RateElectrodes() {
@@ -271,7 +271,7 @@ void RateElectrodes::block_until_empty() {
 }
 
 RateModel::RateModel(Context* ctx) {
-  Eigen::initParallel();
+  // Eigen::initParallel();
   if (ctx == nullptr) {
     Backend::init_global_context();
     context = Backend::get_current_context();
@@ -313,9 +313,11 @@ void RateModel::simulation_loop() {
   while (running && t < t_stop) {
     update_model_per_dt();
 
-    // Print simulation time every 0.1s:
-    if (!((timesteps * 10) % timesteps_per_second))
-      printf("\r%.1f", t);
+    // Print simulation time every 0.05s:
+    if (!((timesteps * 20) % timesteps_per_second)) {
+      printf("\r%.2f", t);
+      std::cout.flush();
+    }
 
     if (stop_trigger) {
       if (*stop_trigger)
@@ -378,6 +380,12 @@ void RateModel::start() {
   simulation_thread = std::thread(&RateModel::simulation_loop, this);
 }
 
+void RateModel::wait_for_simulation() {
+  while (running) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+
 void RateModel::stop() {
   if (!running)
     return;
@@ -398,5 +406,5 @@ void RateModel::stop_electrodes() {
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
-SPIKE_MAKE_INIT_BACKEND(RateElectrodes);
+// SPIKE_MAKE_INIT_BACKEND(RateElectrodes);
 // SPIKE_MAKE_INIT_BACKEND(RateModel);

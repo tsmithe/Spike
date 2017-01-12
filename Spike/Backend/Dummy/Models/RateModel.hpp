@@ -90,6 +90,7 @@ namespace Backend {
       Eigen::VectorXf _rate;
     };
 
+    /*
     class RateElectrodes : public virtual ::Backend::RateElectrodes {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateElectrodes);
@@ -107,6 +108,7 @@ namespace Backend {
       void pull_data_back() override {
       }
     };
+    */
 
     /*
     class RateModel : public virtual ::Backend::RateModel {

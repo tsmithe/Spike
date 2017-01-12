@@ -9,7 +9,6 @@
 namespace Backend {
   namespace Vienna {
     class RateNeurons;    // forward
-    class RatePlasticity; // forward
 
     class RateSynapses : public virtual ::Backend::RateSynapses {
       friend class RateNeurons;
@@ -76,10 +75,11 @@ namespace Backend {
       viennacl::vector<float> _rate;
       Eigen::VectorXf _rate_cpu;
       int _rate_cpu_timestep = 0;
-      std::vector<std::pair<::Backend::Vienna::RateSynapses*,
-                            ::Backend::Vienna::RatePlasticity*> > _dendrites;
+      std::vector<::Backend::Vienna::RateSynapses*> _synapses;
+      std::vector<::Backend::Vienna::RatePlasticity*> _plasticity;
     };
 
+    /*
     class RateElectrodes : public virtual ::Backend::RateElectrodes {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateElectrodes);
@@ -91,7 +91,6 @@ namespace Backend {
       void pull_data_back() override;
     };
 
-    /*
     class RateModel : public virtual ::Backend::RateModel {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateModel);
