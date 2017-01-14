@@ -10,30 +10,15 @@ namespace Backend {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(EvansSTDP);
 
-      void prepare() override {
-        STDP::prepare();
-      }
+      void prepare() override;
+      void reset_state() override;
 
-      void reset_state() override {
-        STDP::reset_state();
-      }
-
-      void push_data_front() override {
-        STDP::push_data_front();
-      }
-
-      void pull_data_back() override {
-        STDP::pull_data_back();
-      }
-
-      void update_synaptic_efficacies_or_weights(float current_time_in_seconds) override {
-      }
-
-      void update_presynaptic_activities(float timestep, float current_time_in_seconds) override {
-      }
-
-      void update_postsynaptic_activities(float timestep, float current_time_in_seconds) override {
-      }
+      void update_synaptic_efficacies_or_weights
+      (float current_time_in_seconds) override;
+      void update_presynaptic_activities
+      (float timestep, float current_time_in_seconds) override;
+      void update_postsynaptic_activities
+      (float timestep, float current_time_in_seconds) override;
     };
   }
 }

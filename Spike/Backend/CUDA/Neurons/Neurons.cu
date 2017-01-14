@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/Neurons.hpp"
 
+// SPIKE_EXPORT_BACKEND_TYPE(CUDA, Neurons);
+
 namespace Backend {
   namespace CUDA {
     Neurons::~Neurons() {
@@ -37,11 +39,5 @@ namespace Backend {
     void Neurons::reset_state() {
       reset_current_injections();
     }  
-
-    void Neurons::push_data_front() {
-    }
-
-    void Neurons::pull_data_back() {
-    }
   } // ::Backend::CUDA
 } // ::Backend

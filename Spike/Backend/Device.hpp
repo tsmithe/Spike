@@ -1,5 +1,7 @@
 #pragma once
 
+/*
+
 namespace Backend {
   // Parent class for device management
   enum Device {
@@ -10,3 +12,5 @@ namespace Backend {
     SPIKE_DEVICE_VIENNA
   };
 } // namespace Backend
+
+*/

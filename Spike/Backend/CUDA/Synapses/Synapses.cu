@@ -4,6 +4,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/count.h>
 
+// SPIKE_EXPORT_BACKEND_TYPE(CUDA, Synapses);
+
 namespace Backend {
   namespace CUDA {
     Synapses::~Synapses() {
@@ -20,12 +22,6 @@ namespace Backend {
     }
 
     void Synapses::reset_state() {
-    }
-
-    void Synapses::push_data_front() {
-    }
-
-    void Synapses::pull_data_back() {
     }
 
     void Synapses::allocate_device_pointers() {

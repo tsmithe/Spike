@@ -4,6 +4,7 @@
 #include "Spike/Backend/CUDA/CUDABackend.hpp"
 #include "Spike/Backend/CUDA/Neurons/SpikingNeurons.hpp"
 #include "Spike/Backend/CUDA/Neurons/InputSpikingNeurons.hpp"
+#include "Spike/Backend/CUDA/RecordingElectrodes/CountNeuronSpikesRecordingElectrodes.hpp"
 
 #include <cuda.h>
 #include <vector_types.h>
@@ -19,9 +20,6 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
-
-      void push_data_front() override;
-      void pull_data_back() override;
 
       void store_spike_counts_for_stimulus_index(int stimulus_index) override;
 

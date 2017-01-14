@@ -2,6 +2,8 @@
 #include "Spike/Backend/CUDA/STDP/STDP.hpp"
 #include <iostream>
 
+// SPIKE_EXPORT_BACKEND_TYPE(CUDA, STDP);
+
 namespace Backend {
   namespace CUDA {
     void STDP::prepare() {
@@ -12,12 +14,6 @@ namespace Backend {
     }
 
     void STDP::reset_state() {
-    }
-
-    void STDP::push_data_front() {
-    }
-
-    void STDP::pull_data_back() {
     }
   }
 }

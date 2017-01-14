@@ -13,25 +13,14 @@ class RandomStateManager; // forward definition
 namespace Backend {
   class RandomStateManager : public virtual SpikeBackendBase {
   public:
-    SPIKE_ADD_FRONTEND_GETTER(RandomStateManager);
+    SPIKE_ADD_BACKEND_FACTORY(RandomStateManager);
 
     void reset_state() override {
       // Unorthodox: reset_state doesn't usually just mean, 'call prepare()'
       prepare();
     }
-    void push_data_front() override {}
-    void pull_data_back() override {}
   };
 }
-
-#include "Spike/Backend/Dummy/Helpers/RandomStateManager.hpp"
-#ifdef SPIKE_WITH_CUDA
-#include "Spike/Backend/CUDA/Helpers/RandomStateManager.hpp"
-#endif
-#ifdef SPIKE_WITH_VIENNACL
-#include "Spike/Backend/Vienna/Helpers/RandomStateManager.hpp"
-#endif
-
 
 class RandomStateManager : public virtual SpikeBase {
 public:

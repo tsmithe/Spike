@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/STDP/MasquelierSTDP.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, MasquelierSTDP);
+
 namespace Backend {
   namespace CUDA {
     MasquelierSTDP::~MasquelierSTDP() {
@@ -30,14 +32,6 @@ namespace Backend {
       STDP::prepare();
 
       allocate_device_pointers();
-    }
-
-    void MasquelierSTDP::push_data_front() {
-      STDP::push_data_front();
-    }
-
-    void MasquelierSTDP::pull_data_back() {
-      STDP::pull_data_back();
     }
 
     void MasquelierSTDP::allocate_device_pointers() {

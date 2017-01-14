@@ -1,5 +1,3 @@
-# if (ENABLE_UBLAS)
-# include_directories(${Boost_INCLUDE_DIRS})
 foreach(example
     SimpleRateModel
     CPUTest
@@ -8,6 +6,8 @@ foreach(example
     )
   add_executable(${example} ${example}.cpp)
   target_link_libraries(${example} Spike) # ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})
-  #set_target_properties(${experiment} PROPERTIES COMPILE_FLAGS "-DSPIKE_WITH_OPENCL")
+  if (BUILD_WITH_CUDA)
+    target_link_libraries(${example} ${CUDA_LIBRARIES})
+    set_target_properties(${experiment} PROPERTIES COMPILE_FLAGS "-DSPIKE_WITH_CUDA")
+  endif()
 endforeach()
-# endif (ENABLE_UBLAS)

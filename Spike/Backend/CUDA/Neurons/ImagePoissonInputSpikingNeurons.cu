@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/ImagePoissonInputSpikingNeurons.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, ImagePoissonInputSpikingNeurons);
+
 namespace Backend {
   namespace CUDA {
     ImagePoissonInputSpikingNeurons::~ImagePoissonInputSpikingNeurons() {
@@ -25,14 +27,6 @@ namespace Backend {
       PoissonInputSpikingNeurons::prepare();
       allocate_device_pointers();
       copy_rates_to_device();
-    }
-
-    void ImagePoissonInputSpikingNeurons::push_data_front() {
-      PoissonInputSpikingNeurons::push_data_front();
-    }
-
-    void ImagePoissonInputSpikingNeurons::pull_data_back() {
-      PoissonInputSpikingNeurons::pull_data_back();
     }
 
     void ImagePoissonInputSpikingNeurons::update_membrane_potentials(float timestep,float current_time_in_seconds) {

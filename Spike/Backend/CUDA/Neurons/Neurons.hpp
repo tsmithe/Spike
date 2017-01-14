@@ -14,9 +14,6 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      void push_data_front() override;
-      void pull_data_back() override;
-
       // Device Pointers
       int * per_neuron_afferent_synapse_count = nullptr;	/**< A (device-side) count of the number of afferent synapses for each neuron */
       float* current_injections = nullptr;				/**< Device array for the storage of current to be injected into each neuron on each timestep. */
@@ -37,9 +34,6 @@ namespace Backend {
       void set_threads_per_block_and_blocks_per_grid(int threads); // Not virtual
 
       void reset_current_injections() override;
-
-    private:
-      SPIKE_ADD_FRONTEND_GETTER(Neurons);
     };
   } // namespace CUDA
 } // namespace Backend

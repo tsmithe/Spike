@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/AdExSpikingNeurons.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, AdExSpikingNeurons);
+
 namespace Backend {
   namespace CUDA {
     AdExSpikingNeurons::~AdExSpikingNeurons() {
@@ -74,14 +76,6 @@ namespace Backend {
                               frontend()->adaptation_values_w,
                               sizeof(float)*frontend()->total_number_of_neurons,
                               cudaMemcpyHostToDevice));
-    }
-
-    void AdExSpikingNeurons::push_data_front() {
-      SpikingNeurons::push_data_front();
-    }
-
-    void AdExSpikingNeurons::pull_data_back() {
-      SpikingNeurons::pull_data_back();
     }
 
     void AdExSpikingNeurons::update_membrane_potentials(float timestep, float current_time_in_seconds) {

@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/GeneratorInputSpikingNeurons.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, GeneratorInputSpikingNeurons)
+
 namespace Backend {
   namespace CUDA {
     GeneratorInputSpikingNeurons::~GeneratorInputSpikingNeurons() {
@@ -31,14 +33,6 @@ namespace Backend {
                               frontend()->spike_times_matrix_for_stimuli[frontend()->current_stimulus_index],
                               sizeof(float)*frontend()->number_of_spikes_in_stimuli[frontend()->current_stimulus_index],
                               cudaMemcpyHostToDevice));
-    }
-
-    void GeneratorInputSpikingNeurons::push_data_front() {
-      InputSpikingNeurons::push_data_front();
-    }
-
-    void GeneratorInputSpikingNeurons::pull_data_back() {
-      InputSpikingNeurons::pull_data_back();
     }
 
     void GeneratorInputSpikingNeurons::check_for_neuron_spikes(float current_time_in_seconds, float timestep) {

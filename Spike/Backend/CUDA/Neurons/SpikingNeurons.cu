@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/SpikingNeurons.hpp"
 
+// SPIKE_EXPORT_BACKEND_TYPE(CUDA, SpikingNeurons);
+
 namespace Backend {
   namespace CUDA {
     SpikingNeurons::~SpikingNeurons() {
@@ -59,14 +61,6 @@ namespace Backend {
                                 sizeof(unsigned char)*frontend()->bitarray_length*frontend()->total_number_of_neurons,
                                 cudaMemcpyHostToDevice));
       }
-    }
-
-    void SpikingNeurons::push_data_front() {
-      Neurons::push_data_front();
-    }
-
-    void SpikingNeurons::pull_data_back() {
-      Neurons::pull_data_back();
     }
 
     void SpikingNeurons::check_for_neuron_spikes(float current_time_in_seconds, float timestep) {

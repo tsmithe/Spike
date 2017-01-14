@@ -25,61 +25,52 @@
   }
 
 #define SPIKE_MAKE_BACKEND_CONSTRUCTOR(TYPE)            \
-  TYPE(::TYPE* front) {                                 \
+  TYPE(::TYPE* front, Context* ctx) {                   \
     _frontend = (void*)front;                           \
     std::cout << "TODO@@@ " << TYPEID_NAME(this) << " @ " << this << " with front " << _frontend << "\n"; \
+    context = ctx;                                      \
   }
 
-#define SPIKE_ADD_FRONTEND_GETTER(TYPE)                 \
-  inline ::TYPE* frontend() const {                     \
-    assert(_frontend != nullptr &&                      \
-           "Need to have backend initialized!");        \
-    return (::TYPE*)_frontend;                          \
-  }
-
-#ifdef SPIKE_WITH_CUDA
-#define SPIKE_MAKE_INIT_BACKEND(TYPE)                                   \
-  void TYPE::init_backend(Context* ctx) {                               \
-    ::Backend::TYPE* ptr = nullptr;                                     \
-    switch (ctx->device) {                                              \
-    case Backend::SPIKE_DEVICE_DUMMY:                                   \
-      ptr = new Backend::Dummy::TYPE(this);                             \
-      break;                                                            \
-    case Backend::SPIKE_DEVICE_VIENNA:                                  \
-      ptr = new Backend::Vienna::TYPE(this);                            \
-      break;                                                            \
-    case Backend::SPIKE_DEVICE_CUDA:                                    \
-      ptr = new Backend::CUDA::TYPE(this);                              \
-      break;                                                            \
-    default:                                                            \
-      assert("Unsupported backend" && false);                           \
-    };                                                                  \
-    backend(std::shared_ptr<::Backend::TYPE>(ptr));                     \
-    backend()->context = ctx;                                           \
-    prepare_backend();                                                  \
-  }
-#else
-#define SPIKE_MAKE_INIT_BACKEND(TYPE)                                   \
-  void TYPE::init_backend(Context* ctx) {                               \
-    switch (ctx->device) {                                              \
-    case Backend::SPIKE_DEVICE_DUMMY:                                   \
-      backend(std::make_shared<Backend::Dummy::TYPE>(this));            \
-      break;                                                            \
-    case Backend::SPIKE_DEVICE_VIENNA:                                  \
-      backend(std::make_shared<Backend::Vienna::TYPE>(this));           \
-      break;                                                            \
-    default:                                                            \
-      assert("Unsupported backend" && false);                           \
-    };                                                                  \
-    backend()->context = ctx;                                           \
-    std::cout << "TODO??? " << backend() << ": " << dynamic_cast<::Backend::Vienna::TYPE*>(backend())->frontend() << "\n"; \
-    backend()->_frontend = (void*)this;                                   \
-    std::cout << "TODO??? " << backend() << ": " << dynamic_cast<::Backend::Vienna::TYPE*>(backend())->frontend() << "\n"; \
-    prepare_backend();                                                  \
-  }
-#endif
+#define SPIKE_MAKE_INIT_BACKEND(TYPE)                              \
+  void TYPE::init_backend(Context* ctx) {                          \
+    auto ptr = ::Backend::TYPE::factory[ctx->backend](this, ctx);  \
+    backend(std::shared_ptr<::Backend::TYPE>(ptr));                \
+    prepare_backend();                                             \
+  } /* Below, instantiate backend factory map: */                  \
+  namespace Backend { FactoryMap<::TYPE, TYPE> TYPE::factory; }    \
 
 #define SPIKE_MAKE_STUB_INIT_BACKEND(TYPE)                             \
   void TYPE::init_backend(Context* ctx) {                              \
     assert("This type's backend cannot be instantiated!" && false);    \
   }
+
+#define SPIKE_ADD_BACKEND_FACTORY(TYPE)                          \
+  static ::Backend::FactoryMap<::TYPE, ::Backend::TYPE> factory; \
+  inline ::TYPE* frontend() const {                              \
+    assert(_frontend != nullptr &&                               \
+           "Need to have backend initialized!");                 \
+    return (::TYPE*)_frontend;                                   \
+  }
+
+#define SPIKE_EXPORT_BACKEND_TYPE(BACKEND, TYPE)                          \
+  namespace Backend {                                                     \
+    namespace BACKEND {                                                   \
+      namespace Registry {                                                \
+        class TYPE {                                                      \
+        public:                                                           \
+          static ::Backend::TYPE* factory(::TYPE* front, Context* ctx) {  \
+            return new ::Backend::BACKEND::TYPE(front, ctx);              \
+          }                                                               \
+          TYPE() {                                                        \
+            /*std::cout << "Registering Backend::" #BACKEND "::" #TYPE /**/ \
+            /*          << " factory (" << TYPEID_NAME(factory)        /**/ \
+            /*          << ") at " << factory << "\n";                 /**/ \
+            ::Backend::TYPE::factory[#BACKEND] = factory;                 \
+          }                                                               \
+        };                                                                \
+        TYPE TYPE ## _registrar;                                          \
+      }                                                                   \
+    }                                                                     \
+  }
+
+#define STRINGIFY(s) #s

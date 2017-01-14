@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Spike/Neurons/PoissonInputSpikingNeurons.hpp"
-#include "Spike/Backend/CUDA/CUDABackend.hpp"
+
 #include "InputSpikingNeurons.hpp"
+
+#include "Spike/Backend/CUDA/CUDABackend.hpp"
+#include "Spike/Backend/CUDA/Helpers/RandomStateManager.hpp"
 
 #include <cuda.h>
 #include <vector_types.h>
@@ -22,9 +25,6 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
-
-      void push_data_front() override;
-      void pull_data_back() override;
 
       ::Backend::CUDA::RandomStateManager* random_state_manager_backend = nullptr;
       float * rates = nullptr;

@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Spike/Backend/Device.hpp"
+// #include "Spike/Backend/Device.hpp"
+#include "Spike/Backend/Macros.hpp"
+
+#include <string>
 
 struct DeviceParameters {
   bool high_fidelity_spike_storage = false;
@@ -9,15 +12,18 @@ struct DeviceParameters {
   int maximum_axonal_delay_in_timesteps = 0;
 };
 
-class Context {
-public:
-  Backend::Device device;
+struct Context {
   DeviceParameters params;
+#ifdef SPIKE_DEFAULT_BACKEND
+  std::string backend = SPIKE_DEFAULT_BACKEND;
+#else
+  std::string backend = "Dummy";
+#endif
 };
 
 extern Context* _global_ctx;
 
 namespace Backend {
-  void init_global_context(Device default_device=SPIKE_DEVICE_DEFAULT);
+  void init_global_context();
   Context* get_current_context();
 }

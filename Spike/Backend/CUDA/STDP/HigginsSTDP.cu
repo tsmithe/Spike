@@ -1,24 +1,17 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/STDP/HigginsSTDP.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, HigginsSTDP);
+
 namespace Backend {
   namespace CUDA {
     void HigginsSTDP::prepare() {
       STDP::prepare();
-
       // allocate_device_pointers();
     }
 
     void HigginsSTDP::reset_state() {
       STDP::reset_state();
-    }
-
-    void HigginsSTDP::push_data_front() {
-      STDP::push_data_front();
-    }
-
-    void HigginsSTDP::pull_data_back() {
-      STDP::pull_data_back();
     }
 
     void HigginsSTDP::apply_ltd_to_synapse_weights(float current_time_in_seconds) {

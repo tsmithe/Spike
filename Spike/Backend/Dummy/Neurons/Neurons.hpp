@@ -8,21 +8,10 @@ namespace Backend {
     public:
       ~Neurons() override = default;
 
-      void prepare() override {
-      }
+      void prepare() override;
+      void reset_state() override;
 
-      void reset_state() override {
-        reset_current_injections();
-      }
-
-      void reset_current_injections() override {
-      }
-
-      void push_data_front() override {
-      }
-
-      void pull_data_back() override {
-      }
+      void reset_current_injections() override;
     };
   } // namespace Dummy
 } // namespace Backend

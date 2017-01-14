@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/RecordingElectrodes/CollectNeuronSpikesRecordingElectrodes.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, CollectNeuronSpikesRecordingElectrodes);
+
 namespace Backend {
   namespace CUDA {
     CollectNeuronSpikesRecordingElectrodes::~CollectNeuronSpikesRecordingElectrodes() {
@@ -38,16 +40,6 @@ namespace Backend {
 
     void CollectNeuronSpikesRecordingElectrodes::copy_spike_counts_to_front() {
       CudaSafeCall(cudaMemcpy(&(frontend()->total_number_of_spikes_stored_on_device[0]), &(total_number_of_spikes_stored_on_device[0]), (sizeof(int)), cudaMemcpyDeviceToHost));
-    }
-
-    void CollectNeuronSpikesRecordingElectrodes::push_data_front() {
-      RecordingElectrodes::push_data_front();
-      copy_spikes_to_front();
-      copy_spike_counts_to_front();
-    }
-
-    void CollectNeuronSpikesRecordingElectrodes::pull_data_back() {
-      RecordingElectrodes::pull_data_back();
     }
 
     void CollectNeuronSpikesRecordingElectrodes::collect_spikes_for_timestep

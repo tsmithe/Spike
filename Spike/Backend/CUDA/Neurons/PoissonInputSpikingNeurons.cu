@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/PoissonInputSpikingNeurons.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, PoissonInputSpikingNeurons);
+
 namespace Backend {
   namespace CUDA {
     PoissonInputSpikingNeurons::~PoissonInputSpikingNeurons() {
@@ -32,14 +34,6 @@ namespace Backend {
         = dynamic_cast<::Backend::CUDA::RandomStateManager*>
         (frontend()->random_state_manager->backend());
       assert(random_state_manager_backend);
-    }
-
-    void PoissonInputSpikingNeurons::push_data_front() {
-      InputSpikingNeurons::push_data_front();
-    }
-
-    void PoissonInputSpikingNeurons::pull_data_back() {
-      InputSpikingNeurons::pull_data_back();
     }
 
     void PoissonInputSpikingNeurons::update_membrane_potentials(float timestep, float current_time_in_seconds) {

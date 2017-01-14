@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Synapses/ConductanceSpikingSynapses.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, ConductanceSpikingSynapses);
+
 namespace Backend {
   namespace CUDA {
     // ConductanceSpikingSynapses Destructor
@@ -44,14 +46,6 @@ namespace Backend {
       SpikingSynapses::prepare();
       allocate_device_pointers();
       copy_constants_and_initial_efficacies_to_device();
-    }
-
-    void ConductanceSpikingSynapses::push_data_front() {
-      SpikingSynapses::push_data_front();
-    }
-
-    void ConductanceSpikingSynapses::pull_data_back() {
-      SpikingSynapses::pull_data_back();
     }
 
     void ConductanceSpikingSynapses::allocate_device_pointers() {

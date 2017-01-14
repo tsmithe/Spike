@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/Neurons/LIFSpikingNeurons.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, LIFSpikingNeurons);
+
 namespace Backend {
   namespace CUDA {
     LIFSpikingNeurons::~LIFSpikingNeurons() {
@@ -32,14 +34,6 @@ namespace Backend {
 
     void LIFSpikingNeurons::reset_state() {
       SpikingNeurons::reset_state();
-    }
-
-    void LIFSpikingNeurons::push_data_front() {
-      SpikingNeurons::push_data_front();
-    }
-
-    void LIFSpikingNeurons::pull_data_back() {
-      SpikingNeurons::pull_data_back();
     }
 
     void LIFSpikingNeurons::update_membrane_potentials(float timestep, float current_time_in_seconds) {

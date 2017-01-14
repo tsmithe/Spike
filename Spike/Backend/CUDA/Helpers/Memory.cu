@@ -1,12 +1,9 @@
-#pragma once
-
-#include <cstddef>
-
-#include "Spike/Backend/CUDA/Helpers/ErrorCheck.hpp"
+#include "Memory.hpp"
+#include "ErrorCheck.hpp"
 
 namespace Backend {
   namespace CUDA {
-    inline size_t memory_total_bytes(Context* ctx = _global_ctx) {
+    std::size_t MemoryManager::total_bytes() const {
       size_t tmp_free, tmp_total;
       cudaError_t cuda_status = cudaMemGetInfo(&tmp_free, &tmp_total) ;
       if ( cudaSuccess != cuda_status ){
@@ -16,7 +13,7 @@ namespace Backend {
       return tmp_total;
     }
 
-    inline size_t memory_free_bytes(Context* ctx = _global_ctx) {
+    std::size_t MemoryManager::free_bytes() const {
       size_t tmp_free, tmp_total;
       cudaError_t cuda_status = cudaMemGetInfo(&tmp_free, &tmp_total) ;
       if ( cudaSuccess != cuda_status ){
@@ -28,3 +25,4 @@ namespace Backend {
   }
 }
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, MemoryManager);

@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/STDP/EvansSTDP.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, EvansSTDP);
+
 namespace Backend {
   namespace CUDA {
     EvansSTDP::~EvansSTDP() {
@@ -25,14 +27,6 @@ namespace Backend {
                               frontend()->recent_postsynaptic_activities_D,
                               sizeof(float)*frontend()->neurs->total_number_of_neurons,
                               cudaMemcpyHostToDevice));
-    }
-
-    void EvansSTDP::push_data_front() {
-      STDP::push_data_front();
-    }
-
-    void EvansSTDP::pull_data_back() {
-      STDP::pull_data_back();
     }
 
     void EvansSTDP::allocate_device_pointers(){

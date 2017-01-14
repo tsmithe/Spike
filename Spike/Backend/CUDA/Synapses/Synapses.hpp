@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Spike/Synapses/Synapses.hpp"
+
 #include "Spike/Backend/CUDA/CUDABackend.hpp"
+#include "Spike/Backend/CUDA/Helpers/RandomStateManager.hpp"
+
 #include <cuda.h>
 #include <vector_types.h>
 #include <curand.h>
@@ -29,9 +32,6 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
-
-      void push_data_front() override;
-      void pull_data_back() override;
 
       void allocate_device_pointers(); // Not virtual
       void copy_constants_and_initial_efficacies_to_device(); // Not virtual

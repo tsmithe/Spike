@@ -1,6 +1,8 @@
 // -*- mode: c++ -*-
 #include "Spike/Backend/CUDA/RecordingElectrodes/CountNeuronSpikesRecordingElectrodes.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(CUDA, CountNeuronSpikesRecordingElectrodes);
+
 namespace Backend {
   namespace CUDA {
     CountNeuronSpikesRecordingElectrodes::~CountNeuronSpikesRecordingElectrodes() {
@@ -17,14 +19,6 @@ namespace Backend {
       RecordingElectrodes::prepare();
 
       allocate_pointers_for_spike_count();
-    }
-
-    void CountNeuronSpikesRecordingElectrodes::push_data_front() {
-      RecordingElectrodes::push_data_front();
-    }
-
-    void CountNeuronSpikesRecordingElectrodes::pull_data_back() {
-      RecordingElectrodes::pull_data_back();
     }
 
     void CountNeuronSpikesRecordingElectrodes::allocate_pointers_for_spike_count() {

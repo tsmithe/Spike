@@ -4,6 +4,7 @@
 #include "Spike/Backend/CUDA/CUDABackend.hpp"
 
 #include "Spike/Neurons/SpikingNeurons.hpp"
+#include "Spike/Backend/CUDA/Neurons/SpikingNeurons.hpp"
 
 #include <cuda.h>
 #include <vector_types.h>
@@ -18,9 +19,6 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
-
-      void push_data_front() override;
-      void pull_data_back() override;
 
     protected:
       ::SpikingNeurons* neurons_frontend = nullptr;

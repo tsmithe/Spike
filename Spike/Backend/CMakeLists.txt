@@ -8,5 +8,4 @@ endif()
 
 add_library (Backend OBJECT
   Context.cpp
-  Memory.cpp
   )
