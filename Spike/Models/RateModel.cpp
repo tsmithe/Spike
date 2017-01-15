@@ -75,17 +75,17 @@ void RateNeurons::reset_state() {
   rate_history.clear();
   backend()->reset_state();
   for (auto& d : dendrites) {
-    d.first->reset_state(); // TODO: should the weights be zeroed here?!
-    d.second->reset_state();
+    d.first.reset_state(); // TODO: should the weights be zeroed here?!
+    d.second.reset_state();
   }
 }
 
 void RateNeurons::assert_dendritic_consistency
-(RateSynapses* synapses, RatePlasticity* plasticity) const {
+(RateSynapses& synapses, RatePlasticity& plasticity) const {
   // Ensure that this set of neurons is post-synaptic:
-  assert(synapses->neurons_post == this);
+  assert(&(synapses.neurons_post) == this);
   // Ensure that plasticity is paired correctly with synapses:
-  assert(plasticity->synapses == synapses);
+  assert(&(plasticity.synapses) == &synapses);
 }
 
 void RateNeurons::assert_dendritic_consistency() const {
@@ -93,12 +93,12 @@ void RateNeurons::assert_dendritic_consistency() const {
     assert_dendritic_consistency(dendrite_pair.first, dendrite_pair.second);
 }
 
-void RateNeurons::connect_input(RateSynapses* synapses,
-                                RatePlasticity* plasticity) {
+void RateNeurons::connect_input(RateSynapses& synapses,
+                                RatePlasticity& plasticity) {
   assert_dendritic_consistency(synapses, plasticity);
   // Connect the synapses to the dendrites:
-  dendrites.push_back(std::make_pair(synapses, plasticity));
-  backend()->connect_input(synapses->backend(), plasticity->backend());
+  dendrites.push_back({synapses, plasticity});
+  backend()->connect_input(synapses.backend(), plasticity.backend());
 }
 
 void RateNeurons::update(FloatT dt) {
@@ -120,23 +120,23 @@ const EigenVector& RateNeurons::rate() const {
 
 void RateNeurons::update_dendritic_activation(FloatT dt) {
   for (auto& dendrite_pair : dendrites)
-    dendrite_pair.first->update_activation(dt);
+    dendrite_pair.first.update_activation(dt);
 }
 
 void RateNeurons::apply_plasticity(FloatT dt) {
   for (auto& dendrite_pair : dendrites)
-    dendrite_pair.second->apply_plasticity(dt);
+    dendrite_pair.second.apply_plasticity(dt);
 }
 
 RateSynapses::RateSynapses(Context* ctx,
-                           RateNeurons* neurons_pre_,
-                           RateNeurons* neurons_post_,
+                           RateNeurons& neurons_pre_,
+                           RateNeurons& neurons_post_,
                            std::string label_)
   : neurons_pre(neurons_pre_), neurons_post(neurons_post_), label(label_) {
   init_backend(ctx);
   // reset_state();
   if(!(label.length()))
-    label = neurons_pre->label;
+    label = neurons_pre.label;
 }
 
 RateSynapses::~RateSynapses() {
@@ -165,7 +165,7 @@ void RateSynapses::update_activation(FloatT dt) {
     activation_history.push_back(timesteps, activation());
 }
 
-RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
+RatePlasticity::RatePlasticity(Context* ctx, RateSynapses& syns)
   : synapses(syns) {
   init_backend(ctx);
   // reset_state();
@@ -184,11 +184,11 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   backend()->apply_plasticity(dt);
   timesteps += 1;
   if (weights_buffer_interval && !(timesteps % weights_buffer_interval))
-    weights_history.push_back(timesteps, synapses->weights());
+    weights_history.push_back(timesteps, synapses.weights());
 }
 
 RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
-                               RateNeurons* neurons_)
+                               RateNeurons& neurons_)
   : output_prefix(prefix), neurons(neurons_) {
 
   // init_backend(ctx);
@@ -201,7 +201,7 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
                 << output_prefix << "\n";
   }  
 
-  std::string dirname = output_prefix + "/" + neurons->label;
+  std::string dirname = output_prefix + "/" + neurons.label;
 
   {
     const int err = mkdir(dirname.c_str(),
@@ -212,34 +212,34 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
   }
 
   std::ofstream output_info_file(dirname + "/output.info");
-  output_info_file << "size = " << neurons->size << "\n"
+  output_info_file << "size = " << neurons.size << "\n"
                    << "rate_buffer_interval = "
-                   << neurons->rate_buffer_interval << "\n";
+                   << neurons.rate_buffer_interval << "\n";
 
   std::string rate_fname = dirname + "/rate.bin";
   writers.push_back
-    (std::make_unique<BufferWriter>(rate_fname, neurons->rate_history));
+    (std::make_unique<BufferWriter>(rate_fname, neurons.rate_history));
 
-  for (auto& d : neurons->dendrites) {
-    auto synapses = d.first;
-    auto plasticity = d.second;
-    output_info_file << "[" << synapses->label << "]\n"
-                     << "neurons_pre->size = "
-                     << synapses->neurons_pre->size << "\n"
+  for (auto& d : neurons.dendrites) {
+    auto& synapses = d.first;
+    auto& plasticity = d.second;
+    output_info_file << "[" << synapses.label << "]\n"
+                     << "neurons_pre.size = "
+                     << synapses.neurons_pre.size << "\n"
                      << "activation_buffer_interval = "
-                     << synapses->activation_buffer_interval << "\n"
+                     << synapses.activation_buffer_interval << "\n"
                      << "weights_buffer_interval = "
-                     << plasticity->weights_buffer_interval << "\n";
+                     << plasticity.weights_buffer_interval << "\n";
     std::string activation_fname
-      = dirname + "/activation_" + synapses->label + ".bin";
+      = dirname + "/activation_" + synapses.label + ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
-       (activation_fname, synapses->activation_history));
+       (activation_fname, synapses.activation_history));
     std::string weights_fname
-      = dirname + "/weights_" + synapses->label + ".bin";
+      = dirname + "/weights_" + synapses.label + ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
-       (weights_fname, plasticity->weights_history));
+       (weights_fname, plasticity.weights_history));
   }
   output_info_file.close();
 
@@ -285,12 +285,12 @@ RateModel::~RateModel() {
     simulation_thread.join();
 }
 
-void RateModel::add(RateNeurons* neurons) {
-  neuron_groups.push_back(neurons);
+void RateModel::add(RateNeurons& neurons) {
+  neuron_groups.push_back(&neurons);
 }
 
-void RateModel::add(RateElectrodes* elecs) {
-  electrodes.push_back(elecs);
+void RateModel::add(RateElectrodes& elecs) {
+  electrodes.push_back(&elecs);
 }
 
 void RateModel::set_rate_buffer_interval(int n_timesteps) {
@@ -301,8 +301,8 @@ void RateModel::set_rate_buffer_interval(int n_timesteps) {
 void RateModel::set_activation_buffer_interval(int n_timesteps) {
   for (auto& n : neuron_groups) {
     for (auto& d : n->dendrites) {
-      auto synapses = d.first;
-      synapses->activation_buffer_interval = n_timesteps;
+      auto& synapses = d.first;
+      synapses.activation_buffer_interval = n_timesteps;
     }
   }
 }
@@ -310,8 +310,8 @@ void RateModel::set_activation_buffer_interval(int n_timesteps) {
 void RateModel::set_weights_buffer_interval(int n_timesteps) {
   for (auto& n : neuron_groups) {
     for (auto& d : n->dendrites) {
-      auto plasticity = d.second;
-      plasticity->weights_buffer_interval = n_timesteps;
+      auto& plasticity = d.second;
+      plasticity.weights_buffer_interval = n_timesteps;
     }
   }
 }

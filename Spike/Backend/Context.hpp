@@ -19,6 +19,7 @@ struct Context {
 #else
   std::string backend = "Dummy";
 #endif
+  bool verbose = false;
 };
 
 extern Context* _global_ctx;

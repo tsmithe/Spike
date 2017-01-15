@@ -7,41 +7,44 @@ int main() {
   RateModel model;
   Context* ctx = model.context;
 
+  // Tell Spike to talk
+  ctx->verbose = true;
+
   int N = 100;
 
   // Set up some Neurons, Synapses and Electrodes
   RateNeurons neurons1(ctx, N, "test_neurons1");
   RateNeurons neurons2(ctx, N, "test_neurons2");
 
-  RateSynapses synapses11(ctx, &neurons1, &neurons1, "11");
-  RateSynapses synapses12(ctx, &neurons1, &neurons2, "12");
-  RateSynapses synapses21(ctx, &neurons2, &neurons1, "21");
-  RateSynapses synapses22(ctx, &neurons2, &neurons2, "22");
+  RateSynapses synapses11(ctx, neurons1, neurons1, "11");
+  RateSynapses synapses12(ctx, neurons1, neurons2, "12");
+  RateSynapses synapses21(ctx, neurons2, neurons1, "21");
+  RateSynapses synapses22(ctx, neurons2, neurons2, "22");
 
-  RatePlasticity plasticity11(ctx, &synapses11);
-  RatePlasticity plasticity12(ctx, &synapses12);
-  RatePlasticity plasticity21(ctx, &synapses21);
-  RatePlasticity plasticity22(ctx, &synapses22);
+  RatePlasticity plasticity11(ctx, synapses11);
+  RatePlasticity plasticity12(ctx, synapses12);
+  RatePlasticity plasticity21(ctx, synapses21);
+  RatePlasticity plasticity22(ctx, synapses22);
 
-  neurons1.connect_input(&synapses11, &plasticity11);
-  neurons2.connect_input(&synapses12, &plasticity12);
-  neurons1.connect_input(&synapses21, &plasticity21);
-  neurons2.connect_input(&synapses22, &plasticity22);
+  neurons1.connect_input(synapses11, plasticity11);
+  neurons2.connect_input(synapses12, plasticity12);
+  neurons1.connect_input(synapses21, plasticity21);
+  neurons2.connect_input(synapses22, plasticity22);
 
   // Add Neurons and Electrodes to Model
-  model.add(&neurons1);
-  model.add(&neurons2);
+  model.add(neurons1);
+  model.add(neurons2);
 
   // TODO: This rigid ordering is awful
   model.set_simulation_time(10, 1e-4);
   model.set_buffer_intervals((float)0.1); // TODO: Use proper units
 
   // Have to construct electrodes after setting up neurons:
-  RateElectrodes electrodes1("tmp_out", &neurons1);
-  RateElectrodes electrodes2("tmp_out", &neurons2);
+  RateElectrodes electrodes1("tmp_out", neurons1);
+  RateElectrodes electrodes2("tmp_out", neurons2);
 
-  model.add(&electrodes1);
-  model.add(&electrodes2);
+  model.add(electrodes1);
+  model.add(electrodes2);
 
   // Run!
   model.start();
