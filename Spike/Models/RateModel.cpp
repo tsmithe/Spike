@@ -70,6 +70,11 @@ RateNeurons::RateNeurons(Context* ctx, int size_,
   : size(size_), label(label_) {
   init_backend(ctx);
   // reset_state();
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created RateNeurons with size "
+              << size << " and label '" << label << "'.\n";
+  }
 }
 
 RateNeurons::~RateNeurons() {
@@ -142,6 +147,11 @@ RateSynapses::RateSynapses(Context* ctx,
   // reset_state();
   if(!(label.length()))
     label = neurons_pre->label;
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created synapses '" << label << "' from "
+              << neurons_pre->label << " to " << neurons_post->label << ".\n";
+  }
 }
 
 RateSynapses::~RateSynapses() {
@@ -174,6 +184,10 @@ RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
   : synapses(syns) {
   init_backend(ctx);
   // reset_state();
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created plasticity for " << syns->label << ".\n";
+  }
 }
 
 RatePlasticity::~RatePlasticity() {
@@ -236,6 +250,11 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
   }
 
   // reset_state();
+
+  if (neurons->backend()->context->verbose) {
+    std::cout << "Spike: Created electrodes for " << neurons->label
+              << " writing to " << output_prefix << ".\n";
+  }
 }
 
 RateElectrodes::~RateElectrodes() {
@@ -317,16 +336,30 @@ void RateModel::add(RateNeurons* neurons) {
 
   // Add neurons to model:
   neuron_groups.push_back(neurons);
+
+  if (context->verbose) {
+    std::cout << "Spike: Added neurons " << neurons->label << " to model.\n";
+  }
 }
 
 void RateModel::add(RateElectrodes* elecs) {
   electrodes.push_back(elecs);
+
+  if (context->verbose) {
+    std::cout << "Spike: Added electrodes on "
+              << elecs->neurons->label << " to model.\n";
+  }
 }
 
 void RateModel::set_rate_buffer_interval(int n_timesteps) {
   rate_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups)
     n->rate_buffer_interval = n_timesteps;
+
+  if (context->verbose) {
+    std::cout << "Spike: Rate buffer interval is "
+              << n_timesteps << " timesteps.\n";
+  }
 }
 
 void RateModel::set_activation_buffer_interval(int n_timesteps) {
@@ -337,6 +370,11 @@ void RateModel::set_activation_buffer_interval(int n_timesteps) {
       synapses->activation_buffer_interval = n_timesteps;
     }
   }
+
+  if (context->verbose) {
+    std::cout << "Spike: Activation buffer interval is "
+              << n_timesteps << " timesteps.\n";
+  }
 }
 
 void RateModel::set_weights_buffer_interval(int n_timesteps) {
@@ -346,6 +384,11 @@ void RateModel::set_weights_buffer_interval(int n_timesteps) {
       auto& plasticity = d.second;
       plasticity->weights_buffer_interval = n_timesteps;
     }
+  }
+
+  if (context->verbose) {
+    std::cout << "Spike: Weights buffer interval is "
+              << n_timesteps << " timesteps.\n";
   }
 }
 
@@ -442,6 +485,13 @@ void RateModel::set_simulation_time(FloatT t_stop_, FloatT dt_) {
   t_stop = t_stop_;
   dt = dt_;
   timesteps_per_second = round(1 / dt);
+
+  if (context->verbose) {
+    std::cout << "Spike: dt = " << dt << " seconds.\n"
+              << "Spike: t_stop = " << t_stop << " seconds.\n"
+              << "Spike: timesteps_per_second = "
+              << timesteps_per_second << "\n";
+  }
 }
 
 void RateModel::start(bool block) {
@@ -449,6 +499,9 @@ void RateModel::start(bool block) {
     return;
 
   if (t == 0) {
+    if (context->verbose) {
+      std::cout << "Spike: Starting simulation...\n";
+    }
     reset_state();
     for (auto& e : electrodes)
       e->write_output_info();

@@ -484,3 +484,4 @@ CLOSED: [2017-01-15 Sun 21:50]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-15 Sun 22:10]
 :END:
+** TODO More sophisticated logging (cf Context::verbose)
