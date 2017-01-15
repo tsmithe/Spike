@@ -194,11 +194,11 @@ public:
 
   void reset_state() override;
 
-  void assert_dendritic_consistency(RateSynapses& synapses,
-                                    RatePlasticity& plasticity) const;
+  void assert_dendritic_consistency(RateSynapses* synapses,
+                                    RatePlasticity* plasticity) const;
   void assert_dendritic_consistency() const;
-  void connect_input(RateSynapses& synapses,
-                     RatePlasticity& plasticity);
+  void connect_input(RateSynapses* synapses,
+                     RatePlasticity* plasticity=nullptr);
   void update(FloatT dt);
 
   int size = 0;
@@ -211,7 +211,7 @@ public:
   int rate_buffer_interval = 0;
   EigenBuffer rate_history;
 
-  std::vector<std::pair<RateSynapses&, RatePlasticity&> > dendrites;
+  std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
 
 protected:
   void update_rate(FloatT dt);
@@ -225,7 +225,7 @@ private:
 class RateSynapses : public virtual SpikeBase {
 public:
   RateSynapses(Context* ctx,
-               RateNeurons& neurons_pre_, RateNeurons& neurons_post_,
+               RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
                std::string label_="");
   ~RateSynapses() override;
 
@@ -236,8 +236,8 @@ public:
 
   void update_activation(FloatT dt);
 
-  RateNeurons& neurons_pre;
-  RateNeurons& neurons_post;
+  RateNeurons* neurons_pre = nullptr;
+  RateNeurons* neurons_post = nullptr;
 
   std::string label;
 
@@ -259,7 +259,7 @@ private:
 
 class RatePlasticity : public virtual SpikeBase {
 public:
-  RatePlasticity(Context* ctx, RateSynapses& syns);
+  RatePlasticity(Context* ctx, RateSynapses* syns);
   ~RatePlasticity() override;
 
   void init_backend(Context* ctx) override;
@@ -269,7 +269,7 @@ public:
 
   void apply_plasticity(FloatT dt);
 
-  RateSynapses& synapses;
+  RateSynapses* synapses = nullptr;
 
   int timesteps = 0;
 
@@ -288,7 +288,7 @@ class RateElectrodes /* : public virtual SpikeBase */ {
   friend class RateModel;
 
 public:
-  RateElectrodes(/*Context* ctx,*/ std::string prefix, RateNeurons& neurons_);
+  RateElectrodes(/*Context* ctx,*/ std::string prefix, RateNeurons* neurons_);
   ~RateElectrodes() /*override*/;
 
   /*
@@ -300,7 +300,7 @@ public:
 
   std::string output_prefix;
 
-  RateNeurons& neurons;
+  RateNeurons* neurons;
   std::vector<std::unique_ptr<BufferWriter> > writers;
 
   void start();
@@ -338,8 +338,8 @@ public:
   std::vector<RateNeurons*> neuron_groups;
   std::vector<RateElectrodes*> electrodes;
 
-  void add(RateNeurons& neurons);
-  void add(RateElectrodes& elecs);
+  void add(RateNeurons* neurons);
+  void add(RateElectrodes* elecs);
 
   void set_rate_buffer_interval(int n_timesteps);
   void set_activation_buffer_interval(int n_timesteps);

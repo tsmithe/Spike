@@ -52,12 +52,12 @@ namespace Backend {
 
     void RateSynapses::prepare() {
       neurons_pre = dynamic_cast<::Backend::Vienna::RateNeurons*>
-        (frontend()->neurons_pre.backend());
+        (frontend()->neurons_pre->backend());
       reset_state();
     }
 
     void RateSynapses::reset_state() {
-      int size_post = frontend()->neurons_post.size;
+      int size_post = frontend()->neurons_post->size;
       int timesteps = frontend()->timesteps;
 
       _activation = viennacl::zero_vector<FloatT>(size_post);
@@ -94,13 +94,13 @@ namespace Backend {
 
     void RatePlasticity::prepare() {
       synapses = dynamic_cast<::Backend::Vienna::RateSynapses*>
-        (frontend()->synapses.backend());
+        (frontend()->synapses->backend());
       reset_state();
     }
 
     void RatePlasticity::reset_state() {
-      int size_post = frontend()->synapses.neurons_post.size;
-      int size_pre = frontend()->synapses.neurons_pre.size;
+      int size_post = frontend()->synapses->neurons_post->size;
+      int size_pre = frontend()->synapses->neurons_pre->size;
       int timesteps = frontend()->timesteps;
 
       // TODO: Better record of initial weights state:
