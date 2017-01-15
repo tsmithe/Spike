@@ -10,38 +10,80 @@ int main() {
   std::cout << "0\n";
 
   // Set up some Neurons, Synapses and Electrodes
-  RateNeurons* neurons = new RateNeurons(ctx, 1000, "test_neurons");
-  neurons->rate_buffer_interval = 100;
+  RateNeurons* neurons1 = new RateNeurons(ctx, 1000, "test_neurons1");
+  neurons1->rate_buffer_interval = 100;
+
+  RateNeurons* neurons2 = new RateNeurons(ctx, 1000, "test_neurons2");
+  neurons2->rate_buffer_interval = 100;
 
   std::cout << "1\n";
   
-  RateSynapses* synapses = new RateSynapses(ctx, neurons, neurons, "rc");
-  synapses->activation_buffer_interval = 100;
-  synapses->weights_buffer_interval = 100;
+  RateSynapses* synapses11 = new RateSynapses(ctx, neurons1, neurons1, "rc");
+  RateSynapses* synapses12 = new RateSynapses(ctx, neurons1, neurons2, "rc");
+  RateSynapses* synapses21 = new RateSynapses(ctx, neurons2, neurons1, "rc");
+  RateSynapses* synapses22 = new RateSynapses(ctx, neurons2, neurons2, "rc");
+
+  synapses11->activation_buffer_interval = 100;
+  synapses11->weights_buffer_interval = 100;
+
+  synapses12->activation_buffer_interval = 100;
+  synapses12->weights_buffer_interval = 100;
+
+  synapses21->activation_buffer_interval = 100;
+  synapses21->weights_buffer_interval = 100;
+
+  synapses22->activation_buffer_interval = 100;
+  synapses22->weights_buffer_interval = 100;
 
   std::cout << "2\n";
 
-  RatePlasticity* plasticity = new RatePlasticity(ctx, synapses);
+  RatePlasticity* plasticity11 = new RatePlasticity(ctx, synapses11);
+  RatePlasticity* plasticity12 = new RatePlasticity(ctx, synapses12);
+  RatePlasticity* plasticity21 = new RatePlasticity(ctx, synapses21);
+  RatePlasticity* plasticity22 = new RatePlasticity(ctx, synapses22);
 
   std::cout << "3\n";
 
-  neurons->init_backend(ctx);
-  neurons->reset_state();
-  synapses->init_backend(ctx);
-  plasticity->init_backend(ctx);
-  plasticity->reset_state();
+  neurons1->init_backend(ctx);
+  neurons1->reset_state();
+  neurons2->init_backend(ctx);
+  neurons2->reset_state();
 
-  neurons->connect_input(synapses, plasticity);
-  synapses->reset_state();
+  synapses11->init_backend(ctx);
+  synapses12->init_backend(ctx);
+  synapses21->init_backend(ctx);
+  synapses22->init_backend(ctx);
+
+  plasticity11->init_backend(ctx);
+  plasticity11->reset_state();
+  plasticity12->init_backend(ctx);
+  plasticity12->reset_state();
+  plasticity21->init_backend(ctx);
+  plasticity21->reset_state();
+  plasticity22->init_backend(ctx);
+  plasticity22->reset_state();
+
+  neurons1->connect_input(synapses11, plasticity11);
+  neurons2->connect_input(synapses12, plasticity12);
+  neurons1->connect_input(synapses21, plasticity21);
+  neurons2->connect_input(synapses22, plasticity22);
+
+  synapses11->reset_state();
+  synapses12->reset_state();
+  synapses21->reset_state();
+  synapses22->reset_state();
 
   // Have to construct electrodes after setting up neurons:
-  RateElectrodes* electrodes = new RateElectrodes(/*ctx,*/ "tmp_out", neurons);
+  RateElectrodes* electrodes1 = new RateElectrodes(/*ctx,*/ "tmp_out", neurons1);
+  RateElectrodes* electrodes2 = new RateElectrodes(/*ctx,*/ "tmp_out", neurons2);
 
   std::cout << "4\n";
 
   // Add Neurons and Electrodes to Model
-  model.add(neurons);
-  model.add(electrodes);
+  model.add(neurons1);
+  model.add(neurons2);
+  model.add(electrodes1);
+  model.add(electrodes2);
 
   std::cout << "5\n";
 

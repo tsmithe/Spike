@@ -1,8 +1,8 @@
 #include "RateModel.hpp"
 
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons)
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses)
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity)
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses);
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity);
 
 namespace Backend {
   namespace Vienna {
