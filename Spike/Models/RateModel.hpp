@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -21,6 +22,14 @@
 #include <thread>
 #include <utility>
 #include <vector>
+
+class SpikeException : public std::exception {
+public:
+  SpikeException(std::string msg);
+  const char* what() const noexcept override;
+private:
+  std::string _msg;
+};
 
 template<typename T>
 inline T infinity() { return std::numeric_limits<T>::infinity(); }
@@ -170,7 +179,7 @@ public:
   void start();
   void stop();
 
-  void block_until_empty();
+  void block_until_empty() const;
 
   EigenBuffer& buffer;
   std::string filename;
@@ -215,8 +224,8 @@ public:
 
 protected:
   void update_rate(FloatT dt);
-  void update_dendritic_activation(FloatT dt);
-  void apply_plasticity(FloatT dt);
+  void update_dendritic_activation(FloatT dt) const;
+  void apply_plasticity(FloatT dt) const;
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
@@ -299,15 +308,18 @@ public:
   void reset_state() /*override*/;
 
   std::string output_prefix;
+  std::string output_dir;
+
+  void write_output_info() const;
 
   RateNeurons* neurons;
   std::vector<std::unique_ptr<BufferWriter> > writers;
 
-  void start();
-  void stop();
+  void start() const;
+  void stop() const;
 
 protected:
-  void block_until_empty();
+  void block_until_empty() const;
 
 /*
 private:
@@ -341,6 +353,10 @@ public:
   void add(RateNeurons* neurons);
   void add(RateElectrodes* elecs);
 
+  int rate_buffer_interval = 0;
+  int activation_buffer_interval = 0;
+  int weights_buffer_interval = 0;
+
   void set_rate_buffer_interval(int n_timesteps);
   void set_activation_buffer_interval(int n_timesteps);
   void set_weights_buffer_interval(int n_timesteps);
@@ -362,14 +378,14 @@ public:
 
   void start(bool block=true);
   void stop();
-  void wait_for_simulation();
+  void wait_for_simulation() const;
 
 private:
   int timesteps_per_second = 0;
   bool running = false;
 
-  void stop_electrodes();
-  void wait_for_electrodes();
+  void stop_electrodes() const;
+  void wait_for_electrodes() const;
   /*
 private:
   std::shared_ptr<::Backend::RateModel> _backend;

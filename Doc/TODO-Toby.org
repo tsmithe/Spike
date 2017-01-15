@@ -391,6 +391,7 @@ CLOSED: [2017-01-14 Sat 17:10]
 + replace them with more expressive -- more specific -- alternatives
 ** TODO Write new build instructions
 * Style / interface design
+** TODO Const correctness!
 ** TODO Unify coding style (discuss this)
 ** PROGRESS Check for unused member pointers
 ** TODO Flesh out push_data_front and pull_data_back for data synchrony
@@ -456,9 +457,30 @@ Something like this:
   - pairs of RateSynapses and associated RatePlasticity
     - defines the connectivity
 
-** TODO As few naked pointers as possible (use references)
+** CANCELLED As few naked pointers as possible (use references)
+CLOSED: [2017-01-15 Sun 21:50]
+:LOGBOOK:
+- State "CANCELLED"  from "TODO"       [2017-01-15 Sun 21:50] \\
+  Decided to be more nuanced. See commit 75b3b270.
+:END:
 ** TODO Use proper units for time (and possibly other quantities?..)
-** TODO Electrodes write out buffer info too early
-** TODO Buffer interval cannot be set with float if dt isn't already set
+** DONE Electrodes write out buffer info too early
+CLOSED: [2017-01-15 Sun 22:05]
+:LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-01-15 Sun 22:05]
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:55]
+:END:
+** DONE Buffer interval cannot be set with float if dt isn't already set
+CLOSED: [2017-01-15 Sun 21:50]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-01-15 Sun 21:50]
+:END:
 (should produce an error)
-** TODO Proper error handling with exceptions
+** PROGRESS Proper error handling with exceptions
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:50]
+:END:
+** PROGRESS Const correctness
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 22:10]
+:END:

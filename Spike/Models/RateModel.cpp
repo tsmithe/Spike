@@ -1,5 +1,10 @@
 #include "RateModel.hpp"
 
+SpikeException::SpikeException(std::string msg) : _msg(msg) {}
+const char* SpikeException::what() const noexcept {
+  return _msg.c_str();
+}
+
 BufferWriter::BufferWriter(const std::string& filename_, EigenBuffer& buf_)
   : buffer(buf_), filename(filename_) {
   file.open(filename, std::ofstream::out | std::ofstream::binary);
@@ -29,7 +34,7 @@ void BufferWriter::write_output() {
   }
 }
 
-void BufferWriter::block_until_empty() {
+void BufferWriter::block_until_empty() const {
   while (buffer.size() > 0)
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
@@ -97,7 +102,7 @@ void RateNeurons::connect_input(RateSynapses* synapses,
                                 RatePlasticity* plasticity) {
   assert_dendritic_consistency(synapses, plasticity);
   // Connect the synapses to the dendrites:
-  dendrites.push_back(std::make_pair(synapses, plasticity));
+  dendrites.push_back({synapses, plasticity});
   backend()->connect_input(synapses->backend(), plasticity->backend());
 }
 
@@ -118,12 +123,12 @@ const EigenVector& RateNeurons::rate() const {
   return backend()->rate();
 }
 
-void RateNeurons::update_dendritic_activation(FloatT dt) {
+void RateNeurons::update_dendritic_activation(FloatT dt) const {
   for (auto& dendrite_pair : dendrites)
     dendrite_pair.first->update_activation(dt);
 }
 
-void RateNeurons::apply_plasticity(FloatT dt) {
+void RateNeurons::apply_plasticity(FloatT dt) const {
   for (auto& dendrite_pair : dendrites)
     dendrite_pair.second->apply_plasticity(dt);
 }
@@ -201,47 +206,34 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
                 << output_prefix << "\n";
   }  
 
-  std::string dirname = output_prefix + "/" + neurons->label;
+  output_dir = output_prefix + "/" + neurons->label;
 
   {
-    const int err = mkdir(dirname.c_str(),
+    const int err = mkdir(output_dir.c_str(),
                           S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if (-1 == err && EEXIST != errno)
       std::cout << "\nTrouble making output directory "
-                << dirname << "\n";
+                << output_dir << "\n";
   }
 
-  std::ofstream output_info_file(dirname + "/output.info");
-  output_info_file << "size = " << neurons->size << "\n"
-                   << "rate_buffer_interval = "
-                   << neurons->rate_buffer_interval << "\n";
-
-  std::string rate_fname = dirname + "/rate.bin";
+  std::string rate_fname = output_dir + "/rate.bin";
   writers.push_back
     (std::make_unique<BufferWriter>(rate_fname, neurons->rate_history));
 
   for (auto& d : neurons->dendrites) {
-    auto synapses = d.first;
-    auto plasticity = d.second;
-    output_info_file << "[" << synapses->label << "]\n"
-                     << "neurons_pre->size = "
-                     << synapses->neurons_pre->size << "\n"
-                     << "activation_buffer_interval = "
-                     << synapses->activation_buffer_interval << "\n"
-                     << "weights_buffer_interval = "
-                     << plasticity->weights_buffer_interval << "\n";
+    auto& synapses = d.first;
+    auto& plasticity = d.second;
     std::string activation_fname
-      = dirname + "/activation_" + synapses->label + ".bin";
+      = output_dir + "/activation_" + synapses->label + ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
        (activation_fname, synapses->activation_history));
     std::string weights_fname
-      = dirname + "/weights_" + synapses->label + ".bin";
+      = output_dir + "/weights_" + synapses->label + ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
        (weights_fname, plasticity->weights_history));
   }
-  output_info_file.close();
 
   // reset_state();
 }
@@ -250,22 +242,43 @@ RateElectrodes::~RateElectrodes() {
   stop();
 }
 
+void RateElectrodes::write_output_info() const {
+  std::ofstream output_info_file(output_dir + "/output.info");
+  output_info_file << "size = " << neurons->size << "\n"
+                   << "rate_buffer_interval = "
+                   << neurons->rate_buffer_interval << "\n";
+
+  for (auto& d : neurons->dendrites) {
+    auto& synapses = d.first;
+    auto& plasticity = d.second;
+    output_info_file << "[" << synapses->label << "]\n"
+                     << "neurons_pre->size = "
+                     << synapses->neurons_pre->size << "\n"
+                     << "activation_buffer_interval = "
+                     << synapses->activation_buffer_interval << "\n"
+                     << "weights_buffer_interval = "
+                     << plasticity->weights_buffer_interval << "\n";
+  }
+
+  output_info_file.close();
+}
+
 void RateElectrodes::reset_state() {
 }
 
-void RateElectrodes::start() {
+void RateElectrodes::start() const {
   for (auto& writer : writers) {
     writer->start();
   }
 }
 
-void RateElectrodes::stop() {
+void RateElectrodes::stop() const {
   for (auto& writer : writers) {
     writer->stop();
   }
 }
 
-void RateElectrodes::block_until_empty() {
+void RateElectrodes::block_until_empty() const {
   for (auto& writer : writers)
     writer->block_until_empty();
 }
@@ -286,6 +299,23 @@ RateModel::~RateModel() {
 }
 
 void RateModel::add(RateNeurons* neurons) {
+  // Ensure buffer intervals match those set here:
+  if (rate_buffer_interval != 0)
+    neurons->rate_buffer_interval = rate_buffer_interval;
+  if (activation_buffer_interval != 0) {
+    for (auto& d : neurons->dendrites) {
+      auto& synapses = d.first;
+      synapses->activation_buffer_interval = activation_buffer_interval;
+    }
+  }
+  if (weights_buffer_interval != 0) {
+    for (auto& d : neurons->dendrites) {
+      auto& plasticity = d.second;
+      plasticity->weights_buffer_interval = weights_buffer_interval;
+    }
+  }
+
+  // Add neurons to model:
   neuron_groups.push_back(neurons);
 }
 
@@ -294,23 +324,26 @@ void RateModel::add(RateElectrodes* elecs) {
 }
 
 void RateModel::set_rate_buffer_interval(int n_timesteps) {
+  rate_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups)
     n->rate_buffer_interval = n_timesteps;
 }
 
 void RateModel::set_activation_buffer_interval(int n_timesteps) {
+  activation_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups) {
     for (auto& d : n->dendrites) {
-      auto synapses = d.first;
+      auto& synapses = d.first;
       synapses->activation_buffer_interval = n_timesteps;
     }
   }
 }
 
 void RateModel::set_weights_buffer_interval(int n_timesteps) {
+  weights_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups) {
     for (auto& d : n->dendrites) {
-      auto plasticity = d.second;
+      auto& plasticity = d.second;
       plasticity->weights_buffer_interval = n_timesteps;
     }
   }
@@ -329,6 +362,9 @@ void RateModel::set_buffer_intervals(int n_timesteps) {
 }
 
 void RateModel::set_buffer_intervals(FloatT intval_s) {
+  if (dt == 0)
+    throw SpikeException("Must set simulation dt first!");
+
   int n_timesteps = round(intval_s / dt);
   set_buffer_intervals(n_timesteps, n_timesteps, n_timesteps);
 }
@@ -378,7 +414,7 @@ void RateModel::simulation_loop() {
   running = false;
 }
 
-void RateModel::wait_for_electrodes() {
+void RateModel::wait_for_electrodes() const {
   for (auto& e : electrodes)
     e->block_until_empty();
 }
@@ -412,8 +448,11 @@ void RateModel::start(bool block) {
   if (running)
     return;
 
-  if (t == 0)
+  if (t == 0) {
     reset_state();
+    for (auto& e : electrodes)
+      e->write_output_info();
+  }
 
   // Start `recording' before simulation starts:
   for (auto& e : electrodes)
@@ -426,7 +465,7 @@ void RateModel::start(bool block) {
     wait_for_simulation();
 }
 
-void RateModel::wait_for_simulation() {
+void RateModel::wait_for_simulation() const {
   while (running) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
@@ -444,7 +483,7 @@ void RateModel::stop() {
   stop_electrodes();
 }
 
-void RateModel::stop_electrodes() {
+void RateModel::stop_electrodes() const {
   for (auto& e : electrodes)
     e->stop();
 }

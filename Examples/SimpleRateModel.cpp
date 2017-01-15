@@ -31,20 +31,20 @@ int main() {
   neurons1.connect_input(&synapses21, &plasticity21);
   neurons2.connect_input(&synapses22, &plasticity22);
 
+  // Have to construct electrodes after neurons:
+  RateElectrodes electrodes1("tmp_out", &neurons1);
+  RateElectrodes electrodes2("tmp_out", &neurons2);
+
   // Add Neurons and Electrodes to Model
   model.add(&neurons1);
   model.add(&neurons2);
 
-  // TODO: This rigid ordering is awful
-  model.set_simulation_time(10, 1e-4);
-  model.set_buffer_intervals((float)0.1); // TODO: Use proper units
-
-  // Have to construct electrodes after setting up neurons:
-  RateElectrodes electrodes1("tmp_out", &neurons1);
-  RateElectrodes electrodes2("tmp_out", &neurons2);
-
   model.add(&electrodes1);
   model.add(&electrodes2);
+
+  // Set simulation time parameters:
+  model.set_simulation_time(10, 1e-4);
+  model.set_buffer_intervals((float)0.1); // TODO: Use proper units
 
   // Run!
   model.start();
