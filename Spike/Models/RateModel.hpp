@@ -27,6 +27,10 @@ inline T infinity() { return std::numeric_limits<T>::infinity(); }
 
 #include <Eigen/Dense>
 
+typedef float FloatT;
+typedef Eigen::VectorXf EigenVector;
+typedef Eigen::MatrixXf EigenMatrix;
+
 namespace Eigen {
 
 template<class Matrix>
@@ -78,9 +82,9 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RateSynapses);
     void prepare() override = 0;
     void reset_state() override = 0;
-    virtual void update_activation(float dt) = 0;
-    virtual const Eigen::VectorXf& activation() = 0;
-    virtual const Eigen::MatrixXf& weights() = 0;
+    virtual void update_activation(FloatT dt) = 0;
+    virtual const EigenVector& activation() = 0;
+    virtual const EigenMatrix& weights() = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -89,7 +93,7 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RatePlasticity);
     void prepare() override = 0;
     void reset_state() override = 0;
-    virtual void apply_plasticity(float dt) = 0;
+    virtual void apply_plasticity(FloatT dt) = 0;
   };
 
   class RateNeurons : public virtual SpikeBackendBase {
@@ -100,8 +104,8 @@ namespace Backend {
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
-    virtual void update_rate(float dt) = 0;
-    virtual const Eigen::VectorXf& rate() = 0;
+    virtual void update_rate(FloatT dt) = 0;
+    virtual const EigenVector& rate() = 0;
   };
 
   /*
@@ -131,7 +135,7 @@ static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
 */
 
 struct EigenBuffer {
-  std::list<std::pair<int, Eigen::MatrixXf> > buf;
+  std::list<std::pair<int, EigenMatrix> > buf;
   std::mutex lock;
 
   template<typename T>
@@ -195,7 +199,7 @@ public:
   void assert_dendritic_consistency() const;
   void connect_input(RateSynapses* synapses,
                      RatePlasticity* plasticity=nullptr);
-  void update(float dt);
+  void update(FloatT dt);
 
   int size = 0;
 
@@ -203,16 +207,16 @@ public:
 
   int timesteps = 0;
 
-  const Eigen::VectorXf& rate() const;
+  const EigenVector& rate() const;
   int rate_buffer_interval = 0;
   EigenBuffer rate_history;
 
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
 
 protected:
-  void update_rate(float dt);
-  void update_dendritic_activation(float dt);
-  void apply_plasticity(float dt);
+  void update_rate(FloatT dt);
+  void update_dendritic_activation(FloatT dt);
+  void apply_plasticity(FloatT dt);
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
@@ -230,22 +234,20 @@ public:
 
   void reset_state() override;
 
-  void update_activation(float dt);
+  void update_activation(FloatT dt);
 
   RateNeurons* neurons_pre = nullptr;
   RateNeurons* neurons_post = nullptr;
 
   std::string label;
 
-  const Eigen::VectorXf& activation() const;
-  const Eigen::MatrixXf& weights() const; // just single, instantaneous dense weights for now
+  const EigenVector& activation() const;
+  const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
 
   int timesteps = 0;
-  int activation_buffer_interval = 0;
-  int weights_buffer_interval = 0;
 
+  int activation_buffer_interval = 0;
   EigenBuffer activation_history;
-  EigenBuffer weights_history;
 
 private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
@@ -265,9 +267,14 @@ public:
 
   void reset_state() override;
 
-  void apply_plasticity(float dt);
+  void apply_plasticity(FloatT dt);
 
   RateSynapses* synapses = nullptr;
+
+  int timesteps = 0;
+
+  int weights_buffer_interval = 0;
+  EigenBuffer weights_history;
 
 private:
   std::shared_ptr<::Backend::RatePlasticity> _backend;
@@ -322,9 +329,9 @@ public:
 
   void reset_state() /*override*/;
 
-  float t = 0;
-  float dt = 0;
-  float t_stop = infinity<float>();
+  FloatT t = 0;
+  FloatT dt = 0;
+  FloatT t_stop = infinity<FloatT>();
 
   int timesteps = 0;
 
@@ -333,6 +340,14 @@ public:
 
   void add(RateNeurons* neurons);
   void add(RateElectrodes* elecs);
+
+  void set_rate_buffer_interval(int n_timesteps);
+  void set_activation_buffer_interval(int n_timesteps);
+  void set_weights_buffer_interval(int n_timesteps);
+  void set_buffer_intervals(int rate_timesteps, int activation_timesteps,
+                            int weights_timesteps);
+  void set_buffer_intervals(int n_timesteps);
+  void set_buffer_intervals(FloatT intval_s);
 
   bool* dump_trigger = nullptr; // used for signal handling
   bool* stop_trigger = nullptr; // used for signal handling
@@ -343,9 +358,9 @@ public:
   void simulation_loop();
   void update_model_per_dt();
 
-  void set_simulation_time(float t_stop_, float dt_);
+  void set_simulation_time(FloatT t_stop_, FloatT dt_);
 
-  void start();
+  void start(bool block=true);
   void stop();
   void wait_for_simulation();
 

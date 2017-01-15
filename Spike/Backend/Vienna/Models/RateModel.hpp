@@ -20,17 +20,17 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      void update_activation(float dt) override;
-      const Eigen::VectorXf& activation() override;
-      const Eigen::MatrixXf& weights() override;
+      void update_activation(FloatT dt) override;
+      const EigenVector& activation() override;
+      const EigenMatrix& weights() override;
 
     private:
-      viennacl::vector<float> _activation; // TODO: Need an explicit temporary?
-      Eigen::VectorXf _activation_cpu;
+      viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
+      EigenVector _activation_cpu;
       int _activation_cpu_timestep = 0;
 
-      viennacl::matrix<float> _weights;    // TODO: Generalize synapse types
-      Eigen::MatrixXf _weights_cpu;
+      viennacl::matrix<FloatT> _weights;    // TODO: Generalize synapse types
+      EigenMatrix _weights_cpu;
       int _weights_cpu_timestep = 0;
 
       ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
@@ -44,7 +44,7 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      void apply_plasticity(float dt) override;
+      void apply_plasticity(FloatT dt) override;
 
     private:
       ::Backend::Vienna::RateSynapses* synapses = nullptr;
@@ -61,16 +61,17 @@ namespace Backend {
 
       void connect_input(::Backend::RateSynapses* synapses,
                          ::Backend::RatePlasticity* plasticity) override;
-      void update_rate(float dt) override;
+      void update_rate(FloatT dt) override;
 
-      const Eigen::VectorXf& rate() override;
+      const EigenVector& rate() override;
 
     private:
-      viennacl::vector<float> _rate;
-      Eigen::VectorXf _rate_cpu;
+      viennacl::vector<FloatT> _rate;
+      EigenVector _rate_cpu;
       int _rate_cpu_timestep = 0;
-      std::vector<::Backend::Vienna::RateSynapses*> _synapses;
-      std::vector<::Backend::Vienna::RatePlasticity*> _plasticity;
+      std::vector<
+        std::pair<::Backend::Vienna::RateSynapses*,
+                   ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
     };
 
     /*

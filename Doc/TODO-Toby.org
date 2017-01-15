@@ -427,7 +427,10 @@ CLOSED: [2017-01-12 Thu 22:50]
 :END:
 ** TODO Generalize Context for more flexible backend-specific options
 ** TODO Write SYCL backend.
-** TODO Write plain C++ backend. (Use ViennaCL for linalg acceleration?)
+** PROGRESS Write plain C++ backend. (Use ViennaCL for linalg acceleration?)
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 15:40]
+:END:
 ** DONE Support for backend fall-back
 CLOSED: [2017-01-13 Fri 11:50]
 :LOGBOOK:
@@ -435,7 +438,13 @@ CLOSED: [2017-01-13 Fri 11:50]
 - State "PROGRESS"   from "TODO"       [2017-01-13 Fri 11:45]
 :END:
 ** TODO Make backend fall-back flexible (select fall-back at runtime)
-** TODO Write rate-coded neuron/synapse/model classes.
+** PROGRESS Write rate-coded neuron/synapse/model classes.
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 15:40]
+:END:
+(see section below)
+** TODO Add runtime backend loader
+* Rate model
 
 Something like this:
 
@@ -447,5 +456,9 @@ Something like this:
   - pairs of RateSynapses and associated RatePlasticity
     - defines the connectivity
 
-----
-** TODO Add runtime backend loader
+** TODO As few naked pointers as possible (use references)
+** TODO Use proper units for time (and possibly other quantities?..)
+** TODO Electrodes write out buffer info too early
+** TODO Buffer interval cannot be set with float if dt isn't already set
+(should produce an error)
+** TODO Proper error handling with exceptions

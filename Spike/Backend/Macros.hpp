@@ -27,7 +27,6 @@
 #define SPIKE_MAKE_BACKEND_CONSTRUCTOR(TYPE)            \
   TYPE(::TYPE* front, Context* ctx) {                   \
     _frontend = (void*)front;                           \
-    std::cout << "TODO@@@ " << TYPEID_NAME(this) << " @ " << this << " with front " << _frontend << "\n"; \
     context = ctx;                                      \
   }
 
