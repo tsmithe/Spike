@@ -1,5 +1,9 @@
 #include "RateModel.hpp"
 
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons)
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses)
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity)
+
 namespace Backend {
   namespace Vienna {
     void RateNeurons::prepare() {
@@ -13,9 +17,6 @@ namespace Backend {
       _rate_cpu = Eigen::VectorXf::Zero(size);
       _rate_cpu_timestep = frontend()->timesteps;
     }
-
-    void RateNeurons::push_data_front() {}
-    void RateNeurons::pull_data_back() {}
 
     const Eigen::VectorXf& RateNeurons::rate() {
       // Ensure that host copy is up to date:
@@ -80,9 +81,6 @@ namespace Backend {
       _weights_cpu_timestep = timesteps;
     }
 
-    void RateSynapses::push_data_front() {}
-    void RateSynapses::pull_data_back() {}
-
     void RateSynapses::update_activation(float dt) {
       // TODO:: Generalise activation function
       _activation = viennacl::linalg::prod(_weights, neurons_pre->_rate);
@@ -119,9 +117,6 @@ namespace Backend {
       // TODO
     }
 
-    void RatePlasticity::push_data_front() {}
-    void RatePlasticity::pull_data_back() {}
-
     void RatePlasticity::apply_plasticity(float dt) {
       // TODO
     }
@@ -129,8 +124,6 @@ namespace Backend {
     /*
     void RateElectrodes::prepare() {}
     void RateElectrodes::reset_state() {}
-    void RateElectrodes::push_data_front() {}
-    void RateElectrodes::pull_data_back() {}
     */
   }
 }

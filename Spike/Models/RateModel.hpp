@@ -75,7 +75,7 @@ namespace Backend {
   class RateSynapses : public virtual SpikeBackendBase {
   public:
     ~RateSynapses() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RateSynapses);
+    SPIKE_ADD_BACKEND_FACTORY(RateSynapses);
     void prepare() override = 0;
     void reset_state() override = 0;
     virtual void update_activation(float dt) = 0;
@@ -86,7 +86,7 @@ namespace Backend {
   class RatePlasticity : public virtual SpikeBackendBase {
   public:
     ~RatePlasticity() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RatePlasticity);
+    SPIKE_ADD_BACKEND_FACTORY(RatePlasticity);
     void prepare() override = 0;
     void reset_state() override = 0;
     virtual void apply_plasticity(float dt) = 0;
@@ -95,7 +95,7 @@ namespace Backend {
   class RateNeurons : public virtual SpikeBackendBase {
   public:
     ~RateNeurons() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RateNeurons);
+    SPIKE_ADD_BACKEND_FACTORY(RateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
@@ -108,13 +108,13 @@ namespace Backend {
   class RateElectrodes : public virtual SpikeBackendBase {
   public:
     ~RateElectrodes() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RateElectrodes);
+    SPIKE_ADD_BACKEND_FACTORY(RateElectrodes);
   };
 
   class RateModel : public virtual SpikeBackendBase {
   public:
     ~RateModel() override = default;
-    SPIKE_ADD_FRONTEND_GETTER(RateModel);
+    SPIKE_ADD_BACKEND_FACTORY(RateModel);
   };
   */
 }
@@ -129,14 +129,6 @@ static_assert(std::has_virtual_destructor<Backend::RatePlasticity>::value,
 static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
               "contract violated");
 */
-
-#include "Spike/Backend/Dummy/Models/RateModel.hpp"
-#ifdef SPIKE_WITH_CUDA
-#include "Spike/Backend/CUDA/Models/RateModel.hpp"
-#endif
-#ifdef SPIKE_WITH_VIENNACL
-#include "Spike/Backend/Vienna/Models/RateModel.hpp"
-#endif
 
 struct EigenBuffer {
   std::list<std::pair<int, Eigen::MatrixXf> > buf;

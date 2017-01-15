@@ -35,6 +35,8 @@ add_library(Spike
 
 # target_compile_features(Spike PUBLIC cxx_nullptr)
 
+target_link_libraries(Spike PRIVATE pthread)
+
 target_link_libraries(Spike PRIVATE -Wl,--whole-archive
   SpikeDummyHelpers 
   SpikeDummyNeurons
@@ -56,16 +58,15 @@ if (BUILD_WITH_CUDA)
 endif()
 
 if (BUILD_WITH_VIENNACL)
-  target_link_libraries(Spike
+  target_link_libraries(Spike PRIVATE -Wl,--whole-archive
     SpikeViennaModels
-    pthread
-    )
+    -Wl,--no-whole-archive)
 endif()
 
 if (BUILD_WITH_OPENCL)
-  target_link_libraries(Spike OpenCL)
+  target_link_libraries(Spike PRIVATE OpenCL)
 endif()
 
 if (ENABLE_PLOTTING)
-  target_link_libraries(Spike SpikePlotting)
+  target_link_libraries(Spike PRIVATE SpikePlotting)
 endif()
