@@ -66,8 +66,10 @@ void BufferWriter::stop() {
 }
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
-                         std::string label_)
-  : size(size_), label(label_) {
+                         std::string label_,
+                         FloatT alpha_, FloatT beta_, FloatT tau_)
+  : size(size_), label(label_),
+    alpha(alpha_), beta(beta_), tau(tau_) {
   init_backend(ctx);
   // reset_state();
 
@@ -518,10 +520,11 @@ void RateModel::start(bool block) {
     wait_for_simulation();
 }
 
-void RateModel::wait_for_simulation() const {
-  while (running) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
+void RateModel::wait_for_simulation() {
+  simulation_thread.join();
+  // while (running) {
+  //   std::this_thread::sleep_for(std::chrono::seconds(1));
+  // }
 }
 
 void RateModel::stop() {

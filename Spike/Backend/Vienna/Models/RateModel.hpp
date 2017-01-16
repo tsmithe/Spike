@@ -66,8 +66,16 @@ namespace Backend {
       const EigenVector& rate() override;
 
     private:
+      FloatT _beta;
+      FloatT _tau;
+
+      viennacl::vector<FloatT> _total_activation;
+
+      viennacl::vector<FloatT> _alpha;
       viennacl::vector<FloatT> _half;
+
       viennacl::vector<FloatT> _rate;
+
       EigenVector _rate_cpu;
       int _rate_cpu_timestep = 0;
       std::vector<

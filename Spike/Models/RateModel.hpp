@@ -195,7 +195,8 @@ private:
 
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx, int size_, std::string label_);
+  RateNeurons(Context* ctx, int size_, std::string label_,
+              FloatT alpha=0.0, FloatT beta=1.0, FloatT tau=1.0);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -213,6 +214,10 @@ public:
   int size = 0;
 
   std::string label;
+
+  FloatT alpha = 0;
+  FloatT beta = 1.0;
+  FloatT tau = 1.0;
 
   int timesteps = 0;
 
@@ -378,7 +383,7 @@ public:
 
   void start(bool block=true);
   void stop();
-  void wait_for_simulation() const;
+  void wait_for_simulation();
 
 private:
   int timesteps_per_second = 0;
