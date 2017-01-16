@@ -20,14 +20,14 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      void update_activation(FloatT dt) override;
-      const EigenVector& activation() override;
+      // void update_activation(FloatT dt) override;
+      // const EigenVector& activation() override;
       const EigenMatrix& weights() override;
 
     private:
-      viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
-      EigenVector _activation_cpu;
-      int _activation_cpu_timestep = 0;
+      // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
+      // EigenVector _activation_cpu;
+      // int _activation_cpu_timestep = 0;
 
       viennacl::matrix<FloatT> _weights;    // TODO: Generalize synapse types
       EigenMatrix _weights_cpu;
