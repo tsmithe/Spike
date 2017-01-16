@@ -10,6 +10,7 @@ namespace Backend {
       reset_state();
 
       int size = frontend()->size;
+      _total_activation = viennacl::zero_vector<FloatT>(size);
       _half = viennacl::scalar_vector<FloatT>(size, 0.5);
       _alpha = viennacl::scalar_vector<FloatT>(size, frontend()->alpha);
       _beta = frontend()->beta;
