@@ -66,6 +66,7 @@ namespace Backend {
       const EigenVector& rate() override;
 
     private:
+      viennacl::vector<FloatT> _half;
       viennacl::vector<FloatT> _rate;
       EigenVector _rate_cpu;
       int _rate_cpu_timestep = 0;

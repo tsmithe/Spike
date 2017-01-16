@@ -112,7 +112,7 @@ void RateNeurons::connect_input(RateSynapses* synapses,
 }
 
 void RateNeurons::update(FloatT dt) {
-  update_dendritic_activation(dt);
+  // update_dendritic_activation(dt);
   update_rate(dt);
   apply_plasticity(dt);
 }

@@ -17,6 +17,8 @@ namespace Backend {
       _rate = viennacl::zero_vector<FloatT>(size);
       _rate_cpu = EigenVector::Zero(size);
       _rate_cpu_timestep = frontend()->timesteps;
+
+      _half = viennacl::scalar_vector<FloatT>(size, 0.5);
     }
 
     const EigenVector& RateNeurons::rate() {
@@ -43,11 +45,17 @@ namespace Backend {
       viennacl::vector<FloatT> total_activation
         = viennacl::zero_vector<FloatT>(frontend()->size);
 
-      for (const auto& dendrite_pair : _vienna_dendrites)
-        total_activation += dendrite_pair.first->_activation;
+      for (const auto& dendrite_pair : _vienna_dendrites) {
+        // total_activation += dendrite_pair.first->_activation;
+
+        auto& synapses = dendrite_pair.first;
+        total_activation += viennacl::linalg::prod
+          (synapses->_weights, synapses->neurons_pre->_rate);
+      }
 
       // TODO: Generalize transfer function
-      _rate += dt * viennacl::linalg::element_tanh(total_activation);
+      _rate += dt * (-_rate + _half + 0.5 * viennacl::linalg::element_tanh
+                     (0.5 * total_activation));
     }
 
     void RateSynapses::prepare() {
@@ -67,7 +75,7 @@ namespace Backend {
 
     void RateSynapses::update_activation(FloatT dt) {
       // TODO:: Generalise activation function
-      _activation = viennacl::linalg::prod(_weights, neurons_pre->_rate);
+      // _activation = viennacl::linalg::prod(_weights, neurons_pre->_rate);
     }
 
     const EigenVector& RateSynapses::activation() {

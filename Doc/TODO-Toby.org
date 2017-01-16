@@ -446,9 +446,43 @@ CLOSED: [2017-01-13 Fri 11:50]
 (see section below)
 ** TODO Add runtime backend loader
 * Rate model
-
-Something like this:
-
+** Scientific functionality
+*** TODO Generalize rate ODE
+**** TODO Important: Runge-Kutta integration!
+*** TODO Generalize transfer function
+*** TODO Implement plasticity rules, including competition
+*** TODO Support sparse connectivity
+** Software engineering
+*** CANCELLED As few naked pointers as possible (use references)
+CLOSED: [2017-01-15 Sun 21:50]
+:LOGBOOK:
+- State "CANCELLED"  from "TODO"       [2017-01-15 Sun 21:50] \\
+  Decided to be more nuanced. See commit 75b3b270.
+:END:
+*** TODO Use proper units for time (and possibly other quantities?..)
+*** DONE Electrodes write out buffer info too early
+CLOSED: [2017-01-15 Sun 22:05]
+:LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-01-15 Sun 22:05]
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:55]
+:END:
+*** DONE Buffer interval cannot be set with float if dt isn't already set
+CLOSED: [2017-01-15 Sun 21:50]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-01-15 Sun 21:50]
+:END:
+(should produce an error)
+*** PROGRESS Proper error handling with exceptions
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:50]
+:END:
+*** PROGRESS Const correctness
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 22:10]
+:END:
+*** TODO More sophisticated logging (cf Context::verbose)
+*** TODO Locking of output directory
+** Sketchpad
 + RateNeurons contains vectors of activation / rate
 + RateSynapses contains (sparse?) connection matrices
 + RatePlasticity contains rules to update the synapse strengths
@@ -457,31 +491,3 @@ Something like this:
   - pairs of RateSynapses and associated RatePlasticity
     - defines the connectivity
 
-** CANCELLED As few naked pointers as possible (use references)
-CLOSED: [2017-01-15 Sun 21:50]
-:LOGBOOK:
-- State "CANCELLED"  from "TODO"       [2017-01-15 Sun 21:50] \\
-  Decided to be more nuanced. See commit 75b3b270.
-:END:
-** TODO Use proper units for time (and possibly other quantities?..)
-** DONE Electrodes write out buffer info too early
-CLOSED: [2017-01-15 Sun 22:05]
-:LOGBOOK:
-- State "DONE"       from "PROGRESS"   [2017-01-15 Sun 22:05]
-- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:55]
-:END:
-** DONE Buffer interval cannot be set with float if dt isn't already set
-CLOSED: [2017-01-15 Sun 21:50]
-:LOGBOOK:
-- State "DONE"       from "TODO"       [2017-01-15 Sun 21:50]
-:END:
-(should produce an error)
-** PROGRESS Proper error handling with exceptions
-:LOGBOOK:
-- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 21:50]
-:END:
-** PROGRESS Const correctness
-:LOGBOOK:
-- State "PROGRESS"   from "TODO"       [2017-01-15 Sun 22:10]
-:END:
-** TODO More sophisticated logging (cf Context::verbose)

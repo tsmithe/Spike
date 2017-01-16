@@ -10,7 +10,7 @@ int main() {
   // Tell Spike to talk
   ctx->verbose = true;
 
-  int N = 100;
+  int N = 500;
 
   // Set up some Neurons, Synapses and Electrodes
   RateNeurons neurons1(ctx, N, "test_neurons1");
