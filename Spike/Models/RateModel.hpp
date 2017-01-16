@@ -19,6 +19,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -70,6 +71,46 @@ inline void read_binary(const char* filename, Matrix& matrix,
   matrix.resize(rows, cols);
   in.read( (char *) matrix.data() , rows*cols*sizeof(typename Matrix::Scalar) );
   in.close();
+}
+
+inline void normalize_matrix_rows(MatrixXf& R, float scale=1) {
+  for (int j = 0; j < R.rows(); ++j) {
+    float row_norm = R.row(j).norm();
+    if (row_norm > 0)
+      R.row(j) /= scale*row_norm;
+  }
+}
+
+inline EigenMatrix make_random_matrix(int J, int N, float scale,
+                                      bool scale_by_norm=1, float sparseness=0,
+                                      float mean=0) {
+  auto global_random_generator = std::mt19937();
+
+  // J rows, each of N columns
+  // Each row ~uniformly distributed on the N-sphere
+  EigenMatrix R = EigenMatrix::Zero(J, N);
+  std::normal_distribution<> gauss;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < J; ++j) {
+      R(j, i) = gauss(global_random_generator) + mean;
+    }
+  }
+  if (scale_by_norm)
+    normalize_matrix_rows(R, scale);
+  else
+    R.array() *= scale;
+
+  if (sparseness > 0) {
+    std::uniform_real_distribution<> U(0, 1);
+    for (int i = 0; i < N; ++i) {
+      for (int j = 0; j < J; ++j) {
+        if (U(global_random_generator) < sparseness)
+          R(j, i) = 0;
+      }
+    }
+  }
+
+  return R;
 }
 
 } // namespace Eigen
@@ -254,6 +295,8 @@ public:
   RateNeurons* neurons_post = nullptr;
 
   std::string label;
+
+  EigenMatrix initial_weights;
 
   // const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now

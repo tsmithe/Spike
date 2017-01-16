@@ -10,11 +10,11 @@ int main() {
   // Tell Spike to talk
   ctx->verbose = true;
 
-  int N = 500;
+  int N = 1000;
 
   // Set up some Neurons, Synapses and Electrodes
-  RateNeurons neurons1(ctx, N, "test_neurons1");
-  RateNeurons neurons2(ctx, N, "test_neurons2");
+  RateNeurons neurons1(ctx, N, "test_neurons1", 0, 1, 0.5);
+  RateNeurons neurons2(ctx, N, "test_neurons2", 0, 1, 0.5);
 
   RateSynapses synapses11(ctx, &neurons1, &neurons1, "11");
   RateSynapses synapses12(ctx, &neurons1, &neurons2, "12");
@@ -43,8 +43,9 @@ int main() {
   model.add(&electrodes2);
 
   // Set simulation time parameters:
-  model.set_simulation_time(10, 1e-4);
-  model.set_buffer_intervals((float)0.1); // TODO: Use proper units
+  model.set_simulation_time(10, 1e-3);
+  model.set_buffer_intervals((float)0.01); // TODO: Use proper units
+  model.set_weights_buffer_interval(6000);
 
   // Run!
   model.start();

@@ -147,10 +147,15 @@ RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_post_,
                            std::string label_)
   : neurons_pre(neurons_pre_), neurons_post(neurons_post_), label(label_) {
+
   init_backend(ctx);
   // reset_state();
   if(!(label.length()))
     label = neurons_pre->label;
+
+  initial_weights = 1.8 * Eigen::make_random_matrix(neurons_pre->size,
+                                                    neurons_post->size,
+                                                    1, 0);
 
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label << "' from "

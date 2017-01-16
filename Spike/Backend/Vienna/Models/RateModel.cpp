@@ -22,7 +22,8 @@ namespace Backend {
       int size = frontend()->size;
 
       _rate = viennacl::zero_vector<FloatT>(size);
-      _rate_cpu = EigenVector::Zero(size);
+      _rate_cpu = 10 * (EigenVector::Random(size) + EigenVector::Ones(size));
+      viennacl::copy(_rate_cpu, _rate);
       _rate_cpu_timestep = frontend()->timesteps;
     }
 
@@ -69,27 +70,34 @@ namespace Backend {
       // TODO: Generalize transfer function
       if (_beta == 1)
         _rate += (dt/_tau)
-          * (-_rate + _half + 0.5 * viennacl::linalg::element_tanh
+          * (-_rate + viennacl::linalg::element_tanh
              (_total_activation));
       else
         _rate += (dt/_tau)
-          * (-_rate + _half + 0.5 * viennacl::linalg::element_tanh
+          * (-_rate + viennacl::linalg::element_tanh
              (_beta * _total_activation));
     }
 
     void RateSynapses::prepare() {
       neurons_pre = dynamic_cast<::Backend::Vienna::RateNeurons*>
         (frontend()->neurons_pre->backend());
-      reset_state();
+      // reset_state();
     }
 
     void RateSynapses::reset_state() {
       int size_post = frontend()->neurons_post->size;
+      int size_pre = frontend()->neurons_pre->size;
       int timesteps = frontend()->timesteps;
 
       // _activation = viennacl::zero_vector<FloatT>(size_post);
       // _activation_cpu = EigenVector::Zero(size_post);
       // _activation_cpu_timestep = timesteps;
+
+      // TODO: Better record of initial weights state:
+      _weights = viennacl::zero_matrix<FloatT>(size_pre, size_post);
+      viennacl::copy(frontend()->initial_weights, _weights);
+      _weights_cpu = frontend()->initial_weights;
+      _weights_cpu_timestep = timesteps;
     }
 
     /*
@@ -128,14 +136,6 @@ namespace Backend {
     }
 
     void RatePlasticity::reset_state() {
-      int size_post = frontend()->synapses->neurons_post->size;
-      int size_pre = frontend()->synapses->neurons_pre->size;
-      int timesteps = frontend()->timesteps;
-
-      // TODO: Better record of initial weights state:
-      synapses->_weights = viennacl::zero_matrix<FloatT>(size_pre, size_post);
-      synapses->_weights_cpu = EigenMatrix::Zero(size_pre, size_post);
-      synapses->_weights_cpu_timestep = timesteps;
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
