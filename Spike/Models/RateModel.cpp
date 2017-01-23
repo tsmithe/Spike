@@ -113,10 +113,12 @@ void RateNeurons::connect_input(RateSynapses* synapses,
   backend()->connect_input(synapses->backend(), plasticity->backend());
 }
 
+/* This returns true if the timestep update is complete,
+   and false otherwise. If false, call repeatedly until true. */
 bool RateNeurons::staged_integrate_timestep(FloatT dt) {
   bool res = backend()->staged_integrate_timestep(dt);
 
-  // TODO: Move this elsewhere.
+  // TODO: Move this elsewhere?
   if (res) {
     timesteps += 1;
     if (rate_buffer_interval && !(timesteps % rate_buffer_interval))
@@ -152,9 +154,10 @@ RateSynapses::RateSynapses(Context* ctx,
   if(!(label.length()))
     label = neurons_pre->label;
 
-  initial_weights = 1.8 * Eigen::make_random_matrix(neurons_pre->size,
-                                                    neurons_post->size,
-                                                    1, 0);
+  // TODO: Set initial weights more properly...
+  initial_weights = 18 * Eigen::make_random_matrix(neurons_pre->size,
+                                                   neurons_post->size,
+                                                   true, 0);
 
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label << "' from "
@@ -484,19 +487,24 @@ void RateModel::update_model_per_dt() {
   std::vector<RateNeurons*> grps(neuron_groups);
   std::list<int> grps_done;
 
+  // Loop through the neuron groups, computing the rate update in stages.
+  // Stop when the update has been computed for each group.
+  // This allows us to implement an arbitrary-order forwards integration
+  // scheme, without the neuron groups becoming unsynchronized.
   while (grps.size() > 0) {
     for (int i = 0; i < grps.size(); ++i) {
       auto& n = grps[i];
       bool res = n->staged_integrate_timestep(dt);
       if (res) grps_done.push_front(i);
     }
-    for (auto& i : grps_done) {
+    for (auto& i : grps_done)
       grps.erase(grps.begin()+i);
-    }
   }
+
   for (auto& n : neuron_groups) {
     n->apply_plasticity(dt);
   }
+
   t += dt;
   timesteps += 1;
 }

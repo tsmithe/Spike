@@ -447,9 +447,18 @@ CLOSED: [2017-01-13 Fri 11:50]
 ** TODO Add runtime backend loader
 * Rate model
 ** Scientific functionality
-*** TODO Generalize rate ODE
+*** PROGRESS Generalize rate ODE
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-23 Mon 21:50]
+:END:
 **** TODO Important: Runge-Kutta integration!
-*** TODO Generalize transfer function
+*** DONE Generalize transfer function
+CLOSED: [2017-01-23 Mon 21:50]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-01-23 Mon 21:50]
+:END:
+*** TODO Proper weight initialization
+*** TODO Input 'networks'
 *** TODO Implement plasticity rules, including competition
 *** TODO Support sparse connectivity
 ** Software engineering
