@@ -61,11 +61,14 @@ namespace Backend {
 
       void connect_input(::Backend::RateSynapses* synapses,
                          ::Backend::RatePlasticity* plasticity) override;
-      void update_rate(FloatT dt) override;
+
+      bool staged_integrate_timestep(FloatT dt) override;
 
       const EigenVector& rate() override;
 
     private:
+      bool done_timestep = false;
+
       FloatT _beta;
       FloatT _tau;
 
@@ -75,6 +78,7 @@ namespace Backend {
       viennacl::vector<FloatT> _half;
 
       viennacl::vector<FloatT> _rate;
+      viennacl::vector<FloatT> _new_rate;
 
       EigenVector _rate_cpu;
       int _rate_cpu_timestep = 0;

@@ -113,17 +113,16 @@ void RateNeurons::connect_input(RateSynapses* synapses,
   backend()->connect_input(synapses->backend(), plasticity->backend());
 }
 
-void RateNeurons::update(FloatT dt) {
-  // update_dendritic_activation(dt);
-  update_rate(dt);
-  apply_plasticity(dt);
-}
+bool RateNeurons::staged_integrate_timestep(FloatT dt) {
+  bool res = backend()->staged_integrate_timestep(dt);
 
-void RateNeurons::update_rate(FloatT dt) {
-  backend()->update_rate(dt);
-  timesteps += 1;
-  if (rate_buffer_interval && !(timesteps % rate_buffer_interval))
-    rate_history.push_back(timesteps, rate());
+  // TODO: Move this elsewhere.
+  if (res) {
+    timesteps += 1;
+    if (rate_buffer_interval && !(timesteps % rate_buffer_interval))
+      rate_history.push_back(timesteps, rate());
+  }
+  return res;
 }
 
 const EigenVector& RateNeurons::rate() const {
@@ -482,20 +481,22 @@ void RateModel::wait_for_electrodes() const {
 }
 
 void RateModel::update_model_per_dt() {
-  // TODO: Currently, neuron groups are updated in (some) sequence.
-  //       But should they be updated all simultaneously?
-  //
-  //       The problem with using a sequence is that
-  //          neuron_groups[2](t)
-  //       sees
-  //          neuron_groups[0](t+dt)
-  //       when it should see
-  //          neuron_groups[0](t)
-  //       !!
-  //
-  //       However, if dt is small, does this matter? ...
-  for (auto& n : neuron_groups)
-    n->update(dt);
+  std::vector<RateNeurons*> grps(neuron_groups);
+  std::list<int> grps_done;
+
+  while (grps.size() > 0) {
+    for (int i = 0; i < grps.size(); ++i) {
+      auto& n = grps[i];
+      bool res = n->staged_integrate_timestep(dt);
+      if (res) grps_done.push_front(i);
+    }
+    for (auto& i : grps_done) {
+      grps.erase(grps.begin()+i);
+    }
+  }
+  for (auto& n : neuron_groups) {
+    n->apply_plasticity(dt);
+  }
   t += dt;
   timesteps += 1;
 }

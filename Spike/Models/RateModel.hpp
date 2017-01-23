@@ -154,7 +154,7 @@ namespace Backend {
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
-    virtual void update_rate(FloatT dt) = 0;
+    virtual bool staged_integrate_timestep(FloatT dt) = 0;
     virtual const EigenVector& rate() = 0;
   };
 
@@ -250,7 +250,9 @@ public:
   void assert_dendritic_consistency() const;
   void connect_input(RateSynapses* synapses,
                      RatePlasticity* plasticity=nullptr);
-  void update(FloatT dt);
+
+  bool staged_integrate_timestep(FloatT dt);
+  void apply_plasticity(FloatT dt) const;
 
   int size = 0;
 
@@ -267,11 +269,6 @@ public:
   EigenBuffer rate_history;
 
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
-
-protected:
-  void update_rate(FloatT dt);
-  // void update_dendritic_activation(FloatT dt) const;
-  void apply_plasticity(FloatT dt) const;
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;

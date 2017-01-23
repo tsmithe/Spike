@@ -22,7 +22,7 @@ namespace Backend {
       int size = frontend()->size;
 
       _rate = viennacl::zero_vector<FloatT>(size);
-      _rate_cpu = 10 * (EigenVector::Random(size) + EigenVector::Ones(size));
+      _rate_cpu = 10 * (EigenVector::Random(size)); // + EigenVector::Ones(size));
       viennacl::copy(_rate_cpu, _rate);
       _rate_cpu_timestep = frontend()->timesteps;
     }
@@ -47,7 +47,13 @@ namespace Backend {
       _vienna_dendrites.push_back({_vienna_synapses, _vienna_plasticity});
     }
 
-    void RateNeurons::update_rate(FloatT dt) {
+    bool RateNeurons::staged_integrate_timestep(FloatT dt) {
+      if (done_timestep) {
+        _rate = _new_rate;
+        done_timestep = false;
+        return true;
+      }
+
       int i = 0;
       for (const auto& dendrite_pair : _vienna_dendrites) {
         auto& synapses = dendrite_pair.first;
@@ -69,13 +75,16 @@ namespace Backend {
 
       // TODO: Generalize transfer function
       if (_beta == 1)
-        _rate += (dt/_tau)
+        _new_rate = _rate + (dt/_tau)
           * (-_rate + viennacl::linalg::element_tanh
              (_total_activation));
       else
-        _rate += (dt/_tau)
+        _new_rate = _rate + (dt/_tau)
           * (-_rate + viennacl::linalg::element_tanh
              (_beta * _total_activation));
+
+      done_timestep = true;
+      return false;
     }
 
     void RateSynapses::prepare() {
