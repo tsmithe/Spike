@@ -47,6 +47,15 @@ namespace Backend {
       _vienna_dendrites.push_back({_vienna_synapses, _vienna_plasticity});
     }
 
+    /* NB: The argument is the total activation beyond the threshold `alpha` */
+    template<typename T>
+    inline T RateNeurons::transfer(T const& total_activation) {
+      if (_beta == 1)
+        return viennacl::linalg::element_tanh(total_activation);
+      else
+        return viennacl::linalg::element_tanh(_beta * total_activation);
+    }
+
     bool RateNeurons::staged_integrate_timestep(FloatT dt) {
       if (done_timestep) {
         _rate = _new_rate;
@@ -73,15 +82,7 @@ namespace Backend {
         i++;
       }
 
-      // TODO: Generalize transfer function
-      if (_beta == 1)
-        _new_rate = _rate + (dt/_tau)
-          * (-_rate + viennacl::linalg::element_tanh
-             (_total_activation));
-      else
-        _new_rate = _rate + (dt/_tau)
-          * (-_rate + viennacl::linalg::element_tanh
-             (_beta * _total_activation));
+      _new_rate = _rate + (dt/_tau)*(-_rate + transfer(_total_activation));
 
       done_timestep = true;
       return false;

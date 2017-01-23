@@ -64,6 +64,9 @@ namespace Backend {
 
       bool staged_integrate_timestep(FloatT dt) override;
 
+      template<typename T>
+      inline T transfer(T const& total_activation);
+
       const EigenVector& rate() override;
 
     private:
