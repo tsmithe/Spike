@@ -245,6 +245,15 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
                 << output_dir << "\n";
   }
 
+  std::string lock_fname = output_dir + "/simulation.lock";
+  if (file_exists(lock_fname))
+    throw SpikeException("Lock file exists at " + lock_fname
+                         + " -- do you already have a simulation running?");
+  std::ofstream lock_file(lock_fname);
+  if (!lock_file.good())
+    throw SpikeException("Couldn't create lock file at " + lock_fname);
+  lock_file << "Electrodes active!\n";
+
   std::string rate_fname = output_dir + "/rate.bin";
   writers.push_back
     (std::make_unique<BufferWriter>(rate_fname, neurons->rate_history));
@@ -276,6 +285,8 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
 
 RateElectrodes::~RateElectrodes() {
   stop();
+  std::string lock_fname = output_dir + "/simulation.lock";
+  remove(lock_fname.c_str());
 }
 
 void RateElectrodes::write_output_info() const {
