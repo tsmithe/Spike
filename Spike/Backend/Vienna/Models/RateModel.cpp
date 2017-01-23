@@ -21,8 +21,9 @@ namespace Backend {
       int timesteps = frontend()->timesteps;
       int size = frontend()->size;
 
+      // TODO: Remove this ugly random init hack!
       _rate = viennacl::zero_vector<FloatT>(size);
-      _rate_cpu = 10 * (EigenVector::Random(size)); // + EigenVector::Ones(size));
+      _rate_cpu = EigenVector::Random(size);
       viennacl::copy(_rate_cpu, _rate);
       _rate_cpu_timestep = frontend()->timesteps;
     }

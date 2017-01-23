@@ -154,10 +154,7 @@ RateSynapses::RateSynapses(Context* ctx,
   if(!(label.length()))
     label = neurons_pre->label;
 
-  // TODO: Set initial weights more properly...
-  initial_weights = 18 * Eigen::make_random_matrix(neurons_pre->size,
-                                                   neurons_post->size,
-                                                   true, 0);
+  initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
 
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label << "' from "
@@ -185,6 +182,10 @@ const EigenVector& RateSynapses::activation() const {
 const EigenMatrix& RateSynapses::weights() const {
   return backend()->weights();
 }
+
+// void RateSynapses::weights(EigenMatrix const& w) const {
+//   backend()->weights(w);
+// }
 
 /*
 void RateSynapses::update_activation(FloatT dt) {

@@ -465,6 +465,9 @@ CLOSED: [2017-01-23 Mon 21:50]
 *** TODO Implement plasticity rules, including competition
 *** TODO Support sparse connectivity
 ** Software engineering
+*** TODO Signal handlers
+*** TODO RNG initialization
+*** TODO Network descriptor file parser?
 *** CANCELLED As few naked pointers as possible (use references)
 CLOSED: [2017-01-15 Sun 21:50]
 :LOGBOOK:
