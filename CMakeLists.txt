@@ -93,6 +93,12 @@ endif()
 mark_as_advanced(EIGEN_INCLUDE_DIR)
 include_directories(BEFORE SYSTEM "${EIGEN_INCLUDE_DIR}")
 
+find_package(OpenMP)
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 if(BUILD_WITH_VIENNACL)
   add_definitions(-DSPIKE_DEFAULT_BACKEND="Vienna")
   include_directories(BEFORE SYSTEM "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
