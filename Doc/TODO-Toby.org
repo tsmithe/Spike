@@ -391,6 +391,9 @@ CLOSED: [2017-01-14 Sat 17:10]
 + replace them with more expressive -- more specific -- alternatives
 ** TODO Write new build instructions
 * Style / interface design
+** TODO Don't pollute the global namespace
+*** TODO There should be a 'Spike' top-level namespace
+*** TODO Utility functions should be in their own namespace
 ** TODO Const correctness!
 ** TODO Unify coding style (discuss this)
 ** PROGRESS Check for unused member pointers
@@ -490,7 +493,11 @@ CLOSED: [2017-01-15 Sun 21:50]
 - State "PROGRESS"   from "TODO"       [2017-01-15 Sun 22:10]
 :END:
 *** TODO More sophisticated logging (cf Context::verbose)
-*** TODO Locking of output directory
+*** DONE Locking of output directory
+CLOSED: [2017-01-23 Mon 22:25]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-01-23 Mon 22:25]
+:END:
 ** Sketchpad
 + RateNeurons contains vectors of activation / rate
 + RateSynapses contains (sparse?) connection matrices
