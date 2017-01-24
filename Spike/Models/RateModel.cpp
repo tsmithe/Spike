@@ -118,7 +118,7 @@ void RateNeurons::connect_input(RateSynapses* synapses,
 bool RateNeurons::staged_integrate_timestep(FloatT dt) {
   bool res = backend()->staged_integrate_timestep(dt);
 
-  // TODO: Move this elsewhere?
+  // TODO: Is this the best place for the buffering?
   if (res) {
     timesteps += 1;
     if (rate_buffer_interval && !(timesteps % rate_buffer_interval))
@@ -218,6 +218,8 @@ void RatePlasticity::reset_state() {
 void RatePlasticity::apply_plasticity(FloatT dt) {
   backend()->apply_plasticity(dt);
   timesteps += 1;
+  synapses->timesteps += 1; // TODO: Tidy this up
+  // TODO: Is this the best place for the buffering?
   if (weights_buffer_interval && !(timesteps % weights_buffer_interval))
     weights_history.push_back(timesteps, synapses->weights());
 }

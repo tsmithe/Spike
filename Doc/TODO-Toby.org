@@ -467,6 +467,10 @@ CLOSED: [2017-01-23 Mon 21:50]
 ** Software engineering
 *** TODO Signal handlers
 *** TODO RNG initialization
+*** TODO Buffering shouldn't be in apply / update / integrate functions
+*** TODO Data members shouldn't be public
+*** TODO Make sure threaded IO is really working ...
+- perhaps only one IO thread?
 *** TODO Network descriptor file parser?
 *** CANCELLED As few naked pointers as possible (use references)
 CLOSED: [2017-01-15 Sun 21:50]

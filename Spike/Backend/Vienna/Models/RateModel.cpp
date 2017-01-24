@@ -92,6 +92,8 @@ namespace Backend {
     void RateSynapses::prepare() {
       neurons_pre = dynamic_cast<::Backend::Vienna::RateNeurons*>
         (frontend()->neurons_pre->backend());
+      neurons_post = dynamic_cast<::Backend::Vienna::RateNeurons*>
+        (frontend()->neurons_post->backend());
       // reset_state();
     }
 
@@ -150,7 +152,9 @@ namespace Backend {
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
-      // TODO
+      // TODO: Parameterize and generalize this
+      synapses->_weights += dt * 0.001 * viennacl::linalg::outer_prod
+        (synapses->neurons_pre->_rate, synapses->neurons_post->_rate);
     }
 
     /*

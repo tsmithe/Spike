@@ -57,7 +57,7 @@ int main() {
   // Set simulation time parameters:
   model.set_simulation_time(10, 1e-3);
   model.set_buffer_intervals((float)0.01); // TODO: Use proper units
-  model.set_weights_buffer_interval(6000);
+  model.set_weights_buffer_interval(1000);
 
   // Run!
   model.start();

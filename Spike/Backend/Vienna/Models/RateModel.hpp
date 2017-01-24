@@ -4,6 +4,7 @@
 
 #include <viennacl/matrix.hpp>
 #include <viennacl/vector.hpp>
+#include <viennacl/linalg/matrix_operations.hpp>
 #include <viennacl/linalg/prod.hpp>
 
 namespace Backend {
@@ -34,6 +35,7 @@ namespace Backend {
       int _weights_cpu_timestep = 0;
 
       ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
+      ::Backend::Vienna::RateNeurons* neurons_post = nullptr;
      };
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
@@ -52,6 +54,7 @@ namespace Backend {
 
     class RateNeurons : public virtual ::Backend::RateNeurons {
       friend class RateSynapses;
+      friend class RatePlasticity;
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
       ~RateNeurons() override = default;
