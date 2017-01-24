@@ -24,6 +24,7 @@ namespace Backend {
       // void update_activation(FloatT dt) override;
       // const EigenVector& activation() override;
       const EigenMatrix& weights() override;
+      void weights(EigenMatrix const& w) override;
 
     private:
       // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?

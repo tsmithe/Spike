@@ -17,21 +17,21 @@ int main() {
   RateNeurons neurons2(ctx, N, "test_neurons2", 0, 1, 0.1);
 
   RateSynapses synapses11(ctx, &neurons1, &neurons1, "11");
-  synapses11.initial_weights = 0.2 * Eigen::make_random_matrix(neurons1.size,
-                                                               neurons1.size,
-                                                               true, 0, 0.2);
+  synapses11.weights(0.2 * Eigen::make_random_matrix(neurons1.size,
+                                                     neurons1.size,
+                                                     true, 0, 0.2));
   RateSynapses synapses12(ctx, &neurons1, &neurons2, "12");
-  synapses12.initial_weights = 0.35 * Eigen::make_random_matrix(neurons1.size,
-                                                                neurons2.size,
-                                                                true, 0, 0);
+  synapses12.weights(0.35 * Eigen::make_random_matrix(neurons1.size,
+                                                      neurons2.size,
+                                                      true, 0, 0));
   RateSynapses synapses21(ctx, &neurons2, &neurons1, "21");
-  synapses21.initial_weights = 0.3 * Eigen::make_random_matrix(neurons2.size,
-                                                               neurons1.size,
-                                                               true, 0, 0);
+  synapses21.weights(0.3 * Eigen::make_random_matrix(neurons2.size,
+                                                     neurons1.size,
+                                                     true, 0, 0));
   RateSynapses synapses22(ctx, &neurons2, &neurons2, "22");
-  synapses22.initial_weights = 0.25 * Eigen::make_random_matrix(neurons2.size,
-                                                                neurons2.size,
-                                                                true, 0, -0.5);
+  synapses22.weights(0.25 * Eigen::make_random_matrix(neurons2.size,
+                                                      neurons2.size,
+                                                      true, 0, -0.5));
 
   RatePlasticity plasticity11(ctx, &synapses11);
   RatePlasticity plasticity12(ctx, &synapses12);

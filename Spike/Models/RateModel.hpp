@@ -144,6 +144,7 @@ namespace Backend {
     // virtual void update_activation(FloatT dt) = 0;
     // virtual const EigenVector& activation() = 0;
     virtual const EigenMatrix& weights() = 0;
+    virtual void weights(EigenMatrix const& w) = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -302,10 +303,12 @@ public:
 
   std::string label;
 
-  EigenMatrix initial_weights;
+  // EigenMatrix initial_weights;
+  // bool initialized = false;
 
   // const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
+  void weights(const EigenMatrix& w);
 
   int timesteps = 0;
 

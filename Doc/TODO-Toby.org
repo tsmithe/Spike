@@ -460,7 +460,10 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-01-23 Mon 21:50]
 :END:
-*** TODO Proper weight initialization
+*** PROGRESS Proper weight initialization
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
+:END:
 *** TODO Input 'networks'
 *** TODO Implement plasticity rules, including competition
 *** TODO Support sparse connectivity
@@ -468,7 +471,10 @@ CLOSED: [2017-01-23 Mon 21:50]
 *** TODO Signal handlers
 *** TODO RNG initialization
 *** TODO Buffering shouldn't be in apply / update / integrate functions
-*** TODO Data members shouldn't be public
+*** PROGRESS Data members shouldn't be public
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
+:END:
 *** TODO Make sure threaded IO is really working ...
 - perhaps only one IO thread?
 *** TODO Network descriptor file parser?
