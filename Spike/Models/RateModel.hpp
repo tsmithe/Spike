@@ -50,6 +50,14 @@ typedef float FloatT;
 typedef Eigen::VectorXf EigenVector;
 typedef Eigen::MatrixXf EigenMatrix;
 
+inline void normalize_matrix_rows(EigenMatrix& R, FloatT scale=1) {
+  for (int j = 0; j < R.rows(); ++j) {
+    FloatT row_norm = R.row(j).norm();
+    if (row_norm > 0)
+      R.row(j) /= scale*row_norm;
+  }
+}
+
 namespace Eigen {
 
 template<class Matrix>
@@ -80,14 +88,6 @@ inline void read_binary(const char* filename, Matrix& matrix,
   matrix.resize(rows, cols);
   in.read( (char *) matrix.data() , rows*cols*sizeof(typename Matrix::Scalar) );
   in.close();
-}
-
-inline void normalize_matrix_rows(MatrixXf& R, float scale=1) {
-  for (int j = 0; j < R.rows(); ++j) {
-    float row_norm = R.row(j).norm();
-    if (row_norm > 0)
-      R.row(j) /= scale*row_norm;
-  }
 }
 
 inline EigenMatrix make_random_matrix(int J, int N, float scale,

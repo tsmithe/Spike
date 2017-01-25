@@ -2,10 +2,21 @@
 
 #include "Spike/Models/RateModel.hpp"
 
-#include <viennacl/matrix.hpp>
 #include <viennacl/vector.hpp>
+#include <viennacl/matrix.hpp>
+#include <viennacl/compressed_matrix.hpp>
 #include <viennacl/linalg/matrix_operations.hpp>
+#include <viennacl/linalg/norm_2.hpp>
 #include <viennacl/linalg/prod.hpp>
+#include <viennacl/linalg/sum.hpp>
+
+inline void normalize_matrix_rows(viennacl::matrix<FloatT>& R) {
+  viennacl::vector<FloatT> inv_norms = viennacl::linalg::element_pow
+    (viennacl::vector<FloatT>(viennacl::linalg::row_sum
+                              (viennacl::linalg::element_prod(R,R))),
+     viennacl::vector<FloatT>(viennacl::scalar_vector<FloatT>(R.size1(),-0.5)));
+  R = viennacl::linalg::prod(viennacl::diag(inv_norms), R);
+}
 
 namespace Backend {
   namespace Vienna {

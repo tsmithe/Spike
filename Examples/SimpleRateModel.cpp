@@ -10,23 +10,21 @@ int main() {
   // Tell Spike to talk
   ctx->verbose = true;
 
-  int N = 1000;
-
   // Set up some Neurons, Synapses and Electrodes
-  RateNeurons neurons1(ctx, N, "test_neurons1", 0, 1, 0.1);
-  RateNeurons neurons2(ctx, N, "test_neurons2", 0, 1, 0.1);
+  RateNeurons neurons1(ctx, 1000, "test_neurons1", 0, 1, 0.1);
+  RateNeurons neurons2(ctx,  800, "test_neurons2", 0, 1, 0.1);
 
   RateSynapses synapses11(ctx, &neurons1, &neurons1, "11");
   synapses11.weights(0.2 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons1.size,
                                                      true, 0, 0.2));
   RateSynapses synapses12(ctx, &neurons1, &neurons2, "12");
-  synapses12.weights(0.35 * Eigen::make_random_matrix(neurons1.size,
-                                                      neurons2.size,
+  synapses12.weights(0.35 * Eigen::make_random_matrix(neurons2.size,
+                                                      neurons1.size,
                                                       true, 0, 0));
   RateSynapses synapses21(ctx, &neurons2, &neurons1, "21");
-  synapses21.weights(0.3 * Eigen::make_random_matrix(neurons2.size,
-                                                     neurons1.size,
+  synapses21.weights(0.3 * Eigen::make_random_matrix(neurons1.size,
+                                                     neurons2.size,
                                                      true, 0, 0));
   RateSynapses synapses22(ctx, &neurons2, &neurons2, "22");
   synapses22.weights(0.25 * Eigen::make_random_matrix(neurons2.size,

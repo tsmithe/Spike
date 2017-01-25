@@ -97,7 +97,7 @@ namespace Backend {
 
       int size_post = frontend()->neurons_post->size;
       int size_pre = frontend()->neurons_pre->size;
-      _weights = viennacl::zero_matrix<FloatT>(size_pre, size_post);
+      _weights = viennacl::zero_matrix<FloatT>(size_post, size_pre);
 
       // reset_state();
     }
@@ -163,8 +163,10 @@ namespace Backend {
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
       // TODO: Parameterize and generalize this
-      synapses->_weights += dt * 0.001 * viennacl::linalg::outer_prod
-        (synapses->neurons_pre->_rate, synapses->neurons_post->_rate);
+      synapses->_weights += dt * 0.01 *
+        viennacl::linalg::outer_prod(synapses->neurons_post->_rate,
+                                     synapses->neurons_pre->_rate);
+      normalize_matrix_rows(synapses->_weights);
     }
 
     /*
