@@ -34,6 +34,7 @@ int main() {
   float eps = 0.001;
   RatePlasticity plasticity11(ctx, &synapses11, eps);
   RatePlasticity plasticity12(ctx, &synapses12, eps);
+  plasticity12.multipliers(EigenMatrix::Ones(neurons2.size, neurons1.size));
   RatePlasticity plasticity21(ctx, &synapses21, eps);
   RatePlasticity plasticity22(ctx, &synapses22, eps);
 

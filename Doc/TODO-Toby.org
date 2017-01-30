@@ -468,7 +468,11 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
-**** TODO RateSynapses::set_delay sets storage size for corresponding presynaptic RateNeurons
+**** DONE RateSynapses::delay sets storage size for corresponding presynaptic RateNeurons
+CLOSED: [2017-01-30 Mon 15:35]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-01-30 Mon 15:35]
+:END:
 **** TODO Performance enhancements: references, not copies, where possible
 *** TODO Input 'networks'
 *** PROGRESS Implement plasticity rules, including competition
@@ -479,8 +483,14 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
-*** TODO Support sparse connectivity
-**** TODO Sparse Hebb update: use element_prod to zero unconnected inputs (before doing the outer_prod!)
+*** PROGRESS Support sparse connectivity
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
+:END:
+**** PROGRESS Sparse Hebb update: use element_prod to zero unconnected inputs
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
+:END:
 ** Software engineering
 *** TODO Shared API with Spiking classes
 *** TODO Signal handlers

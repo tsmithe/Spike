@@ -201,14 +201,14 @@ namespace Backend {
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
-      auto hebb_update = viennacl::linalg::outer_prod
-        (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate());
-
-      if (_using_multipliers)
-        synapses->_weights += dt * epsilon
-          * viennacl::linalg::element_prod(_multipliers, hebb_update);
-      else
-        synapses->_weights += dt * epsilon * hebb_update;
+      if (_using_multipliers) {
+        synapses->_weights += dt * viennacl::linalg::element_prod
+          (_multipliers, viennacl::linalg::outer_prod
+           (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate()));
+      } else {
+        synapses->_weights += dt * epsilon * viennacl::linalg::outer_prod
+          (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate());
+      }
 
       normalize_matrix_rows(synapses->_weights);
     }
@@ -217,6 +217,7 @@ namespace Backend {
     void RatePlasticity::multipliers(EigenMatrix const& m) {
       _using_multipliers = true;
       viennacl::copy(m, _multipliers);
+      _multipliers *= epsilon;
     }
 
     /*
