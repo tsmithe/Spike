@@ -25,14 +25,17 @@ inline bool isanynan(viennacl::matrix<T> v) {
 }
 
 inline void normalize_matrix_rows(viennacl::matrix<FloatT>& R) {
-  viennacl::vector<FloatT> inv_norms = viennacl::linalg::element_pow
-    (viennacl::vector<FloatT>(viennacl::linalg::row_sum
-                              (viennacl::linalg::element_prod(R,R))),
-     viennacl::vector<FloatT>(viennacl::scalar_vector<FloatT>(R.size1(),-0.5)));
+  viennacl::vector<FloatT> ones = viennacl::scalar_vector<FloatT>(R.size1(), 1);
+  viennacl::vector<FloatT> inv_norms =
+    viennacl::linalg::row_sum(viennacl::linalg::element_prod(R,R));
+  inv_norms = viennacl::linalg::element_pow(inv_norms, 0.5*ones);
+  inv_norms = viennacl::linalg::element_div(ones, inv_norms + (1e-4)*ones);
+  /*
   if (isanynan(inv_norms)) {
     std::cout << "\n" << inv_norms << "\n!!!!!!\n";
     assert(false);
   }
+  */
   R = viennacl::linalg::prod(viennacl::diag(inv_norms), R);
 }
 
