@@ -464,8 +464,21 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
 :END:
+*** PROGRESS Axonal conduction delays
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
+:END:
+**** TODO RateSynapses::set_delay sets storage size for corresponding presynaptic RateNeurons
+**** TODO Performance enhancements: references, not copies, where possible
 *** TODO Input 'networks'
-*** TODO Implement plasticity rules, including competition
+*** PROGRESS Implement plasticity rules, including competition
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
+:END:
+**** PROGRESS Weight normalization
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
+:END:
 *** TODO Support sparse connectivity
 ** Software engineering
 *** TODO Shared API with Spiking classes
