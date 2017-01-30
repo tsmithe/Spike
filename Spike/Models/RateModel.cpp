@@ -143,6 +143,18 @@ void RateNeurons::apply_plasticity(FloatT dt) const {
     dendrite_pair.second->apply_plasticity(dt);
 }
 
+DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
+                                   FloatT t_on_, FloatT t_off_,
+                                   EigenVector const& x_on_,
+                                   EigenVector const& x_off_)
+  : RateNeurons(ctx, size_, label_, 0, 1, 0),
+    t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) {
+}
+
+DummyRateNeurons::~DummyRateNeurons() {
+  // TODO
+}
+
 RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_pre_,
                            RateNeurons* neurons_post_,
@@ -599,6 +611,7 @@ void RateModel::stop_electrodes() const {
 }
 
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
+SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
 // SPIKE_MAKE_INIT_BACKEND(RateElectrodes);

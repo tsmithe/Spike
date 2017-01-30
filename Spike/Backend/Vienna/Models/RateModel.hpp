@@ -121,6 +121,29 @@ namespace Backend {
                    ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
     };
 
+    class DummyRateNeurons : public virtual ::Backend::DummyRateNeurons {
+      friend class RateSynapses;
+      friend class RatePlasticity;
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(DummyRateNeurons);
+      ~DummyRateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      void connect_input(::Backend::RateSynapses*,
+                         ::Backend::RatePlasticity*) override;
+
+      bool staged_integrate_timestep(FloatT dt) override;
+      const EigenVector& rate() override;
+
+    private:
+      viennacl::vector<FloatT> _rate(unsigned int n_back=0);
+
+      viennacl::vector<FloatT> _rate_on;
+      viennacl::vector<FloatT> _rate_off;
+    };
+
     /*
     class RateElectrodes : public virtual ::Backend::RateElectrodes {
     public:

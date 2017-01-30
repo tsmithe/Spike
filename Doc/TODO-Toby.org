@@ -474,7 +474,10 @@ CLOSED: [2017-01-30 Mon 15:35]
 - State "DONE"       from "TODO"       [2017-01-30 Mon 15:35]
 :END:
 **** TODO Performance enhancements: references, not copies, where possible
-*** TODO Input 'networks'
+*** PROGRESS Input 'networks'
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-01-30 Mon 16:35]
+:END:
 *** PROGRESS Implement plasticity rules, including competition
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]

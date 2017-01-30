@@ -125,6 +125,7 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 } // namespace Eigen
 
 class RateNeurons;    // Forward definition
+class DummyRateNeurons;    // Forward definition
 class RateSynapses;   // Forward definition
 class RatePlasticity; // Forward definition
 class RateElectrodes; // Forward definition
@@ -173,6 +174,18 @@ namespace Backend {
   public:
     ~RateNeurons() override = default;
     SPIKE_ADD_BACKEND_FACTORY(RateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    virtual void connect_input(RateSynapses* synapses,
+                               RatePlasticity* plasticity) = 0;
+    virtual bool staged_integrate_timestep(FloatT dt) = 0;
+    virtual const EigenVector& rate() = 0;
+  };
+
+  class DummyRateNeurons : public virtual RateNeurons {
+  public:
+    ~DummyRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(DummyRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
@@ -295,6 +308,24 @@ public:
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
+};
+
+class DummyRateNeurons : public virtual RateNeurons {
+public:
+  DummyRateNeurons(Context* ctx, int size_, std::string label_,
+                   FloatT t_on_, FloatT t_off_,
+                   EigenVector const& x_on_, EigenVector const& x_off_);
+  ~DummyRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(DummyRateNeurons, SpikeBase);
+
+  FloatT t_on = 0;
+  FloatT t_off = 0;
+  EigenVector x_on, x_off;
+
+private:
+  std::shared_ptr<::Backend::DummyRateNeurons> _backend;
 };
 
 class RateSynapses : public virtual SpikeBase {

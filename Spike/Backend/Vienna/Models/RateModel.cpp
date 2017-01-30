@@ -1,6 +1,7 @@
 #include "RateModel.hpp"
 
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity);
 
@@ -42,6 +43,7 @@ namespace Backend {
     }
 
     viennacl::vector<FloatT> RateNeurons::_rate(unsigned int n_back) {
+      // TODO: performance -- just return a 'view'
       int i = (_rate_hist_idx - n_back) % _rate_history.size2();
       return viennacl::column(_rate_history, i);
     }
@@ -106,6 +108,31 @@ namespace Backend {
 
       done_timestep = true;
       return false;
+    }
+
+    void DummyRateNeurons::prepare() {
+      // TODO
+    }
+
+    void DummyRateNeurons::reset_state() {
+      // TODO
+    }
+
+    void DummyRateNeurons::connect_input(::Backend::RateSynapses*,
+                                         ::Backend::RatePlasticity*) {
+      // TODO
+    }
+
+    bool DummyRateNeurons::staged_integrate_timestep(FloatT dt) {
+      return true;
+    }
+
+    EigenVector const& DummyRateNeurons::rate() {
+      // TODO
+    }
+
+    viennacl::vector<FloatT> DummyRateNeurons::_rate(unsigned int n_back) {
+      // TODO
     }
 
     void RateSynapses::prepare() {
@@ -203,6 +230,9 @@ namespace Backend {
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
+      if (epsilon == 0)
+        return;
+
       if (_using_multipliers) {
         synapses->_weights += dt * viennacl::linalg::element_prod
           (_multipliers, viennacl::linalg::outer_prod
