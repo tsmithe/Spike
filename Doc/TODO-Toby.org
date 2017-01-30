@@ -468,6 +468,7 @@ CLOSED: [2017-01-23 Mon 21:50]
 *** TODO Implement plasticity rules, including competition
 *** TODO Support sparse connectivity
 ** Software engineering
+*** TODO Shared API with Spiking classes
 *** TODO Signal handlers
 *** TODO RNG initialization
 *** TODO Buffering shouldn't be in apply / update / integrate functions
