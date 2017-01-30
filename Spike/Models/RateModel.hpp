@@ -190,7 +190,7 @@ namespace Backend {
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
-    virtual bool staged_integrate_timestep(FloatT dt) = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
 
@@ -318,7 +318,7 @@ public:
   ~DummyRateNeurons() override;
 
   void init_backend(Context* ctx) override;
-  SPIKE_ADD_BACKEND_GETSET(DummyRateNeurons, SpikeBase);
+  SPIKE_ADD_BACKEND_GETSET(DummyRateNeurons, RateNeurons);
 
   FloatT t_on = 0;
   FloatT t_off = 0;

@@ -111,6 +111,8 @@ namespace Backend {
     }
 
     void DummyRateNeurons::prepare() {
+      _rate_on.resize(frontend()->x_on.size());
+      _rate_off.resize(frontend()->x_off.size());
       viennacl::copy(frontend()->x_on, _rate_on);
       viennacl::copy(frontend()->x_off, _rate_off);
     }
@@ -140,7 +142,7 @@ namespace Backend {
       if (t_ > frontend()->t_on && t_ < frontend()->t_off)
         return _rate_on;
       else
-        return _rate_off;      
+        return _rate_off;
     }
 
     void RateSynapses::prepare() {

@@ -32,6 +32,7 @@
 
 #define SPIKE_MAKE_INIT_BACKEND(TYPE)                              \
   void TYPE::init_backend(Context* ctx) {                          \
+    if (ctx == nullptr) return; /* <-- TODO: hacky!! */            \
     auto ptr = ::Backend::TYPE::factory[ctx->backend](this, ctx);  \
     backend(std::shared_ptr<::Backend::TYPE>(ptr));                \
     prepare_backend();                                             \

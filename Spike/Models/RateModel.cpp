@@ -70,6 +70,11 @@ RateNeurons::RateNeurons(Context* ctx, int size_,
                          FloatT alpha_, FloatT beta_, FloatT tau_)
   : size(size_), label(label_),
     alpha(alpha_), beta(beta_), tau(tau_) {
+
+  // TODO: This is hacky!
+  if (ctx == nullptr)
+    return;
+
   init_backend(ctx);
   // reset_state();
 
@@ -147,8 +152,9 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
                                    FloatT t_on_, FloatT t_off_,
                                    EigenVector const& x_on_,
                                    EigenVector const& x_off_)
-  : RateNeurons(ctx, size_, label_, 0, 1, 0),
+  : RateNeurons(nullptr, size_, label_, 0, 1, 1),
     t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) {
+  init_backend(ctx);
 }
 
 DummyRateNeurons::~DummyRateNeurons() {
@@ -524,20 +530,21 @@ void RateModel::wait_for_electrodes() const {
 
 void RateModel::update_model_per_dt() {
   std::vector<RateNeurons*> grps(neuron_groups);
-  std::list<int> grps_done;
 
   // Loop through the neuron groups, computing the rate update in stages.
   // Stop when the update has been computed for each group.
   // This allows us to implement an arbitrary-order forwards integration
   // scheme, without the neuron groups becoming unsynchronized.
   while (grps.size() > 0) {
+    std::list<int> grps_done;
     for (int i = 0; i < grps.size(); ++i) {
       auto& n = grps[i];
       bool res = n->staged_integrate_timestep(dt);
-      if (res) grps_done.push_front(i);
+      if (res)
+        grps_done.push_front(i);
     }
-    for (auto& i : grps_done)
-      grps.erase(grps.begin()+i);
+    for (auto j : grps_done)
+      grps.erase(grps.begin()+j);
   }
 
   for (auto& n : neuron_groups) {

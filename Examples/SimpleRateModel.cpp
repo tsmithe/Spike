@@ -1,8 +1,11 @@
 #include "Spike/Models/RateModel.hpp"
+#include <fenv.h>
 
 // TODO: Add signal handlers
 
 int main() {
+  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+
   // Create Model
   RateModel model;
   Context* ctx = model.context;
@@ -11,7 +14,7 @@ int main() {
   ctx->verbose = true;
 
   // Set up some Neurons, Synapses and Electrodes
-  EigenVector neurons0_on = EigenVector::Random(100);
+  EigenVector neurons0_on = 2*EigenVector::Random(100);
   EigenVector neurons0_off = EigenVector::Zero(100);
   DummyRateNeurons neurons0(ctx, 100, "dummy_input", 0, 1,
                             neurons0_on, neurons0_off);
@@ -42,21 +45,22 @@ int main() {
                                                       neurons2.size,
                                                       true, 0, -0.5));
 
-  float eps = 0; // .001;
+  float eps = 0.001;
   RatePlasticity plasticity01(ctx, &synapses01, 0);
   RatePlasticity plasticity11(ctx, &synapses11, eps);
   RatePlasticity plasticity12(ctx, &synapses12, eps);
-  // plasticity12.multipliers(EigenMatrix::Ones(neurons2.size, neurons1.size));
+  plasticity12.multipliers(EigenMatrix::Ones(neurons2.size, neurons1.size));
   RatePlasticity plasticity21(ctx, &synapses21, eps);
   RatePlasticity plasticity22(ctx, &synapses22, eps);
 
-  // neurons1.connect_input(&synapses01, &plasticity01);
+  neurons1.connect_input(&synapses01, &plasticity01);
   neurons1.connect_input(&synapses11, &plasticity11);
   neurons2.connect_input(&synapses12, &plasticity12);
   neurons1.connect_input(&synapses21, &plasticity21);
   neurons2.connect_input(&synapses22, &plasticity22);
 
   // Have to construct electrodes after neurons:
+  RateElectrodes electrodes0("tmp_out", &neurons0);
   RateElectrodes electrodes1("tmp_out", &neurons1);
   RateElectrodes electrodes2("tmp_out", &neurons2);
 
@@ -65,6 +69,7 @@ int main() {
   model.add(&neurons1);
   model.add(&neurons2);
 
+  model.add(&electrodes0);
   model.add(&electrodes1);
   model.add(&electrodes2);
 

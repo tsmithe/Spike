@@ -76,10 +76,19 @@ namespace Backend {
       bool _using_multipliers = false;
     };
 
-    class RateNeurons : public virtual ::Backend::RateNeurons {
+    // TODO: Make this more elegant!
+    class RateNeuronsCommon {
+    private:
+      virtual viennacl::vector<FloatT> _rate(unsigned int n_back=0) = 0;
+      // TODO: Also include staged_integrate_timestep?
+    };
+
+    class RateNeurons : public virtual ::Backend::RateNeurons,
+                        public virtual ::Backend::Vienna::RateNeuronsCommon {
       friend class RateSynapses;
       friend class RatePlasticity;
     public:
+      RateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
       ~RateNeurons() override = default;
 
@@ -107,7 +116,7 @@ namespace Backend {
       viennacl::vector<FloatT> _alpha;
       viennacl::vector<FloatT> _half;
 
-      viennacl::vector<FloatT> _rate(unsigned int n_back=0);
+      viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
 
       viennacl::matrix<FloatT> _rate_history;
       int _rate_hist_idx = 0;
@@ -121,7 +130,8 @@ namespace Backend {
                    ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
     };
 
-    class DummyRateNeurons : public virtual ::Backend::DummyRateNeurons {
+    class DummyRateNeurons : public virtual ::Backend::DummyRateNeurons,
+                             public virtual ::Backend::Vienna::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
     public:
@@ -140,7 +150,7 @@ namespace Backend {
     private:
       FloatT t, dt_;
 
-      viennacl::vector<FloatT> _rate(unsigned int n_back=0);
+      viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
 
       viennacl::vector<FloatT> _rate_on;
       viennacl::vector<FloatT> _rate_off;
