@@ -10,19 +10,30 @@
 #include <viennacl/linalg/prod.hpp>
 #include <viennacl/linalg/sum.hpp>
 
-inline void normalize_matrix_rows(viennacl::matrix<FloatT>& R) {
-  viennacl::vector<FloatT> inv_norms = viennacl::linalg::element_pow
-    (viennacl::vector<FloatT>(viennacl::linalg::row_sum
-                              (viennacl::linalg::element_prod(R,R))),
-     viennacl::vector<FloatT>(viennacl::scalar_vector<FloatT>(R.size1(),-0.5)));
-  R = viennacl::linalg::prod(viennacl::diag(inv_norms), R);
-}
-
 template<class T>
 inline bool isanynan(viennacl::vector<T> v) {
   Eigen::Matrix<T, Eigen::Dynamic, 1> v_(v.size());
   viennacl::copy(v, v_);
   return v_.array().isNaN().any();
+}
+
+template<class T>
+inline bool isanynan(viennacl::matrix<T> v) {
+  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> v_(v.size1(), v.size2());
+  viennacl::copy(v, v_);
+  return v_.array().isNaN().any();
+}
+
+inline void normalize_matrix_rows(viennacl::matrix<FloatT>& R) {
+  viennacl::vector<FloatT> inv_norms = viennacl::linalg::element_pow
+    (viennacl::vector<FloatT>(viennacl::linalg::row_sum
+                              (viennacl::linalg::element_prod(R,R))),
+     viennacl::vector<FloatT>(viennacl::scalar_vector<FloatT>(R.size1(),-0.5)));
+  if (isanynan(inv_norms)) {
+    std::cout << "\n" << inv_norms << "\n!!!!!!\n";
+    assert(false);
+  }
+  R = viennacl::linalg::prod(viennacl::diag(inv_norms), R);
 }
 
 namespace Backend {

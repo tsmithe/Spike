@@ -46,6 +46,16 @@ namespace Backend {
       // TODO: performance -- just return a 'view'
       int i = (_rate_hist_idx - n_back) % _rate_history.size2();
       viennacl::vector<FloatT> v(viennacl::column(_rate_history, i));
+      /*
+      if (isanynan(viennacl::vector<FloatT>(1.0*v))) {
+        std::cout << "\n" << v << "\n";
+        std::cout << "\n????? " << frontend()
+                  << " " << _rate_hist_idx << " " << n_back
+                  << " " << _rate_history.size2()
+                  << "\n";
+        assert(false);
+      }
+      */
       return viennacl::column(_rate_history, i);
     }
 
@@ -102,22 +112,26 @@ namespace Backend {
           _total_activation += activation_i;
         }
 
+        /*
         if (isanynan(activation_i)) {
           std::cout << "\n !!!!!!!!!!!!!!!!!! "
                     << i << " " << synapses->frontend() << "\n";
           assert(false);
         }
+        */
 
         i++;
       }
 
       auto trans = transfer(_total_activation);
+      /*
       if(isanynan(trans)) {
         std::cout << "\n" << trans << "\n";
         if(isanynan(_total_activation))
           std::cout << "\n!!!!! !!!!!";
         assert(false);
       }
+      */
       _new_rate = _rate() + (dt/_tau)*(-_rate() + trans);
 
       done_timestep = true;
@@ -208,7 +222,19 @@ namespace Backend {
 
     viennacl::vector<FloatT> RateSynapses::activation() {
       // TODO: caching; perf enhancements
-      auto activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+      viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+
+      /*
+      if (isanynan(viennacl::vector<FloatT>(1.0*activ))) {
+        if (isanynan(_weights)) {
+          std::cout << _weights << "\n";
+        }
+        std::cout << "\n !!!!!!!!!!!!!!!!!! "
+                  << frontend() << "\n";
+        assert(false);
+      }
+      */
+
       if (frontend()->scaling != 1)
         return frontend()->scaling * activ;
       else
