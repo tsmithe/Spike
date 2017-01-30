@@ -301,7 +301,7 @@ class RateSynapses : public virtual SpikeBase {
 public:
   RateSynapses(Context* ctx,
                RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
-               std::string label_="");
+               FloatT scaling_=1, std::string label_="");
   ~RateSynapses() override;
 
   void init_backend(Context* ctx) override;
@@ -325,6 +325,8 @@ public:
   // const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
+
+  FloatT scaling = 1;
 
   int timesteps = 0;
 

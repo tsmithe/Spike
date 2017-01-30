@@ -92,14 +92,11 @@ namespace Backend {
 
         if (i == 0) {
           if (frontend()->alpha == 0)
-            _total_activation = activation_i; /*viennacl::linalg::prod
-              (synapses->_weights, synapses->neurons_pre->_rate);*/ 
+            _total_activation = activation_i;
           else
-            _total_activation = activation_i /*viennacl::linalg::prod
-              (synapses->_weights, synapses->neurons_pre->_rate)*/ - _alpha;
+            _total_activation = activation_i - _alpha;
         } else {
-          _total_activation += activation_i; /*viennacl::linalg::prod
-            (synapses->_weights, synapses->neurons_pre->_rate);*/
+          _total_activation += activation_i;
         }
 
         i++;
@@ -119,6 +116,7 @@ namespace Backend {
 
       int size_post = frontend()->neurons_post->size;
       int size_pre = frontend()->neurons_pre->size;
+
       _weights = viennacl::zero_matrix<FloatT>(size_post, size_pre);
 
       // reset_state();
@@ -159,7 +157,11 @@ namespace Backend {
 
     viennacl::vector<FloatT> RateSynapses::activation() {
       // TODO: caching; perf enhancements
-      return viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+      auto activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+      if (frontend()->scaling != 1)
+        return frontend()->scaling * activ;
+      else
+        return activ;
     }
 
     void RateSynapses::delay(unsigned int d) {

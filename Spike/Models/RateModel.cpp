@@ -146,8 +146,10 @@ void RateNeurons::apply_plasticity(FloatT dt) const {
 RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_pre_,
                            RateNeurons* neurons_post_,
+                           FloatT scaling_,
                            std::string label_)
-  : neurons_pre(neurons_pre_), neurons_post(neurons_post_), label(label_) {
+  : neurons_pre(neurons_pre_), neurons_post(neurons_post_),
+    scaling(scaling_), label(label_) {
 
   init_backend(ctx);
   // reset_state();
