@@ -36,7 +36,7 @@ int main() {
   synapses21.weights(0.3 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons2.size,
                                                      true, 0, 0));
-  synapses21.delay(10);
+  // synapses21.delay(10);
   RateSynapses synapses22(ctx, &neurons2, &neurons2, 1, "22");
   synapses22.weights(0.25 * Eigen::make_random_matrix(neurons2.size,
                                                       neurons2.size,
@@ -46,11 +46,11 @@ int main() {
   RatePlasticity plasticity01(ctx, &synapses01, 0);
   RatePlasticity plasticity11(ctx, &synapses11, eps);
   RatePlasticity plasticity12(ctx, &synapses12, eps);
-  plasticity12.multipliers(EigenMatrix::Ones(neurons2.size, neurons1.size));
+  // plasticity12.multipliers(EigenMatrix::Ones(neurons2.size, neurons1.size));
   RatePlasticity plasticity21(ctx, &synapses21, eps);
   RatePlasticity plasticity22(ctx, &synapses22, eps);
 
-  neurons1.connect_input(&synapses01, &plasticity01);
+  // neurons1.connect_input(&synapses01, &plasticity01);
   neurons1.connect_input(&synapses11, &plasticity11);
   neurons2.connect_input(&synapses12, &plasticity12);
   neurons1.connect_input(&synapses21, &plasticity21);
@@ -61,7 +61,7 @@ int main() {
   RateElectrodes electrodes2("tmp_out", &neurons2);
 
   // Add Neurons and Electrodes to Model
-  model.add(&neurons0);
+  // model.add(&neurons0);
   model.add(&neurons1);
   model.add(&neurons2);
 
@@ -72,7 +72,7 @@ int main() {
   model.set_simulation_time(10, 1e-3);
   model.set_buffer_intervals((float)0.01); // TODO: Use proper units
   neurons0.rate_buffer_interval = 0;
-  model.set_weights_buffer_interval(1000);
+  model.set_weights_buffer_interval(100);
 
   // Run!
   model.start();
