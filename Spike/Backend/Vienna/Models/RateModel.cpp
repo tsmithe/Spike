@@ -10,6 +10,9 @@ namespace Backend {
       reset_state();
 
       int size = frontend()->size;
+
+      _rate_history = viennacl::zero_matrix<FloatT>(size, 1);
+
       _total_activation = viennacl::zero_vector<FloatT>(size);
       _half = viennacl::scalar_vector<FloatT>(size, 0.5);
       _alpha = viennacl::scalar_vector<FloatT>(size, frontend()->alpha);
@@ -21,10 +24,9 @@ namespace Backend {
       int timesteps = frontend()->timesteps;
       int size = frontend()->size;
 
-      // TODO: Remove this ugly random init hack!
-      _rate = viennacl::zero_vector<FloatT>(size);
-      _rate_cpu = EigenVector::Random(size);
-      viennacl::copy(_rate_cpu, _rate);
+      _rate_history = viennacl::zero_matrix<FloatT>(_rate_history.size1(),
+                                                    _rate_history.size2());
+      _rate_cpu = EigenVector::Zero(size);
       _rate_cpu_timestep = frontend()->timesteps;
     }
 
@@ -32,11 +34,16 @@ namespace Backend {
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
       if (curr_timestep != _rate_cpu_timestep) {
-        viennacl::copy(_rate, _rate_cpu);
+        viennacl::copy(_rate(), _rate_cpu);
         _rate_cpu_timestep = curr_timestep;
       }
 
       return _rate_cpu;
+    }
+
+    viennacl::vector<FloatT> RateNeurons::_rate(unsigned int n_back) {
+      int i = (_rate_hist_idx - n_back) % _rate_history.size2();
+      return viennacl::column(_rate_history, i);
     }
 
     void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
@@ -59,31 +66,46 @@ namespace Backend {
 
     bool RateNeurons::staged_integrate_timestep(FloatT dt) {
       if (done_timestep) {
-        _rate = _new_rate;
-        done_timestep = false;
+        // Update rate history:
+        _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.size2();
+        viennacl::matrix_range<viennacl::matrix<FloatT> > _rate_history_col
+          (_rate_history,
+           viennacl::range(0, _rate_history.size1()),
+           viennacl::range(_rate_hist_idx, _rate_hist_idx + 1));
+
+        viennacl::matrix_base<FloatT> _new_rate_as_matrix
+          (_new_rate.handle(),
+           _new_rate.size(), _new_rate.start(),
+           _new_rate.stride(), _new_rate.internal_size(),
+           1, 0, 1, 1, // 1 column; start 0, stride 1, internal columns 1
+           _rate_history.row_major());
+        _rate_history_col = _new_rate_as_matrix;
+
+        done_timestep = false; // false for next time
         return true;
       }
 
       int i = 0;
       for (const auto& dendrite_pair : _vienna_dendrites) {
         auto& synapses = dendrite_pair.first;
+        auto activation_i = synapses->activation();
 
         if (i == 0) {
           if (frontend()->alpha == 0)
-            _total_activation = viennacl::linalg::prod
-              (synapses->_weights, synapses->neurons_pre->_rate);
+            _total_activation = activation_i; /*viennacl::linalg::prod
+              (synapses->_weights, synapses->neurons_pre->_rate);*/ 
           else
-            _total_activation = viennacl::linalg::prod
-              (synapses->_weights, synapses->neurons_pre->_rate) - _alpha;
+            _total_activation = activation_i /*viennacl::linalg::prod
+              (synapses->_weights, synapses->neurons_pre->_rate)*/ - _alpha;
         } else {
-          _total_activation += viennacl::linalg::prod
-            (synapses->_weights, synapses->neurons_pre->_rate);
+          _total_activation += activation_i; /*viennacl::linalg::prod
+            (synapses->_weights, synapses->neurons_pre->_rate);*/
         }
 
         i++;
       }
 
-      _new_rate = _rate + (dt/_tau)*(-_rate + transfer(_total_activation));
+      _new_rate = _rate() + (dt/_tau)*(-_rate() + transfer(_total_activation));
 
       done_timestep = true;
       return false;
@@ -135,6 +157,12 @@ namespace Backend {
     }
     */
 
+    viennacl::vector<FloatT> RateSynapses::activation() {
+      // TODO: delays, caching
+      // TODO: shouldn't incur a copy
+      return viennacl::linalg::prod(_weights, neurons_pre->_rate());
+    }
+
     const EigenMatrix& RateSynapses::weights() {
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
@@ -164,8 +192,8 @@ namespace Backend {
     void RatePlasticity::apply_plasticity(FloatT dt) {
       // TODO: Parameterize and generalize this
       synapses->_weights += dt * 0.01 *
-        viennacl::linalg::outer_prod(synapses->neurons_post->_rate,
-                                     synapses->neurons_pre->_rate);
+        viennacl::linalg::outer_prod(synapses->neurons_post->_rate(),
+                                     synapses->neurons_pre->_rate());
       normalize_matrix_rows(synapses->_weights);
     }
 

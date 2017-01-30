@@ -156,6 +156,13 @@ namespace Backend {
     virtual void apply_plasticity(FloatT dt) = 0;
   };
 
+  /*
+  class HebbPlasticity : public virtual RatePlasticity {
+  public:
+    SPIKE_ADD_BACKEND_FACTORY(HebbPlasticity);
+  };
+  */
+
   class RateNeurons : public virtual SpikeBackendBase {
   public:
     ~RateNeurons() override = default;
@@ -319,7 +326,6 @@ private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
 };
 
-
 // TODO: Some nice Synapse factories for random initializations
 
 
@@ -348,6 +354,20 @@ private:
 
 
 // TODO: Various RatePlasiticity specialisations for different learning rules
+
+/*
+class HebbPlasticity : public virtual RatePlasticity {
+public:
+  RatePlasticity(Context* ctx, RateSynapses* syns);
+  ~RatePlasticity() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(RatePlasticity, SpikeBase);
+
+private:
+  std::shared_ptr<::Backend::HebbPlasticity> _backend;
+};
+*/
 
 
 class RateElectrodes /* : public virtual SpikeBase */ {

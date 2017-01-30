@@ -39,6 +39,7 @@ namespace Backend {
 
     private:
       // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
+      viennacl::vector<FloatT> activation();
       // EigenVector _activation_cpu;
       // int _activation_cpu_timestep = 0;
 
@@ -95,7 +96,11 @@ namespace Backend {
       viennacl::vector<FloatT> _alpha;
       viennacl::vector<FloatT> _half;
 
-      viennacl::vector<FloatT> _rate;
+      viennacl::vector<FloatT> _rate(unsigned int n_back=0);
+
+      viennacl::matrix<FloatT> _rate_history;
+      int _rate_hist_idx = 0;
+
       viennacl::vector<FloatT> _new_rate;
 
       EigenVector _rate_cpu;
