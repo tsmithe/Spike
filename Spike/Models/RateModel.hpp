@@ -145,6 +145,9 @@ namespace Backend {
     // virtual const EigenVector& activation() = 0;
     virtual const EigenMatrix& weights() = 0;
     virtual void weights(EigenMatrix const& w) = 0;
+
+    virtual void delay(unsigned int) = 0;
+    virtual unsigned int delay() = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -153,7 +156,10 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RatePlasticity);
     void prepare() override = 0;
     void reset_state() override = 0;
+
     virtual void apply_plasticity(FloatT dt) = 0;
+
+    virtual void multipliers(EigenMatrix const&) = 0;
   };
 
   /*
@@ -313,6 +319,9 @@ public:
   // EigenMatrix initial_weights;
   // bool initialized = false;
 
+  unsigned int delay() const;
+  void delay(unsigned int d);
+
   // const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
@@ -331,7 +340,7 @@ private:
 
 class RatePlasticity : public virtual SpikeBase {
 public:
-  RatePlasticity(Context* ctx, RateSynapses* syns);
+  RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps);
   ~RatePlasticity() override;
 
   void init_backend(Context* ctx) override;
@@ -339,9 +348,12 @@ public:
 
   void reset_state() override;
 
+  void multipliers(EigenMatrix const& m);
+
   void apply_plasticity(FloatT dt);
 
   RateSynapses* synapses = nullptr;
+  FloatT epsilon = 0;
 
   int timesteps = 0;
 

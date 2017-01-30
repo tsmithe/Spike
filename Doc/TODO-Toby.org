@@ -480,6 +480,7 @@ CLOSED: [2017-01-23 Mon 21:50]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
 *** TODO Support sparse connectivity
+**** TODO Sparse Hebb update: use element_prod to zero unconnected inputs (before doing the outer_prod!)
 ** Software engineering
 *** TODO Shared API with Spiking classes
 *** TODO Signal handlers

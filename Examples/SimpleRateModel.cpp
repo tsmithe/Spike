@@ -31,10 +31,11 @@ int main() {
                                                       neurons2.size,
                                                       true, 0, -0.5));
 
-  RatePlasticity plasticity11(ctx, &synapses11);
-  RatePlasticity plasticity12(ctx, &synapses12);
-  RatePlasticity plasticity21(ctx, &synapses21);
-  RatePlasticity plasticity22(ctx, &synapses22);
+  float eps = 0.001;
+  RatePlasticity plasticity11(ctx, &synapses11, eps);
+  RatePlasticity plasticity12(ctx, &synapses12, eps);
+  RatePlasticity plasticity21(ctx, &synapses21, eps);
+  RatePlasticity plasticity22(ctx, &synapses22, eps);
 
   neurons1.connect_input(&synapses11, &plasticity11);
   neurons2.connect_input(&synapses12, &plasticity12);

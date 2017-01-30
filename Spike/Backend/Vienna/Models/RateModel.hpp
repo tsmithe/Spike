@@ -37,7 +37,12 @@ namespace Backend {
       const EigenMatrix& weights() override;
       void weights(EigenMatrix const& w) override;
 
+      unsigned int delay() override;
+      void delay(unsigned int d) override;
+
     private:
+      unsigned int _delay = 0;
+
       // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
       viennacl::vector<FloatT> activation();
       // EigenVector _activation_cpu;
@@ -61,8 +66,14 @@ namespace Backend {
 
       void apply_plasticity(FloatT dt) override;
 
+      void multipliers(EigenMatrix const& m) override;
+
     private:
       ::Backend::Vienna::RateSynapses* synapses = nullptr;
+      FloatT epsilon = 0;
+
+      viennacl::matrix<FloatT> _multipliers;
+      bool _using_multipliers = false;
     };
 
     class RateNeurons : public virtual ::Backend::RateNeurons {

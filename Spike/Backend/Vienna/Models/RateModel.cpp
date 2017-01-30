@@ -158,9 +158,19 @@ namespace Backend {
     */
 
     viennacl::vector<FloatT> RateSynapses::activation() {
-      // TODO: delays, caching
-      // TODO: shouldn't incur a copy
-      return viennacl::linalg::prod(_weights, neurons_pre->_rate());
+      // TODO: caching; perf enhancements
+      return viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+    }
+
+    void RateSynapses::delay(unsigned int d) {
+      _delay = d;
+      if (neurons_pre->_rate_history.size2() < (d+1))
+        neurons_pre->_rate_history.resize
+          (neurons_pre->_rate_history.size1(), d+1);
+    }
+
+    unsigned int RateSynapses::delay() {
+      return _delay;
     }
 
     const EigenMatrix& RateSynapses::weights() {
@@ -183,6 +193,7 @@ namespace Backend {
     void RatePlasticity::prepare() {
       synapses = dynamic_cast<::Backend::Vienna::RateSynapses*>
         (frontend()->synapses->backend());
+      epsilon = frontend()->epsilon;
       reset_state();
     }
 
@@ -190,11 +201,22 @@ namespace Backend {
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
-      // TODO: Parameterize and generalize this
-      synapses->_weights += dt * 0.01 *
-        viennacl::linalg::outer_prod(synapses->neurons_post->_rate(),
-                                     synapses->neurons_pre->_rate());
+      auto hebb_update = viennacl::linalg::outer_prod
+        (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate());
+
+      if (_using_multipliers)
+        synapses->_weights += dt * epsilon
+          * viennacl::linalg::element_prod(_multipliers, hebb_update);
+      else
+        synapses->_weights += dt * epsilon * hebb_update;
+
       normalize_matrix_rows(synapses->_weights);
+    }
+
+    /* Can be used for maintaining a crude kind of sparseness: */
+    void RatePlasticity::multipliers(EigenMatrix const& m) {
+      _using_multipliers = true;
+      viennacl::copy(m, _multipliers);
     }
 
     /*

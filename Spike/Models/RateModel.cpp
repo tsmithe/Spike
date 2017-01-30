@@ -187,6 +187,14 @@ void RateSynapses::weights(EigenMatrix const& w) {
   backend()->weights(w);
 }
 
+unsigned int RateSynapses::delay() const {
+  return backend()->delay();
+}
+
+void RateSynapses::delay(unsigned int d) {
+  backend()->delay(d);
+}
+
 /*
 void RateSynapses::update_activation(FloatT dt) {
   backend()->update_activation(dt);
@@ -196,8 +204,8 @@ void RateSynapses::update_activation(FloatT dt) {
 }
 */
 
-RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
-  : synapses(syns) {
+RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps)
+  : synapses(syns), epsilon(eps) {
   init_backend(ctx);
   // reset_state();
 
@@ -222,6 +230,10 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   // TODO: Is this the best place for the buffering?
   if (weights_buffer_interval && !(timesteps % weights_buffer_interval))
     weights_history.push_back(timesteps, synapses->weights());
+}
+
+void RatePlasticity::multipliers(EigenMatrix const& m) {
+  backend()->multipliers(m);
 }
 
 RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
