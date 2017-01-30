@@ -152,7 +152,6 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
 }
 
 DummyRateNeurons::~DummyRateNeurons() {
-  // TODO
 }
 
 RateSynapses::RateSynapses(Context* ctx,

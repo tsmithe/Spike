@@ -138,6 +138,8 @@ namespace Backend {
       const EigenVector& rate() override;
 
     private:
+      FloatT t, dt_;
+
       viennacl::vector<FloatT> _rate(unsigned int n_back=0);
 
       viennacl::vector<FloatT> _rate_on;

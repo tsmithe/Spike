@@ -111,28 +111,36 @@ namespace Backend {
     }
 
     void DummyRateNeurons::prepare() {
-      // TODO
+      viennacl::copy(frontend()->x_on, _rate_on);
+      viennacl::copy(frontend()->x_off, _rate_off);
     }
 
     void DummyRateNeurons::reset_state() {
-      // TODO
     }
 
     void DummyRateNeurons::connect_input(::Backend::RateSynapses*,
                                          ::Backend::RatePlasticity*) {
-      // TODO
     }
 
     bool DummyRateNeurons::staged_integrate_timestep(FloatT dt) {
+      t += dt;
+      dt_ = dt;
       return true;
     }
 
     EigenVector const& DummyRateNeurons::rate() {
-      // TODO
+      if (t > frontend()->t_on && t < frontend()->t_off)
+        return frontend()->x_on;
+      else
+        return frontend()->x_off;
     }
 
     viennacl::vector<FloatT> DummyRateNeurons::_rate(unsigned int n_back) {
-      // TODO
+      FloatT t_ = t - dt_*n_back;
+      if (t_ > frontend()->t_on && t_ < frontend()->t_off)
+        return _rate_on;
+      else
+        return _rate_off;      
     }
 
     void RateSynapses::prepare() {
