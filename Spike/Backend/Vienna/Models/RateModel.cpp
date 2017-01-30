@@ -45,6 +45,7 @@ namespace Backend {
     viennacl::vector<FloatT> RateNeurons::_rate(unsigned int n_back) {
       // TODO: performance -- just return a 'view'
       int i = (_rate_hist_idx - n_back) % _rate_history.size2();
+      viennacl::vector<FloatT> v(viennacl::column(_rate_history, i));
       return viennacl::column(_rate_history, i);
     }
 
@@ -101,10 +102,23 @@ namespace Backend {
           _total_activation += activation_i;
         }
 
+        if (isanynan(activation_i)) {
+          std::cout << "\n !!!!!!!!!!!!!!!!!! "
+                    << i << " " << synapses->frontend() << "\n";
+          assert(false);
+        }
+
         i++;
       }
 
-      _new_rate = _rate() + (dt/_tau)*(-_rate() + transfer(_total_activation));
+      auto trans = transfer(_total_activation);
+      if(isanynan(trans)) {
+        std::cout << "\n" << trans << "\n";
+        if(isanynan(_total_activation))
+          std::cout << "\n!!!!! !!!!!";
+        assert(false);
+      }
+      _new_rate = _rate() + (dt/_tau)*(-_rate() + trans);
 
       done_timestep = true;
       return false;
@@ -243,11 +257,12 @@ namespace Backend {
       if (epsilon == 0)
         return;
 
+      /*
       if (_using_multipliers) {
         synapses->_weights += dt * viennacl::linalg::element_prod
           (_multipliers, viennacl::linalg::outer_prod
            (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate()));
-      } else {
+      } else*/ {
         synapses->_weights += dt * epsilon * viennacl::linalg::outer_prod
           (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate());
       }

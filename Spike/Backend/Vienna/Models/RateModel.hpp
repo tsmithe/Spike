@@ -18,6 +18,13 @@ inline void normalize_matrix_rows(viennacl::matrix<FloatT>& R) {
   R = viennacl::linalg::prod(viennacl::diag(inv_norms), R);
 }
 
+template<class T>
+inline bool isanynan(viennacl::vector<T> v) {
+  Eigen::Matrix<T, Eigen::Dynamic, 1> v_(v.size());
+  viennacl::copy(v, v_);
+  return v_.array().isNaN().any();
+}
+
 namespace Backend {
   namespace Vienna {
     class RateNeurons;    // forward

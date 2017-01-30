@@ -176,7 +176,8 @@ RateSynapses::RateSynapses(Context* ctx,
   // initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
 
   if (ctx->verbose) {
-    std::cout << "Spike: Created synapses '" << label << "' from "
+    std::cout << "Spike: Created synapses '" << label
+              << "' (at " << this <<  ") from "
               << neurons_pre->label << " to " << neurons_post->label << ".\n";
   }
 }
