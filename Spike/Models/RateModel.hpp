@@ -124,12 +124,16 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 
 } // namespace Eigen
 
-class RateNeurons;    // Forward definition
-class DummyRateNeurons;    // Forward definition
-class RateSynapses;   // Forward definition
-class RatePlasticity; // Forward definition
-class RateElectrodes; // Forward definition
-class RateModel;      // Forward definition
+// Forward definitions:
+// |---
+class RateNeurons;
+class DummyRateNeurons;
+class InputDummyRateNeurons;
+class RateSynapses;
+class RatePlasticity;
+class RateElectrodes;
+class RateModel;
+// ---|
 
 // TODO: Be more protective about friends!
 //        -- That is, make more class members protected / private,
@@ -191,6 +195,15 @@ namespace Backend {
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
+    virtual const EigenVector& rate() = 0;
+  };
+
+  class InputDummyRateNeurons : public virtual DummyRateNeurons {
+  public:
+    ~InputDummyRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(InputDummyRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
     virtual const EigenVector& rate() = 0;
   };
 
@@ -324,8 +337,23 @@ public:
   FloatT t_off = 0;
   EigenVector x_on, x_off;
 
+protected:
+  DummyRateNeurons(Context* ctx, int size_, std::string label_);
+
 private:
   std::shared_ptr<::Backend::DummyRateNeurons> _backend;
+};
+
+class InputDummyRateNeurons : protected virtual DummyRateNeurons {
+public:
+  InputDummyRateNeurons(Context* ctx, int size_, std::string label_);
+  ~InputDummyRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
+
+private:
+  std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;
 };
 
 class RateSynapses : public virtual SpikeBase {

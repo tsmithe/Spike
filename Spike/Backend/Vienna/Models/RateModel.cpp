@@ -2,6 +2,7 @@
 
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, DummyRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Vienna, InputDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity);
 
@@ -171,6 +172,19 @@ namespace Backend {
         return _rate_on;
       else
         return _rate_off;
+    }
+
+    void InputDummyRateNeurons::prepare() {
+    }
+
+    void InputDummyRateNeurons::reset_state() {
+    }
+
+
+    EigenVector const& InputDummyRateNeurons::rate() {
+    }
+
+    viennacl::vector<FloatT> InputDummyRateNeurons::_rate(unsigned int n_back) {
     }
 
     void RateSynapses::prepare() {

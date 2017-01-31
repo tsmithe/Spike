@@ -154,10 +154,28 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
                                    EigenVector const& x_off_)
   : RateNeurons(nullptr, size_, label_, 0, 1, 1),
     t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) {
-  init_backend(ctx);
+  if (ctx)
+    init_backend(ctx);
+}
+
+DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
+  : RateNeurons(nullptr, size_, label_, 0, 1, 1) {
+  if (ctx)
+    init_backend(ctx);
 }
 
 DummyRateNeurons::~DummyRateNeurons() {
+}
+
+InputDummyRateNeurons::InputDummyRateNeurons
+(Context* ctx, int size_, std::string label_)
+  : DummyRateNeurons(nullptr, size_, label_),
+    RateNeurons(nullptr, size_, label_, 0, 1, 1) {
+  if (ctx)
+    init_backend(ctx);
+}
+
+InputDummyRateNeurons::~InputDummyRateNeurons() {
 }
 
 RateSynapses::RateSynapses(Context* ctx,
@@ -619,6 +637,7 @@ void RateModel::stop_electrodes() const {
 
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
 // SPIKE_MAKE_INIT_BACKEND(RateElectrodes);

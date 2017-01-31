@@ -97,15 +97,7 @@ namespace Backend {
       bool _using_multipliers = false;
     };
 
-    // TODO: Make this more elegant!
-    class RateNeuronsCommon {
-    private:
-      virtual viennacl::vector<FloatT> _rate(unsigned int n_back=0) = 0;
-      // TODO: Also include staged_integrate_timestep?
-    };
-
-    class RateNeurons : public virtual ::Backend::RateNeurons,
-                        public virtual ::Backend::Vienna::RateNeuronsCommon {
+    class RateNeurons : public virtual ::Backend::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
     public:
@@ -129,6 +121,8 @@ namespace Backend {
     private:
       bool done_timestep = false;
 
+      virtual viennacl::vector<FloatT> _rate(unsigned int n_back=0);
+
       FloatT _beta;
       FloatT _tau;
 
@@ -136,8 +130,6 @@ namespace Backend {
 
       viennacl::vector<FloatT> _alpha;
       viennacl::vector<FloatT> _half;
-
-      viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
 
       viennacl::matrix<FloatT> _rate_history;
       int _rate_hist_idx = 0;
@@ -148,7 +140,7 @@ namespace Backend {
       int _rate_cpu_timestep = 0;
       std::vector<
         std::pair<::Backend::Vienna::RateSynapses*,
-                   ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
+                  ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
     };
 
     class DummyRateNeurons : public virtual ::Backend::DummyRateNeurons,
@@ -156,6 +148,7 @@ namespace Backend {
       friend class RateSynapses;
       friend class RatePlasticity;
     public:
+      DummyRateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(DummyRateNeurons);
       ~DummyRateNeurons() override = default;
 
@@ -168,13 +161,32 @@ namespace Backend {
       bool staged_integrate_timestep(FloatT dt) override;
       const EigenVector& rate() override;
 
-    private:
+    protected:
       FloatT t, dt_;
 
+    private:
       viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
 
       viennacl::vector<FloatT> _rate_on;
       viennacl::vector<FloatT> _rate_off;
+    };
+
+    class InputDummyRateNeurons
+      : public virtual ::Backend::InputDummyRateNeurons,
+        protected virtual ::Backend::Vienna::DummyRateNeurons {
+      friend class RateSynapses;
+      friend class RatePlasticity;
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(InputDummyRateNeurons);
+      ~InputDummyRateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      const EigenVector& rate() override;
+
+    private:
+      viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
     };
 
     /*
