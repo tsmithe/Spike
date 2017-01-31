@@ -183,10 +183,19 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
+      bool staged_integrate_timestep(FloatT dt) override;
       const EigenVector& rate() override;
 
     private:
       viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
+      EigenVector _rate_cpu;
+
+      FloatT theta;
+
+      viennacl::vector<FloatT> sigma_IN_sqr;
+
+      viennacl::vector<FloatT> theta_pref;
+      viennacl::vector<FloatT> d;
     };
 
     /*

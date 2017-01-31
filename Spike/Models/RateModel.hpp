@@ -204,6 +204,7 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(InputDummyRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
 
@@ -344,13 +345,21 @@ private:
   std::shared_ptr<::Backend::DummyRateNeurons> _backend;
 };
 
-class InputDummyRateNeurons : protected virtual DummyRateNeurons {
+class InputDummyRateNeurons : public virtual DummyRateNeurons {
 public:
-  InputDummyRateNeurons(Context* ctx, int size_, std::string label_);
+  InputDummyRateNeurons(Context* ctx, int size_, std::string label_,
+                        FloatT sigma_IN_, FloatT gamma_,
+                        FloatT revolutions_per_second_);
   ~InputDummyRateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
+
+  FloatT sigma_IN;
+  FloatT gamma, lambda;
+  FloatT revolutions_per_second;
+
+  EigenVector theta_pref;
 
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;

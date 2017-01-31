@@ -175,16 +175,53 @@ namespace Backend {
     }
 
     void InputDummyRateNeurons::prepare() {
+      theta_pref.resize(frontend()->size);
+      d.resize(frontend()->size);
+      _rate_cpu.resize(frontend()->size);
+
+      viennacl::copy(frontend()->theta_pref, theta_pref);
+
+      viennacl::vector<FloatT> all_twos
+        = viennacl::scalar_vector<FloatT>(frontend()->size, 2.0);
+      sigma_IN_sqr = viennacl::scalar_vector<FloatT>(frontend()->size,
+                                                     frontend()->sigma_IN);
+      sigma_IN_sqr = viennacl::linalg::element_pow(sigma_IN_sqr, all_twos);
+
+      reset_state();
     }
 
     void InputDummyRateNeurons::reset_state() {
+      theta = 0;
     }
 
+    bool InputDummyRateNeurons::staged_integrate_timestep(FloatT dt) {
+      t += dt;
+      dt_ = dt;
 
-    EigenVector const& InputDummyRateNeurons::rate() {
+      theta += dt * 2 * M_PI * frontend()->revolutions_per_second;
+      if (theta > 2*M_PI)
+        theta -= 2*M_PI;
+
+      // TODO: Inefficient allocation?
+      d = theta_pref
+        - viennacl::vector<FloatT>
+        (viennacl::scalar_vector<FloatT>(frontend()->size, theta));
+
+      return true;
     }
 
     viennacl::vector<FloatT> InputDummyRateNeurons::_rate(unsigned int n_back) {
+      assert(n_back == 0); // TODO: support delays here?
+      viennacl::vector<FloatT> v(frontend()->size);
+      v = frontend()->lambda * viennacl::linalg::element_exp
+        (viennacl::linalg::element_div
+         (viennacl::linalg::element_cos(d), sigma_IN_sqr));
+      return v;
+    }
+
+    EigenVector const& InputDummyRateNeurons::rate() {
+      viennacl::copy(_rate(), _rate_cpu);
+      return _rate_cpu;
     }
 
     void RateSynapses::prepare() {
