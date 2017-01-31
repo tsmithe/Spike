@@ -495,6 +495,9 @@ CLOSED: [2017-01-30 Mon 15:35]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
 ** Software engineering
+*** TODO Documentation
+*** TODO Split classes into separate compilation units
+*** TODO Clean up code
 *** TODO Fix RateNeurons inheritance hierarchy
 *** TODO Fix horrid inefficiency of RateNeurons::_rate methods (copying etc)
 *** TODO Shared API with Spiking classes
