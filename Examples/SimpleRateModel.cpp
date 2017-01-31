@@ -19,38 +19,39 @@ int main() {
   DummyRateNeurons neurons0(ctx, 100, "dummy_input", 0, 0.1,
                             neurons0_on, neurons0_off);
   InputDummyRateNeurons neurons3(ctx, 400, "rot_input",
-                                 1.5*M_PI/18, 100, 0.25);
+                                 1.5*M_PI/9, 10, 0.25);
 
   RateNeurons neurons1(ctx, 1000, "test_neurons1", 0, 1, 0.1);
   RateNeurons neurons2(ctx,  800, "test_neurons2", 0, 1, 0.1);
 
-  RateSynapses synapses01(ctx, &neurons0, &neurons1, 1, "01");
+  RateSynapses synapses01(ctx, &neurons0, &neurons1, 0.1, "01");
   synapses01.weights(0.2 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons0.size,
                                                      true, 0, 0.1));
 
-  RateSynapses synapses11(ctx, &neurons1, &neurons1, 1, "11");
+  RateSynapses synapses11(ctx, &neurons1, &neurons1, 0.25, "11");
   synapses11.weights(0.2 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons1.size,
                                                      true, 0, 0.1));
-  RateSynapses synapses12(ctx, &neurons1, &neurons2, 1, "12");
+  RateSynapses synapses12(ctx, &neurons1, &neurons2, 0.1, "12");
   synapses12.weights(0.35 * Eigen::make_random_matrix(neurons2.size,
                                                       neurons1.size,
                                                       true, 0, 0));
-  RateSynapses synapses21(ctx, &neurons2, &neurons1, 1, "21");
-  synapses21.weights(0.3 * Eigen::make_random_matrix(neurons1.size,
+  synapses12.delay(100);
+  RateSynapses synapses21(ctx, &neurons2, &neurons1, 0.4, "21");
+  synapses21.weights(0.25 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons2.size,
                                                      true, 0, 0));
   synapses21.delay(100);
-  RateSynapses synapses22(ctx, &neurons2, &neurons2, 1, "22");
-  synapses22.weights(0.25 * Eigen::make_random_matrix(neurons2.size,
-                                                      neurons2.size,
-                                                      true, 0, -0.5));
+  RateSynapses synapses22(ctx, &neurons2, &neurons2, 0.25, "22");
+  synapses22.weights(0.1 * Eigen::make_random_matrix(neurons2.size,
+                                                     neurons2.size,
+                                                     true, 0, -0.5));
   RateSynapses synapses32(ctx, &neurons3, &neurons2, 1, "32");
   synapses32.weights(0.25 * EigenMatrix::Identity(neurons2.size,
                                                   neurons3.size));
 
-  float eps = 0.0001;
+  float eps = 0.001;
   RatePlasticity plasticity01(ctx, &synapses01, 0);
   RatePlasticity plasticity11(ctx, &synapses11, eps);
   RatePlasticity plasticity12(ctx, &synapses12, eps);
@@ -84,9 +85,9 @@ int main() {
   model.add(&electrodes3);
 
   // Set simulation time parameters:
-  model.set_simulation_time(10, 1e-3);
-  model.set_buffer_intervals((float)0.05); // TODO: Use proper units
-  model.set_weights_buffer_interval(100);
+  model.set_simulation_time(100, 2e-3);
+  model.set_buffer_intervals((float)0.1); // TODO: Use proper units
+  model.set_weights_buffer_interval(500);
 
   // Run!
   model.start();
