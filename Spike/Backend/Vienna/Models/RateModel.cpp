@@ -82,10 +82,10 @@ namespace Backend {
       if (done_timestep) {
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.size2();
+        viennacl::range _rate_hist_r1(0, _rate_history.size1());
+        viennacl::range _rate_hist_r2(_rate_hist_idx, _rate_hist_idx + 1);
         viennacl::matrix_range<viennacl::matrix<FloatT> > _rate_history_col
-          (_rate_history,
-           viennacl::range(0, _rate_history.size1()),
-           viennacl::range(_rate_hist_idx, _rate_hist_idx + 1));
+          (_rate_history, _rate_hist_r1, _rate_hist_r2);
 
         viennacl::matrix_base<FloatT> _new_rate_as_matrix
           (_new_rate.handle(),

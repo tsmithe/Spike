@@ -169,14 +169,15 @@ DummyRateNeurons::~DummyRateNeurons() {
 
 InputDummyRateNeurons::InputDummyRateNeurons
 (Context* ctx, int size_, std::string label_,
- FloatT sigma_IN_, FloatT gamma_,
+ FloatT sigma_IN_, FloatT lambda_, // FloatT gamma_,
  FloatT revolutions_per_second_)
   : DummyRateNeurons(nullptr, size_, label_),
     RateNeurons(nullptr, size_, label_, 0, 1, 1),
-    sigma_IN(sigma_IN_), gamma(gamma_),
+    sigma_IN(sigma_IN_), /*gamma(gamma_),*/
     revolutions_per_second(revolutions_per_second_) {
 
-  lambda = gamma / exp(1 / pow(sigma_IN, 2));
+  // lambda = gamma / exp(1 / pow(sigma_IN, 2));
+  lambda = lambda_;
 
   theta_pref = EigenVector::Zero(size);
   for (int j = 0; j < size; ++j)

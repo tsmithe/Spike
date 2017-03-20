@@ -460,10 +460,41 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-01-23 Mon 21:50]
 :END:
+*** TODO Correct transfer function for PageHD (with slope and threshold)
 *** PROGRESS Proper weight initialization
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
 :END:
+**** PROGRESS For prewired model
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:35]
+:END:
+***** PROGRESS Recurrent inhibition: HD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:35]
+:END:
+***** PROGRESS Recurrent inhibition: AHVxHD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:55]
+:END:
+***** PROGRESS Identity: VIS -> HD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:10]
+:END:
+***** PROGRESS Identity ('segregated'): AHV -> AHVxHD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:20]
+:END:
+***** PROGRESS Offset/non-offset: HD -> AHVxHD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:55]
+:END:
+***** PROGRESS Offset/non-offset: AHVxHD -> HD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:20]
+:END:
+**** TODO For self-organising model
+***** TODO Details go here!
 *** PROGRESS Axonal conduction delays
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
@@ -478,10 +509,19 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 16:35]
 :END:
+**** PROGRESS VIS: Pre-defined Gaussian bump + identity connections to HD
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
+:END:
+**** PROGRESS AHV: ROT and NOROT
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
+:END:
 *** PROGRESS Implement plasticity rules, including competition
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
+**** TODO At first, no plasticity
 **** PROGRESS Weight normalization
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
@@ -494,6 +534,10 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
+*** TODO Simulation protocol
+**** TODO Prewired model
+***** TODO VIS -> HD initialisation
+***** TODO NOROT, ROT, NOROT
 ** Software engineering
 *** TODO Documentation
 *** TODO Split classes into separate compilation units

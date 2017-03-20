@@ -348,7 +348,7 @@ private:
 class InputDummyRateNeurons : public virtual DummyRateNeurons {
 public:
   InputDummyRateNeurons(Context* ctx, int size_, std::string label_,
-                        FloatT sigma_IN_, FloatT gamma_,
+                        FloatT sigma_IN_, FloatT lambda_, // gamma_,
                         FloatT revolutions_per_second_);
   ~InputDummyRateNeurons() override;
 
@@ -356,7 +356,7 @@ public:
   SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
 
   FloatT sigma_IN;
-  FloatT gamma, lambda;
+  FloatT /*gamma,*/ lambda;
   FloatT revolutions_per_second;
 
   EigenVector theta_pref;
