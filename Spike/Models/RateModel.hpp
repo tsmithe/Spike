@@ -194,6 +194,7 @@ namespace Backend {
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
+    virtual void add_rate(FloatT duration, EigenVector rates) = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
@@ -326,21 +327,20 @@ private:
 
 class DummyRateNeurons : public virtual RateNeurons {
 public:
-  DummyRateNeurons(Context* ctx, int size_, std::string label_,
+  /*
+  DummyRateNeurons(Context* ctx, int size_, std::string label_/*,
                    FloatT t_on_, FloatT t_off_,
-                   EigenVector const& x_on_, EigenVector const& x_off_);
+                   EigenVector const& x_on_, EigenVector const& x_off_* /);
+  */
+  DummyRateNeurons(Context* ctx, int size_, std::string label_);
   ~DummyRateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(DummyRateNeurons, RateNeurons);
 
-  FloatT t_on = 0;
-  FloatT t_off = 0;
-  EigenVector x_on, x_off;
-
-protected:
-  DummyRateNeurons(Context* ctx, int size_, std::string label_);
-
+  std::vector<std::pair<FloatT, EigenVector> > rate_schedule;
+  void add_rate(FloatT duration, EigenVector const& rates);
+  
 private:
   std::shared_ptr<::Backend::DummyRateNeurons> _backend;
 };
@@ -358,6 +358,7 @@ public:
   FloatT sigma_IN;
   FloatT /*gamma,*/ lambda;
   FloatT revolutions_per_second;
+  FloatT t_stop_after = infinity<FloatT>();
 
   EigenVector theta_pref;
 

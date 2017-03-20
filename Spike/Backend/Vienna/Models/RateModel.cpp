@@ -16,7 +16,10 @@ namespace Backend {
       _rate_history = viennacl::zero_matrix<FloatT>(size, 1);
 
       _total_activation = viennacl::zero_vector<FloatT>(size);
+
+      _ones = viennacl::scalar_vector<FloatT>(size, 1);
       _half = viennacl::scalar_vector<FloatT>(size, 0.5);
+
       _alpha = viennacl::scalar_vector<FloatT>(size, frontend()->alpha);
       _beta = frontend()->beta;
       _tau = frontend()->tau;
@@ -72,10 +75,16 @@ namespace Backend {
     /* NB: The argument is the total activation beyond the threshold `alpha` */
     template<typename T>
     inline T RateNeurons::transfer(T const& total_activation) {
+      return viennacl::linalg::element_div
+        (_ones,
+         (_ones
+          + viennacl::linalg::element_exp(-2 * _beta * total_activation)));
+      /*
       if (_beta == 1)
         return viennacl::linalg::element_tanh(total_activation);
       else
         return viennacl::linalg::element_tanh(_beta * total_activation);
+      */
     }
 
     bool RateNeurons::staged_integrate_timestep(FloatT dt) {
@@ -140,10 +149,14 @@ namespace Backend {
     }
 
     void DummyRateNeurons::prepare() {
+      /*
       _rate_on.resize(frontend()->x_on.size());
       _rate_off.resize(frontend()->x_off.size());
       viennacl::copy(frontend()->x_on, _rate_on);
       viennacl::copy(frontend()->x_off, _rate_off);
+      */
+      _schedule_idx = 0;
+      _curr_rate_t = 0;
     }
 
     void DummyRateNeurons::reset_state() {
@@ -153,25 +166,33 @@ namespace Backend {
                                          ::Backend::RatePlasticity*) {
     }
 
+    void DummyRateNeurons::add_rate(FloatT duration, EigenVector rates) {
+      viennacl::vector<FloatT> _vcl_rates(frontend()->size);
+      viennacl::copy(rates, _vcl_rates);
+      _rate_schedule.push_back({duration, _vcl_rates});
+    }
+
     bool DummyRateNeurons::staged_integrate_timestep(FloatT dt) {
       t += dt;
       dt_ = dt;
+
+      _curr_rate_t += dt;
+      if (_curr_rate_t > _rate_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - _rate_schedule[_schedule_idx].first;
+        _schedule_idx++;
+        if (_schedule_idx >= _rate_schedule.size())
+          _schedule_idx = 0;
+      }
+
       return true;
     }
 
     EigenVector const& DummyRateNeurons::rate() {
-      if (t > frontend()->t_on && t < frontend()->t_off)
-        return frontend()->x_on;
-      else
-        return frontend()->x_off;
+      return frontend()->rate_schedule[_schedule_idx].second;
     }
 
     viennacl::vector<FloatT> DummyRateNeurons::_rate(unsigned int n_back) {
-      FloatT t_ = t - dt_*n_back;
-      if (t_ > frontend()->t_on && t_ < frontend()->t_off)
-        return _rate_on;
-      else
-        return _rate_off;
+      return _rate_schedule[_schedule_idx].second;
     }
 
     void InputDummyRateNeurons::prepare() {
@@ -198,6 +219,9 @@ namespace Backend {
       t += dt;
       dt_ = dt;
 
+      if (t > frontend()->t_stop_after)
+        return true;
+
       theta += dt * 2 * M_PI * frontend()->revolutions_per_second;
       if (theta > 2*M_PI)
         theta -= 2*M_PI;
@@ -212,6 +236,10 @@ namespace Backend {
 
     viennacl::vector<FloatT> InputDummyRateNeurons::_rate(unsigned int n_back) {
       assert(n_back == 0); // TODO: support delays here?
+
+      if (t > frontend()->t_stop_after)
+        return viennacl::zero_vector<FloatT>(frontend()->size);
+
       viennacl::vector<FloatT> v(frontend()->size);
       v = frontend()->lambda * viennacl::linalg::element_exp
         (viennacl::linalg::element_div

@@ -130,6 +130,7 @@ namespace Backend {
 
       viennacl::vector<FloatT> _alpha;
       viennacl::vector<FloatT> _half;
+      viennacl::vector<FloatT> _ones;
 
       viennacl::matrix<FloatT> _rate_history;
       int _rate_hist_idx = 0;
@@ -161,14 +162,21 @@ namespace Backend {
       bool staged_integrate_timestep(FloatT dt) override;
       const EigenVector& rate() override;
 
+      void add_rate(FloatT duration, EigenVector rates) override;
+
     protected:
       FloatT t, dt_;
 
     private:
       viennacl::vector<FloatT> _rate(unsigned int n_back=0) override;
 
+      /*
       viennacl::vector<FloatT> _rate_on;
       viennacl::vector<FloatT> _rate_off;
+      */
+      std::vector<std::pair<FloatT, viennacl::vector<FloatT>> > _rate_schedule;
+      int _schedule_idx = 0;
+      FloatT _curr_rate_t;
     };
 
     class InputDummyRateNeurons

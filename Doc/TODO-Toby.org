@@ -460,7 +460,10 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-01-23 Mon 21:50]
 :END:
-*** TODO Correct transfer function for PageHD (with slope and threshold)
+*** PROGRESS Correct transfer function for PageHD (with slope and threshold)
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
+:END:
 *** PROGRESS Proper weight initialization
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
@@ -535,9 +538,18 @@ CLOSED: [2017-01-30 Mon 15:35]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
 *** TODO Simulation protocol
-**** TODO Prewired model
-***** TODO VIS -> HD initialisation
-***** TODO NOROT, ROT, NOROT
+**** PROGRESS Prewired model
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
+:END:
+***** PROGRESS VIS -> HD initialisation
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
+:END:
+***** PROGRESS NOROT, ROT, NOROT
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:15]
+:END:
 ** Software engineering
 *** TODO Documentation
 *** TODO Split classes into separate compilation units

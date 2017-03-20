@@ -7,6 +7,7 @@ int main() {
   // feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   FloatT timestep = 1e-3; // seconds (TODO units)
+  FloatT simulation_time = 4.1; // seconds (TODO units)
   
   // Create Model
   RateModel model;
@@ -17,27 +18,28 @@ int main() {
 
   // Set up some Neurons, Synapses and Electrodes
   int N_ROT = 1;
-  FloatT t_on_ROT = 1;
-  FloatT t_off_ROT = 1; 
-  EigenVector ROT_on = EigenVector::Random(N_ROT);
+  EigenVector ROT_on = EigenVector::Ones(N_ROT);
   EigenVector ROT_off = EigenVector::Zero(N_ROT);
-  DummyRateNeurons ROT(ctx, N_ROT, "ROT", t_on_ROT, t_off_ROT,
-                       ROT_on, ROT_off);
+  DummyRateNeurons ROT(ctx, N_ROT, "ROT");
+  ROT.add_rate(1.1, ROT_off);
+  ROT.add_rate(2, ROT_on);
+  ROT.add_rate(1, ROT_off);
 
   int N_NOROT = 1;
-  FloatT t_on_NOROT = 1;
-  FloatT t_off_NOROT = 1; 
-  EigenVector NOROT_on = EigenVector::Random(N_NOROT);
+  EigenVector NOROT_on = EigenVector::Ones(N_NOROT);
   EigenVector NOROT_off = EigenVector::Zero(N_NOROT);
-  DummyRateNeurons NOROT(ctx, N_NOROT, "NOROT", t_on_NOROT, t_off_NOROT,
-                         NOROT_on, NOROT_off);
+  DummyRateNeurons NOROT(ctx, N_NOROT, "NOROT");
+  NOROT.add_rate(1.1, NOROT_on);
+  NOROT.add_rate(2, NOROT_off);
+  NOROT.add_rate(1, NOROT_on);
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 2; // 100;
-  FloatT revs_per_sec_VIS = 0; // 0.5; // NB: Initialisation is static
+  FloatT revs_per_sec_VIS = 0; // NB: Initialisation is static
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS",
                             sigma_VIS, lambda_VIS, revs_per_sec_VIS);
+  VIS.t_stop_after = 0.1;
   auto& VIS_tuning = VIS.theta_pref;
 
   int N_HD = 500;

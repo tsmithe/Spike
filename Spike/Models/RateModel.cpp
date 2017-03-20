@@ -148,15 +148,17 @@ void RateNeurons::apply_plasticity(FloatT dt) const {
     dendrite_pair.second->apply_plasticity(dt);
 }
 
+/*
 DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
-                                   FloatT t_on_, FloatT t_off_,
+                                   /*FloatT t_on_, FloatT t_off_,
                                    EigenVector const& x_on_,
-                                   EigenVector const& x_off_)
-  : RateNeurons(nullptr, size_, label_, 0, 1, 1),
-    t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) {
+                                   EigenVector const& x_off_ * /)
+  : RateNeurons(nullptr, size_, label_, 0, 1, 1)/*,
+    t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) * / {
   if (ctx)
     init_backend(ctx);
 }
+*/
 
 DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
   : RateNeurons(nullptr, size_, label_, 0, 1, 1) {
@@ -165,6 +167,11 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
 }
 
 DummyRateNeurons::~DummyRateNeurons() {
+}
+
+void DummyRateNeurons::add_rate(FloatT duration, EigenVector const& rates) {
+  backend()->add_rate(duration, rates);
+  rate_schedule.push_back({duration, rates});
 }
 
 InputDummyRateNeurons::InputDummyRateNeurons

@@ -16,8 +16,10 @@ int main() {
   // Set up some Neurons, Synapses and Electrodes
   EigenVector neurons0_on = EigenVector::Random(100);
   EigenVector neurons0_off = EigenVector::Zero(100);
-  DummyRateNeurons neurons0(ctx, 100, "dummy_input", 0, 0.1,
-                            neurons0_on, neurons0_off);
+  DummyRateNeurons neurons0(ctx, 100, "dummy_input");
+  neurons0.add_rate(0.05, neurons0_off);
+  neurons0.add_rate(0.1, neurons0_on);
+  neurons0.add_rate(0.05, neurons0_off);
   InputDummyRateNeurons neurons3(ctx, 400, "rot_input",
                                  1.5*M_PI/9, 10, 0.25);
 
