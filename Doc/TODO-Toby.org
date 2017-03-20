@@ -450,6 +450,7 @@ CLOSED: [2017-01-13 Fri 11:50]
 ** TODO Add runtime backend loader
 * Rate model
 ** Scientific functionality
+*** TODO Electrodes: record activation
 *** PROGRESS Generalize rate ODE
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-23 Mon 21:50]
