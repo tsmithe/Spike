@@ -4,7 +4,7 @@
 // TODO: Add signal handlers
 
 int main() {
-  // feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   FloatT timestep = 1e-3; // seconds (TODO units)
   FloatT simulation_time = 4.1; // seconds (TODO units)
@@ -115,7 +115,7 @@ int main() {
 
   FloatT AHVxHD_inhibition = -0.35;
   RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
-                             AHVxHD_inhibition / N_AHVxHD, "AHVxHD_AHVxHV");
+                             AHVxHD_inhibition / N_AHVxHD, "AHVxHD_AHVxHD");
   AHVxHD_AHVxHD.weights(EigenMatrix::Identity(N_AHVxHD, N_AHVxHD));
 
   FloatT ROT_AHVxHD_scaling = 80.0 / N_ROT;
@@ -171,8 +171,8 @@ int main() {
   model.add(&NOROT_elecs);
 
   // Set simulation time parameters:
-  model.set_simulation_time(10, timestep);
-  model.set_buffer_intervals((float)0.05); // TODO: Use proper units
+  model.set_simulation_time(simulation_time, timestep);
+  model.set_buffer_intervals(timestep); // (float)0.05); // TODO: Use proper units
   model.set_weights_buffer_interval(100);
 
   // Run!

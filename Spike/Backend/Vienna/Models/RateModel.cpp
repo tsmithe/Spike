@@ -75,20 +75,19 @@ namespace Backend {
     /* NB: The argument is the total activation beyond the threshold `alpha` */
     template<typename T>
     inline T RateNeurons::transfer(T const& total_activation) {
-      return viennacl::linalg::element_div
-        (_ones,
-         (_ones
-          + viennacl::linalg::element_exp(-2 * _beta * total_activation)));
-      /*
+      // 2*logistic(x) = 1 + tanh(x/2)
+      viennacl::vector<FloatT> transfer_tmp;
       if (_beta == 1)
-        return viennacl::linalg::element_tanh(total_activation);
+        transfer_tmp = viennacl::linalg::element_tanh(total_activation) + _ones;
       else
-        return viennacl::linalg::element_tanh(_beta * total_activation);
-      */
+        transfer_tmp = viennacl::linalg::element_tanh(_beta*total_activation) + _ones;
+      return viennacl::linalg::element_prod(_half, transfer_tmp);
     }
 
     bool RateNeurons::staged_integrate_timestep(FloatT dt) {
       if (done_timestep) {
+// TODO: THE FOLLOWING GUARD IS VERY HACKY -- WHY DOESN'T IT WORK??
+#ifdef VIENNACL_WITH_OPENCL
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.size2();
         viennacl::range _rate_hist_r1(0, _rate_history.size1());
@@ -103,6 +102,7 @@ namespace Backend {
            1, 0, 1, 1, // 1 column; start 0, stride 1, internal columns 1
            _rate_history.row_major());
         _rate_history_col = _new_rate_as_matrix;
+#endif
 
         done_timestep = false; // false for next time
         return true;
@@ -240,6 +240,7 @@ namespace Backend {
       if (t > frontend()->t_stop_after)
         return viennacl::zero_vector<FloatT>(frontend()->size);
 
+      // TODO: FIX THIS HERE !
       viennacl::vector<FloatT> v(frontend()->size);
       v = frontend()->lambda * viennacl::linalg::element_exp
         (viennacl::linalg::element_div
