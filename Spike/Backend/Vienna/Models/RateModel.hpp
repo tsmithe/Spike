@@ -54,7 +54,7 @@ namespace Backend {
       void reset_state() override;
 
       // void update_activation(FloatT dt) override;
-      // const EigenVector& activation() override;
+      const EigenVector& activation() override;
       const EigenMatrix& weights() override;
       void weights(EigenMatrix const& w) override;
 
@@ -65,9 +65,9 @@ namespace Backend {
       unsigned int _delay = 0;
 
       // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
-      viennacl::vector<FloatT> activation();
-      // EigenVector _activation_cpu;
-      // int _activation_cpu_timestep = 0;
+      viennacl::vector<FloatT> _activation();
+      EigenVector _activation_cpu;
+      int _activation_cpu_timestep = 0;
 
       viennacl::matrix<FloatT> _weights;    // TODO: Generalize synapse types
       EigenMatrix _weights_cpu;

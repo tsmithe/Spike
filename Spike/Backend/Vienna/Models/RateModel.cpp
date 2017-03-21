@@ -111,7 +111,7 @@ namespace Backend {
       int i = 0;
       for (const auto& dendrite_pair : _vienna_dendrites) {
         auto& synapses = dendrite_pair.first;
-        auto activation_i = synapses->activation();
+        auto activation_i = synapses->_activation();
 
         if (i == 0) {
           if (frontend()->alpha == 0)
@@ -273,8 +273,8 @@ namespace Backend {
       int timesteps = frontend()->timesteps;
 
       // _activation = viennacl::zero_vector<FloatT>(size_post);
-      // _activation_cpu = EigenVector::Zero(size_post);
-      // _activation_cpu_timestep = timesteps;
+      _activation_cpu = EigenVector::Zero(size_post);
+      _activation_cpu_timestep = timesteps;
 
       // TODO: Better record of initial weights state:
       // viennacl::copy(frontend()->initial_weights, _weights);
@@ -287,20 +287,20 @@ namespace Backend {
       // TODO:: Generalise activation function
       // _activation = viennacl::linalg::prod(_weights, neurons_pre->_rate);
     }
+    */
 
     const EigenVector& RateSynapses::activation() {
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
       if (curr_timestep != _activation_cpu_timestep) {
-        viennacl::copy(_activation, _activation_cpu);
+        viennacl::copy(_activation(), _activation_cpu);
         _activation_cpu_timestep = curr_timestep;
       }
 
       return _activation_cpu;
     }
-    */
 
-    viennacl::vector<FloatT> RateSynapses::activation() {
+    viennacl::vector<FloatT> RateSynapses::_activation() {
       // TODO: caching; perf enhancements
       viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
 
@@ -342,6 +342,19 @@ namespace Backend {
 
       return _weights_cpu;
     }
+
+    /*
+    const EigenVector& RateSynapses::activation() {
+      // Ensure that host copy is up to date:
+      int curr_timestep = frontend()->timesteps;
+      if (curr_timestep != _activation_cpu_timestep) {
+        viennacl::copy(_activation, _activation_cpu);
+        _activation_cpu_timestep = curr_timestep;
+      }
+
+      return _activation_cpu;
+    }
+    */
 
     void RateSynapses::weights(EigenMatrix const& w) {
       _weights_cpu = w;

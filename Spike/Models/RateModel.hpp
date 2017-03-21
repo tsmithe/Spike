@@ -147,7 +147,7 @@ namespace Backend {
     void prepare() override = 0;
     void reset_state() override = 0;
     // virtual void update_activation(FloatT dt) = 0;
-    // virtual const EigenVector& activation() = 0;
+    virtual const EigenVector& activation() = 0;
     virtual const EigenMatrix& weights() = 0;
     virtual void weights(EigenMatrix const& w) = 0;
 
@@ -391,7 +391,7 @@ public:
   unsigned int delay() const;
   void delay(unsigned int d);
 
-  // const EigenVector& activation() const;
+  const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
 
@@ -399,8 +399,8 @@ public:
 
   int timesteps = 0;
 
-  // int activation_buffer_interval = 0;
-  // EigenBuffer activation_history;
+  int activation_buffer_interval = 0;
+  EigenBuffer activation_history;
 
 private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
@@ -514,13 +514,13 @@ public:
   void add(RateElectrodes* elecs);
 
   int rate_buffer_interval = 0;
-  // int activation_buffer_interval = 0;
+  int activation_buffer_interval = 0;
   int weights_buffer_interval = 0;
 
   void set_rate_buffer_interval(int n_timesteps);
-  // void set_activation_buffer_interval(int n_timesteps);
+  void set_activation_buffer_interval(int n_timesteps);
   void set_weights_buffer_interval(int n_timesteps);
-  void set_buffer_intervals(int rate_timesteps, // int activation_timesteps,
+  void set_buffer_intervals(int rate_timesteps, int activation_timesteps,
                             int weights_timesteps);
   void set_buffer_intervals(int n_timesteps);
   void set_buffer_intervals(FloatT intval_s);
