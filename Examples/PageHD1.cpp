@@ -80,12 +80,12 @@ int main() {
   assert(N_VIS == N_NOROTxHD);
   assert(N_VIS == N_ROTxHD);
   
-  FloatT axonal_delay = 4e-2; // seconds (TODO units)
+  FloatT axonal_delay = 1e-2; // seconds (TODO units)
   FloatT HD_AHVxHD_scaling = 100.0 / N_HD;
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
   FloatT sigma_HD_AHVxHD = sigma_VIS;
   FloatT V = M_PI; // radians per second (angular velocity)
-  FloatT O = 4*V*axonal_delay; // offset in radians due to delay
+  FloatT O = V*axonal_delay; // offset in radians due to delay
   EigenMatrix HD_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_HD);
   auto HD_ROTxHD_W = HD_AHVxHD_W.topRows(N_ROTxHD);
   for (int i = 0; i < N_ROTxHD; ++i) {

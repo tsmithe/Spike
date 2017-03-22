@@ -48,9 +48,13 @@ namespace Backend {
 
     viennacl::vector<FloatT> RateNeurons::_rate(unsigned int n_back) {
       // TODO: performance -- just return a 'view'
-      int i = (_rate_hist_idx - n_back) % _rate_history.size2();
-      viennacl::vector<FloatT> v(viennacl::column(_rate_history, i));
+      int i = _rate_hist_idx - n_back;
+      if (i < 0) i += _rate_history.size2();
+      // if (n_back != 0) {
+      //   std::cout << this << "- " << _rate_hist_idx << " - " << n_back << " - " << _rate_history.size2() << " - " << i << "\n";
+      // }
       /*
+      viennacl::vector<FloatT> v(viennacl::column(_rate_history, i));
       if (isanynan(viennacl::vector<FloatT>(1.0*v))) {
         std::cout << "\n" << v << "\n";
         std::cout << "\n????? " << frontend()
@@ -90,6 +94,7 @@ namespace Backend {
 #ifdef VIENNACL_WITH_OPENCL
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.size2();
+        // std::cout << this << ": " << _rate_hist_idx << "\n";
         viennacl::range _rate_hist_r1(0, _rate_history.size1());
         viennacl::range _rate_hist_r2(_rate_hist_idx, _rate_hist_idx + 1);
         viennacl::matrix_range<viennacl::matrix<FloatT> > _rate_history_col
@@ -313,6 +318,7 @@ namespace Backend {
 
     viennacl::vector<FloatT> RateSynapses::_activation() {
       // TODO: caching; perf enhancements
+      
       viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
 
       /*
@@ -337,6 +343,7 @@ namespace Backend {
       if (neurons_pre->_rate_history.size2() < (d+1))
         neurons_pre->_rate_history.resize
           (neurons_pre->_rate_history.size1(), d+1);
+      // std::cout << neurons_pre << "= " << neurons_pre->_rate_history.size2() << "\n";
     }
 
     unsigned int RateSynapses::delay() {
