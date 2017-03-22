@@ -38,7 +38,7 @@ int main() {
   FloatT lambda_VIS = 8;
   FloatT revs_per_sec_VIS = 0; // NB: Initialisation is static
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS",
-                            M_PI/9/*sigma_VIS*/, lambda_VIS, revs_per_sec_VIS);
+                            sigma_VIS, lambda_VIS, revs_per_sec_VIS);
   VIS.t_stop_after = 0.1;
   auto& VIS_tuning = VIS.theta_pref;
 
