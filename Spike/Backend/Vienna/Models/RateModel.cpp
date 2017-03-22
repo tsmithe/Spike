@@ -202,11 +202,9 @@ namespace Backend {
 
       viennacl::copy(frontend()->theta_pref, theta_pref);
 
-      viennacl::vector<FloatT> all_twos
-        = viennacl::scalar_vector<FloatT>(frontend()->size, 2.0);
       sigma_IN_sqr = viennacl::scalar_vector<FloatT>(frontend()->size,
                                                      frontend()->sigma_IN);
-      sigma_IN_sqr = viennacl::linalg::element_pow(sigma_IN_sqr, all_twos);
+      sigma_IN_sqr = viennacl::linalg::element_prod(sigma_IN_sqr,sigma_IN_sqr);
 
       reset_state();
     }
@@ -230,6 +228,12 @@ namespace Backend {
       d = theta_pref
         - viennacl::vector<FloatT>
         (viennacl::scalar_vector<FloatT>(frontend()->size, theta));
+      d = viennacl::linalg::element_fabs(d);
+      // TODO: Very inefficient -- needs custom kernel!
+      EigenVector d_tmp(d.size());
+      viennacl::copy(d, d_tmp);
+      d_tmp = d_tmp.array().min(2*M_PI - d_tmp.array());
+      viennacl::copy(d_tmp, d);
 
       return true;
     }
@@ -242,9 +246,16 @@ namespace Backend {
 
       // TODO: FIX THIS HERE !
       viennacl::vector<FloatT> v(frontend()->size);
+      /*
       v = frontend()->lambda * viennacl::linalg::element_exp
         (viennacl::linalg::element_div
          (viennacl::linalg::element_cos(d), sigma_IN_sqr));
+      */
+      // TODO: Probably want custom kernel!
+      v = frontend()->lambda * viennacl::linalg::element_exp
+        (viennacl::linalg::element_div
+         (-viennacl::vector<FloatT>(viennacl::linalg::element_prod(d, d)),
+          2*sigma_IN_sqr));
       return v;
     }
 

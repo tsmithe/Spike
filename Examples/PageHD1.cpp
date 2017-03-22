@@ -35,16 +35,16 @@ int main() {
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
-  FloatT lambda_VIS = 2; // 100;
+  FloatT lambda_VIS = 8;
   FloatT revs_per_sec_VIS = 0; // NB: Initialisation is static
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS",
-                            sigma_VIS, lambda_VIS, revs_per_sec_VIS);
+                            M_PI/9/*sigma_VIS*/, lambda_VIS, revs_per_sec_VIS);
   VIS.t_stop_after = 0.1;
   auto& VIS_tuning = VIS.theta_pref;
 
   int N_HD = 500;
-  FloatT alpha_HD = 4.0;
-  FloatT beta_HD = 0.4;
+  FloatT alpha_HD = 4.2;
+  FloatT beta_HD = 0.8;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
@@ -58,11 +58,11 @@ int main() {
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
   
-  FloatT HD_inhibition = -2.5;
+  FloatT HD_inhibition = -2.4;
   RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition/N_HD, "HD_HD");
   HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
 
-  RateSynapses VIS_HD(ctx, &VIS, &HD, 1e-3, "VIS_HD");
+  RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
   VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
 
   // NOTA BENE
@@ -80,17 +80,17 @@ int main() {
   assert(N_VIS == N_NOROTxHD);
   assert(N_VIS == N_ROTxHD);
   
-  FloatT axonal_delay = 1e-2; // seconds (TODO units)
+  FloatT axonal_delay = 4e-2; // seconds (TODO units)
   FloatT HD_AHVxHD_scaling = 100.0 / N_HD;
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
   FloatT sigma_HD_AHVxHD = sigma_VIS;
-  FloatT V = 2*M_PI; // radians per second (angular velocity)
-  FloatT O = V * axonal_delay; // offset in radians due to delay
+  FloatT V = M_PI; // radians per second (angular velocity)
+  FloatT O = 4*V*axonal_delay; // offset in radians due to delay
   EigenMatrix HD_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_HD);
   auto HD_ROTxHD_W = HD_AHVxHD_W.topRows(N_ROTxHD);
   for (int i = 0; i < N_ROTxHD; ++i) {
     for (int j = 0; j < N_HD; ++j) {
-      FloatT tmp_tuning_diff = abs(VIS_tuning(i) - (VIS_tuning(j) + O));
+      FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - (VIS_tuning(j) + O));
       FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
       HD_ROTxHD_W(i, j) = expf(-(s_ij*s_ij)
                                /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
@@ -99,7 +99,7 @@ int main() {
   auto HD_NOROTxHD_W = HD_AHVxHD_W.bottomRows(N_NOROTxHD);
   for (int i = 0; i < N_NOROTxHD; ++i) {
     for (int j = 0; j < N_HD; ++j) {
-      FloatT tmp_tuning_diff = abs(VIS_tuning(i) - VIS_tuning(j));
+      FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - VIS_tuning(j));
       FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
       HD_NOROTxHD_W(i, j) = expf(-(s_ij*s_ij)
                                  /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
@@ -108,23 +108,23 @@ int main() {
   HD_AHVxHD.weights(HD_AHVxHD_W);
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
 
-  FloatT AHVxHD_HD_scaling = 120.0 / N_AHVxHD;
+  FloatT AHVxHD_HD_scaling = 160.0 / N_AHVxHD;
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.weights(HD_AHVxHD_W.transpose());
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
 
-  FloatT AHVxHD_inhibition = -2.0;
+  FloatT AHVxHD_inhibition = -5.7;
   RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
                              AHVxHD_inhibition/N_AHVxHD, "AHVxHD_AHVxHD");
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
-  FloatT ROT_AHVxHD_scaling = 10.0 / N_ROT;
+  FloatT ROT_AHVxHD_scaling = 8.3 / N_ROT;
   RateSynapses ROT_AHVxHD(ctx, &ROT, &AHVxHD, ROT_AHVxHD_scaling, "ROT_AHVxHD");
   EigenMatrix ROT_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_ROT);
   ROT_AHVxHD_W.topRows(N_ROTxHD) = EigenMatrix::Ones(N_ROTxHD, N_ROT);
   ROT_AHVxHD.weights(ROT_AHVxHD_W);
 
-  FloatT NOROT_AHVxHD_scaling = 10.0 / N_NOROT;
+  FloatT NOROT_AHVxHD_scaling = 8.3 / N_NOROT;
   RateSynapses NOROT_AHVxHD(ctx, &NOROT, &AHVxHD,
                             NOROT_AHVxHD_scaling, "NOROT_AHVxHD");
   EigenMatrix NOROT_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_NOROT);

@@ -450,7 +450,11 @@ CLOSED: [2017-01-13 Fri 11:50]
 ** TODO Add runtime backend loader
 * Rate model
 ** Scientific functionality
-*** TODO Electrodes: record activation
+*** DONE Electrodes: record activation
+CLOSED: [2017-03-22 Wed 13:40]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-22 Wed 13:40]
+:END:
 *** PROGRESS Generalize rate ODE
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-23 Mon 21:50]
@@ -461,8 +465,10 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-01-23 Mon 21:50]
 :END:
-*** PROGRESS Correct transfer function for PageHD (with slope and threshold)
+*** DONE Correct transfer function for PageHD (with slope and threshold)
+CLOSED: [2017-03-22 Wed 13:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-22 Wed 13:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
 :END:
 *** PROGRESS Proper weight initialization
@@ -497,6 +503,7 @@ CLOSED: [2017-01-23 Mon 21:50]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:20]
 :END:
+****** TODO Check this!
 **** TODO For self-organising model
 ***** TODO Details go here!
 *** PROGRESS Axonal conduction delays
@@ -517,7 +524,11 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
 :END:
-**** TODO Compute VIS according to recent Page & Stringer
+**** DONE Compute VIS according to recent Page & Stringer
+CLOSED: [2017-03-22 Wed 13:40]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-22 Wed 13:40]
+:END:
 **** PROGRESS AHV: ROT and NOROT
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
@@ -539,7 +550,10 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
-*** TODO Simulation protocol
+*** PROGRESS Simulation protocol
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-22 Wed 13:40]
+:END:
 **** PROGRESS Prewired model
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
@@ -552,6 +566,8 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:15]
 :END:
+**** TODO Self-organising model
+***** TODO Details here ...
 ** Software engineering
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
