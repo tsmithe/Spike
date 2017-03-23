@@ -7,7 +7,7 @@ int main() {
   feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT simulation_time = 4.1; // seconds (TODO units)
+  FloatT simulation_time = 0.6; // 4.1; // seconds (TODO units)
   
   // Create Model
   RateModel model;
@@ -44,7 +44,7 @@ int main() {
 
   int N_HD = 500;
   FloatT alpha_HD = 4.2;
-  FloatT beta_HD = 0.8;
+  FloatT beta_HD = 0.7;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
@@ -52,15 +52,25 @@ int main() {
   int N_NOROTxHD = 500;
   int N_AHVxHD = N_ROTxHD + N_NOROTxHD;
   FloatT alpha_AHVxHD = 16.0;
-  FloatT beta_AHVxHD = 0.3;
+  FloatT beta_AHVxHD = 0.2;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
   
-  FloatT HD_inhibition = -2.4;
+  FloatT HD_inhibition = -5;
   RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition/N_HD, "HD_HD");
-  HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
+  {
+    EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
+    for (int i = 0; i < N_HD; ++i) {
+      for (int j = 0; j < N_HD; ++j) {
+        FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - VIS_tuning(j));
+        FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
+        HD_HD_W(i, j) += 5*expf(-(s_ij*s_ij)/(sigma_VIS*sigma_VIS));
+      }
+    }
+    HD_HD.weights(HD_HD_W);
+  }
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
   VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
@@ -80,38 +90,66 @@ int main() {
   assert(N_VIS == N_NOROTxHD);
   assert(N_VIS == N_ROTxHD);
   
-  FloatT axonal_delay = 1e-2; // seconds (TODO units)
-  FloatT HD_AHVxHD_scaling = 100.0 / N_HD;
+  FloatT axonal_delay = 1.1e-2; // seconds (TODO units)
+  FloatT HD_AHVxHD_scaling = 130.0 / N_HD;
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
+  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
   FloatT sigma_HD_AHVxHD = sigma_VIS;
   FloatT V = M_PI; // radians per second (angular velocity)
-  FloatT O = V*axonal_delay; // offset in radians due to delay
-  EigenMatrix HD_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_HD);
-  auto HD_ROTxHD_W = HD_AHVxHD_W.topRows(N_ROTxHD);
-  for (int i = 0; i < N_ROTxHD; ++i) {
-    for (int j = 0; j < N_HD; ++j) {
-      FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - (VIS_tuning(j) + O));
-      FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
-      HD_ROTxHD_W(i, j) = expf(-(s_ij*s_ij)
-                               /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
-    }
-  }
-  auto HD_NOROTxHD_W = HD_AHVxHD_W.bottomRows(N_NOROTxHD);
-  for (int i = 0; i < N_NOROTxHD; ++i) {
-    for (int j = 0; j < N_HD; ++j) {
-      FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - VIS_tuning(j));
-      FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
-      HD_NOROTxHD_W(i, j) = expf(-(s_ij*s_ij)
+  FloatT O = 3*V*axonal_delay; // offset in radians due to delay
+  {
+    EigenMatrix HD_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_HD);
+    /*
+    auto HD_ROTxHD_W = HD_AHVxHD_W.topRows(N_ROTxHD);
+    for (int i = 0; i < N_ROTxHD; ++i) {
+      for (int j = 0; j < N_HD; ++j) {
+        FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - (VIS_tuning(j) + O));
+        FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
+        HD_ROTxHD_W(i, j) = expf(-(s_ij*s_ij)
                                  /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
+      }
     }
+    */
+    auto HD_NOROTxHD_W = HD_AHVxHD_W.bottomRows(N_NOROTxHD);
+    for (int i = 0; i < N_NOROTxHD; ++i) {
+      for (int j = 0; j < N_HD; ++j) {
+        FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - (VIS_tuning(j) + O));
+        FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
+        HD_NOROTxHD_W(i, j) = expf(-(s_ij*s_ij)
+                                   /(1.5*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
+      }
+    }
+    HD_AHVxHD.weights(HD_AHVxHD_W);
   }
-  HD_AHVxHD.weights(HD_AHVxHD_W);
-  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
 
-  FloatT AHVxHD_HD_scaling = 160.0 / N_AHVxHD;
+  FloatT AHVxHD_HD_scaling = 165.0 / N_AHVxHD;
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
-  AHVxHD_HD.weights(HD_AHVxHD_W.transpose());
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
+  AHVxHD_HD.weights(EigenMatrix(HD_AHVxHD.weights().transpose()));
+  // {
+  //   EigenMatrix AHVxHD_HD_W = EigenMatrix::Zero(N_HD, N_AHVxHD);
+  //   /*
+  //   auto HD_ROTxHD_W = HD_AHVxHD_W.topRows(N_ROTxHD);
+  //   for (int i = 0; i < N_ROTxHD; ++i) {
+  //     for (int j = 0; j < N_HD; ++j) {
+  //       FloatT tmp_tuning_diff = fabs(VIS_tuning(i) - (VIS_tuning(j) + O));
+  //       FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
+  //       HD_ROTxHD_W(i, j) = expf(-(s_ij*s_ij)
+  //                                /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
+  //     }
+  //   }
+  //   */
+  //   auto NOROTxHD_HD_W = AHVxHD_HD_W.rightCols(N_NOROTxHD);
+  //   for (int i = 0; i < N_HD; ++i) {
+  //     for (int j = 0; j < N_NOROTxHD; ++j) {
+  //       FloatT tmp_tuning_diff = fabs(VIS_tuning(j) - VIS_tuning(j) - O);
+  //       FloatT s_ij = fmin(tmp_tuning_diff, (2 * M_PI - tmp_tuning_diff));
+  //       NOROTxHD_HD_W(i, j) = expf(-(s_ij*s_ij)
+  //                                  /(2*sigma_HD_AHVxHD*sigma_HD_AHVxHD));
+  //     }
+  //   }
+  //   //AHVxHD_HD.weights(AHVxHD_HD_W);
+  // }
 
   FloatT AHVxHD_inhibition = -5.7;
   RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
