@@ -127,10 +127,10 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 // Forward definitions:
 // |---
 class RateNeurons;
-class DummyRateNeurons;
-class InputDummyRateNeurons;
+//class DummyRateNeurons;
+//class InputDummyRateNeurons;
 class RateSynapses;
-class RatePlasticity;
+//class RatePlasticity;
 class RateElectrodes;
 class RateModel;
 // ---|
@@ -155,6 +155,7 @@ namespace Backend {
     virtual unsigned int delay() = 0;
   };
 
+  /*
   class RatePlasticity : public virtual SpikeBackendBase {
   public:
     ~RatePlasticity() override = default;
@@ -166,6 +167,7 @@ namespace Backend {
 
     virtual void multipliers(EigenMatrix const&) = 0;
   };
+  */
 
   /*
   class HebbPlasticity : public virtual RatePlasticity {
@@ -186,6 +188,7 @@ namespace Backend {
     virtual const EigenVector& rate() = 0;
   };
 
+  /*
   class DummyRateNeurons : public virtual RateNeurons {
   public:
     ~DummyRateNeurons() override = default;
@@ -208,6 +211,7 @@ namespace Backend {
     bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
+  */
 
   /*
   class RateElectrodes : public virtual SpikeBackendBase {
@@ -228,8 +232,8 @@ static_assert(std::has_virtual_destructor<Backend::RateNeurons>::value,
               "contract violated");
 static_assert(std::has_virtual_destructor<Backend::RateSynapses>::value,
               "contract violated");
-static_assert(std::has_virtual_destructor<Backend::RatePlasticity>::value,
-              "contract violated");
+// static_assert(std::has_virtual_destructor<Backend::RatePlasticity>::value,
+//               "contract violated");
 /*
 static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
               "contract violated");
@@ -285,16 +289,24 @@ private:
   bool running = false;
 };
 
+struct RateNeuronParams {
+  std::string label;
+  FloatT size;
+  FloatT alpha = 0.0;
+  FloatT beta = 1.0;
+};
+
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx, int size_, std::string label_,
-              FloatT alpha=0.0, FloatT beta=1.0, FloatT tau=1.0);
+  RateNeurons(Context* ctx, FloatT tau=1.0);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(RateNeurons, SpikeBase);
 
   void reset_state() override;
+
+  virtual int AddGroup(RateNeuronParams params) = 0;
 
   void assert_dendritic_consistency(RateSynapses* synapses,
                                     RatePlasticity* plasticity) const;
@@ -307,11 +319,7 @@ public:
 
   int size = 0;
 
-  std::string label;
-
-  FloatT alpha = 0;
-  FloatT beta = 1.0;
-  FloatT tau = 1.0;
+  std::vector<std::pair<int, RateNeuronParams> > neuron_groups;
 
   int timesteps = 0;
 
@@ -325,13 +333,14 @@ private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
 };
 
+/*
 class DummyRateNeurons : public virtual RateNeurons {
 public:
   /*
   DummyRateNeurons(Context* ctx, int size_, std::string label_/*,
                    FloatT t_on_, FloatT t_off_,
                    EigenVector const& x_on_, EigenVector const& x_off_* /);
-  */
+  * /
   DummyRateNeurons(Context* ctx, int size_, std::string label_);
   ~DummyRateNeurons() override;
 
@@ -356,7 +365,7 @@ public:
   SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
 
   FloatT sigma_IN;
-  FloatT /*gamma,*/ lambda;
+  FloatT /*gamma,* / lambda;
   FloatT revolutions_per_second;
   FloatT t_stop_after = infinity<FloatT>();
 
@@ -365,6 +374,7 @@ public:
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;
 };
+*/
 
 class RateSynapses : public virtual SpikeBase {
 public:
@@ -409,6 +419,7 @@ private:
 // TODO: Some nice Synapse factories for random initializations
 
 
+/*
 class RatePlasticity : public virtual SpikeBase {
 public:
   RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps);
@@ -434,6 +445,7 @@ public:
 private:
   std::shared_ptr<::Backend::RatePlasticity> _backend;
 };
+*/
 
 
 // TODO: Various RatePlasiticity specialisations for different learning rules
