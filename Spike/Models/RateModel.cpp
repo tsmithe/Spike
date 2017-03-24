@@ -65,7 +65,8 @@ void BufferWriter::stop() {
   file.flush();
 }
 
-RateNeurons::RateNeurons(Context* ctx) {
+RateNeurons::RateNeurons(Context* ctx, std::string _label)
+  : label(_label) {
 
   // TODO: This is hacky!
   if (ctx == nullptr)
@@ -94,7 +95,7 @@ void RateNeurons::reset_state() {
 void RateNeurons::assert_dendritic_consistency
 (RateSynapses* synapses/*, RatePlasticity* plasticity*/) const {
   // Ensure that this set of neurons is post-synaptic:
-  assert(synapses->neurons_post == this);
+  assert(synapses->neurons/*_post*/ == this);
   // Ensure that plasticity is paired correctly with synapses:
   //assert(plasticity->synapses == synapses);
 }
@@ -127,7 +128,7 @@ bool RateNeurons::staged_integrate_timestep(FloatT dt) {
       rate_history.push_back(timesteps, rate());
     // TODO: Best place for synapse activation buffering?
     for (auto& dendrite_pair : dendrites) {
-      auto& syns = dendrite_pair.first;
+      auto& syns = dendrite_pair/*.first*/;
       if (syns->activation_buffer_interval && !(timesteps % syns->activation_buffer_interval)) {
         syns->activation_history.push_back(timesteps, syns->activation());
       }
@@ -204,24 +205,22 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
 // }
 
 RateSynapses::RateSynapses(Context* ctx,
-                           RateNeurons* neurons_pre_,
-                           RateNeurons* neurons_post_,
-                           FloatT scaling_,
-                           std::string label_)
-  : neurons_pre(neurons_pre_), neurons_post(neurons_post_),
-    scaling(scaling_), label(label_) {
+                           RateNeurons* _neurons)
+  : neurons(_neurons) {
 
   init_backend(ctx);
   // reset_state();
+  /*
   if(!(label.length()))
     label = neurons_pre->label;
+  */
 
   // initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
 
   if (ctx->verbose) {
-    std::cout << "Spike: Created synapses '" << label
-              << "' (at " << this <<  ") from "
-              << neurons_pre->label << " to " << neurons_post->label << ".\n";
+    std::cout << "Spike: Created synapses " /*<< label*/
+              << " at " << this /*<<  ") from "
+              << neurons_pre->label << " to " << neurons_post->label*/ << ".\n";
   }
 }
 
@@ -342,7 +341,7 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
     //auto& plasticity = d.second;
     
     std::string activation_fname
-      = output_dir + "/activation_" + synapses->label + ".bin";
+      = output_dir + "/activation_" /*+ synapses->label +*/ ".bin";
     writers.push_back
       (std::make_unique<BufferWriter>
        (activation_fname, synapses->activation_history));
@@ -377,11 +376,11 @@ void RateElectrodes::write_output_info() const {
                    << neurons->rate_buffer_interval << "\n";
 
   for (auto& d : neurons->dendrites) {
-    auto& synapses = d.first;
+    auto& synapses = d/*.first*/;
     //auto& plasticity = d.second;
-    output_info_file << "[" << synapses->label << "]\n"
-                     << "neurons_pre->size = "
-                     << synapses->neurons_pre->size << "\n"
+    output_info_file << "[" << /*synapses*/neurons->label << "]\n"
+                     << "neurons->size = "
+                     << synapses->neurons/*_pre*/->size << "\n"
                      << "activation_buffer_interval = "
                      << synapses->activation_buffer_interval << "\n"
                      /*<< "weights_buffer_interval = "
@@ -433,7 +432,7 @@ void RateModel::add(RateNeurons* neurons) {
   
   if (activation_buffer_interval != 0) {
     for (auto& d : neurons->dendrites) {
-      auto& synapses = d.first;
+      auto& synapses = d/*.first*/;
       synapses->activation_buffer_interval = activation_buffer_interval;
     }
   }
@@ -480,7 +479,7 @@ void RateModel::set_activation_buffer_interval(int n_timesteps) {
   activation_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups) {
     for (auto& d : n->dendrites) {
-      auto& synapses = d.first;
+      auto& synapses = d/*.first*/;
       synapses->activation_buffer_interval = n_timesteps;
     }
   }

@@ -569,12 +569,19 @@ CLOSED: [2017-03-22 Wed 13:40]
 **** TODO Self-organising model
 ***** TODO Details here ...
 ** Software engineering
+*** PROGRESS Shared API with Spiking classes
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-24 Fri 17:45]
+:END:
+**** TODO Don't need RateSynapses separate from RateNeurons if we have SynapseGroups: integrate the Synapses with the Neurons...
++ OR: have a vacuous RateSynapses class
++ Should just have the synapse matrix in the Neurons class, and SynapseGroup descriptors (and views onto the matrix)
++ What about multiple synapses?...
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
 *** TODO Clean up code
 *** TODO Fix RateNeurons inheritance hierarchy
 *** TODO Fix horrid inefficiency of RateNeurons::_rate methods (copying etc)
-*** TODO Shared API with Spiking classes
 *** TODO Signal handlers
 *** TODO RNG initialization
 *** TODO Buffering shouldn't be in apply / update / integrate functions

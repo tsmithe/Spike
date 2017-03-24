@@ -299,7 +299,7 @@ struct RateNeuronGroup {
 
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx);
+  RateNeurons(Context* ctx, std::string _label);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -317,6 +317,8 @@ public:
 
   bool staged_integrate_timestep(FloatT dt);
   void apply_plasticity(FloatT dt) const;
+
+  std::string label;
 
   int size = 0;
 
@@ -397,8 +399,8 @@ struct RateSynapseGroup {
 class RateSynapses : public virtual SpikeBase {
 public:
   RateSynapses(Context* ctx,
-               RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
-               FloatT scaling_=1, std::string label_="");
+               RateNeurons* neurons/*_pre_, RateNeurons* neurons_post_,
+               FloatT scaling_=1, std::string label_=""*/);
   ~RateSynapses() override;
 
   void init_backend(Context* ctx) override;
@@ -408,6 +410,7 @@ public:
 
   // void update_activation(FloatT dt);
 
+  RateNeurons* neurons = nullptr;
   // RateNeurons* neurons_pre = nullptr;
   // RateNeurons* neurons_post = nullptr;
 
