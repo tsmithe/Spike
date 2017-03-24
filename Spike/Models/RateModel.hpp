@@ -182,8 +182,8 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
-    virtual void connect_input(RateSynapses* synapses,
-                               RatePlasticity* plasticity) = 0;
+    virtual void connect_input(RateSynapses* synapses/*,
+                               RatePlasticity* plasticity*/) = 0;
     virtual bool staged_integrate_timestep(FloatT dt) = 0;
     virtual const EigenVector& rate() = 0;
   };
@@ -289,16 +289,17 @@ private:
   bool running = false;
 };
 
-struct RateNeuronParams {
+struct RateNeuronGroup {
   std::string label;
   FloatT size;
   FloatT alpha = 0.0;
   FloatT beta = 1.0;
+  FloatT tau = 1.0;
 };
 
 class RateNeurons : public virtual SpikeBase {
 public:
-  RateNeurons(Context* ctx, FloatT tau=1.0);
+  RateNeurons(Context* ctx);
   ~RateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -306,20 +307,20 @@ public:
 
   void reset_state() override;
 
-  virtual int AddGroup(RateNeuronParams params) = 0;
+  virtual int AddGroup(RateNeuronGroup group) = 0;
 
-  void assert_dendritic_consistency(RateSynapses* synapses,
-                                    RatePlasticity* plasticity) const;
+  void assert_dendritic_consistency(RateSynapses* synapses/*,
+                                    RatePlasticity* plasticity*/) const;
   void assert_dendritic_consistency() const;
-  void connect_input(RateSynapses* synapses,
-                     RatePlasticity* plasticity=nullptr);
+  void connect_input(RateSynapses* synapses/*,
+                     RatePlasticity* plasticity=nullptr*/);
 
   bool staged_integrate_timestep(FloatT dt);
   void apply_plasticity(FloatT dt) const;
 
   int size = 0;
 
-  std::vector<std::pair<int, RateNeuronParams> > neuron_groups;
+  std::vector<std::pair<int, RateNeuronGroup> > neuron_groups;
 
   int timesteps = 0;
 
@@ -327,7 +328,7 @@ public:
   int rate_buffer_interval = 0;
   EigenBuffer rate_history;
 
-  std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
+  std::vector</*std::pair<*/RateSynapses*/*, RatePlasticity*>*/ > dendrites;
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
@@ -376,6 +377,23 @@ private:
 };
 */
 
+struct RateSynapseGroup {
+  RateNeuronGroup* neurons_pre = nullptr;
+  RateNeuronGroup* neurons_post = nullptr;
+
+  std::string label;
+
+  unsigned int delay() const;
+  void delay(unsigned int d);
+
+  const EigenVector& activation() const;
+  const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
+  void weights(const EigenMatrix& w);
+
+  FloatT scaling = 1;
+};
+  
+
 class RateSynapses : public virtual SpikeBase {
 public:
   RateSynapses(Context* ctx,
@@ -390,10 +408,8 @@ public:
 
   // void update_activation(FloatT dt);
 
-  RateNeurons* neurons_pre = nullptr;
-  RateNeurons* neurons_post = nullptr;
-
-  std::string label;
+  // RateNeurons* neurons_pre = nullptr;
+  // RateNeurons* neurons_post = nullptr;
 
   // EigenMatrix initial_weights;
   // bool initialized = false;
@@ -405,7 +421,7 @@ public:
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
 
-  FloatT scaling = 1;
+  std::vector<RateSynapseGroup*> synapse_groups;
 
   int timesteps = 0;
 
@@ -417,7 +433,6 @@ private:
 };
 
 // TODO: Some nice Synapse factories for random initializations
-
 
 /*
 class RatePlasticity : public virtual SpikeBase {
