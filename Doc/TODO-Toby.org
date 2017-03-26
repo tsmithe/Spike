@@ -573,10 +573,21 @@ CLOSED: [2017-03-22 Wed 13:40]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-24 Fri 17:45]
 :END:
-**** TODO Don't need RateSynapses separate from RateNeurons if we have SynapseGroups: integrate the Synapses with the Neurons...
+**** CANCELLED Don't need RateSynapses separate from RateNeurons if we have SynapseGroups: integrate the Synapses with the Neurons...
+CLOSED: [2017-03-24 Fri 21:00]
+:LOGBOOK:
+- State "CANCELLED"  from "TODO"       [2017-03-24 Fri 21:00] \\
+  See notes below
+:END:
 + OR: have a vacuous RateSynapses class
 + Should just have the synapse matrix in the Neurons class, and SynapseGroup descriptors (and views onto the matrix)
 + What about multiple synapses?...
++ And what about other inputs?
++ So it seems that a RateSynapses base class is necessary
+**** TODO RateSynapseGroup is a [view of a] block of the main weight matrix
++ When a group is added, copy its elements to the CPU sparse matrix
++ This invalidates the backend weight matrix, which must be automatically updated when required
+**** TODO Use sparse matrix-matrix multiplication to select delayed rates?
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
 *** TODO Clean up code
