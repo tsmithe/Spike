@@ -283,6 +283,7 @@ void RateSynapses::update_activation(FloatT dt) {
 */
 
 void RateSynapseGroup::delay(unsigned int d) {
+  assert("This seems incorrect: only *some* inputs should be delayed!" && false);
   Eigen::VectorXi delay_vector = parent->delay();
   delay_vector.segment(neurons_post->start, neurons_post->size) = Eigen::VectorXi::Constant(neurons_post->size, d);
   parent->delay(delay_vector);
