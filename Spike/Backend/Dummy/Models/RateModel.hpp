@@ -16,6 +16,9 @@ namespace Backend {
       void reset_state() override {
       }
 
+      void add_group(RateSynapseGroup* group) override {
+      }
+
       // void update_activation(float dt) override {
       // }
 
@@ -78,6 +81,9 @@ namespace Backend {
       }
 
       void reset_state() override {
+      }
+
+      void add_group(RateNeuronGroup* group) override {
       }
 
       void connect_input(::Backend::RateSynapses* synapses/*,

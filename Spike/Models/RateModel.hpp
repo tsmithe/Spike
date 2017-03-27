@@ -127,9 +127,11 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 // Forward definitions:
 // |---
 class RateNeurons;
+class RateNeuronGroup;
 //class DummyRateNeurons;
 //class InputDummyRateNeurons;
 class RateSynapses;
+class RateSynapseGroup;
 //class RatePlasticity;
 class RateElectrodes;
 class RateModel;
@@ -146,6 +148,9 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RateSynapses);
     void prepare() override = 0;
     void reset_state() override = 0;
+
+    virtual void add_group(RateSynapseGroup* group) = 0;
+
     // virtual void update_activation(FloatT dt) = 0;
     virtual const EigenVector& activation() = 0;
     virtual const EigenMatrix& weights() = 0;
@@ -182,6 +187,9 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
+
+    virtual void add_group(RateNeuronGroup* group) = 0;
+
     virtual void connect_input(RateSynapses* synapses/*,
                                RatePlasticity* plasticity*/) = 0;
     virtual bool staged_integrate_timestep(FloatT dt) = 0;
