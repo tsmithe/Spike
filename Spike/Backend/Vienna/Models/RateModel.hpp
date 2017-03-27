@@ -60,12 +60,12 @@ namespace Backend {
       const EigenMatrix& weights() override;
       void weights(EigenMatrix const& w) override;
 
-      EigenVector delay() override;
-      void delay(EigenVector const& d) override;
+      Eigen::VectorXi delay() override;
+      void delay(Eigen::VectorXi const& d) override;
 
     private:
       unsigned int _max_delay = 0;
-      viennacl::vector<FloatT> _delays;
+      viennacl::vector<int> _delays;
 
       // viennacl::vector<FloatT> _activation; // TODO: Need an explicit temporary?
       viennacl::vector<FloatT> _activation();
@@ -132,7 +132,7 @@ namespace Backend {
       bool done_timestep = false;
 
       virtual viennacl::vector<FloatT> _rate();
-      virtual viennacl::vector<FloatT> _rate(viennacl::vector<FloatT> const& n_back);
+      virtual viennacl::vector<FloatT> _rate(viennacl::vector<int> const& n_back);
 
       viennacl::vector<FloatT> _total_activation;
 

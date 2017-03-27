@@ -57,13 +57,13 @@ int main() {
   synapses12.weights(0.35 * Eigen::make_random_matrix(neurons2.size,
                                                       neurons1.size,
                                                       true, 0, 0));
-  // synapses12.delay(100);
+  synapses12.delay(100);
   RateSynapseGroup synapses21 = {&neurons2, &neurons1};
   synapses.add_group(&synapses21);
   synapses21.weights(0.25 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons2.size,
                                                      true, 0, 0));
-  // synapses21.delay(100);
+  synapses21.delay(110);
   RateSynapseGroup synapses22 = {&neurons2, &neurons2};
   synapses.add_group(&synapses22);
   synapses22.weights(0.1 * Eigen::make_random_matrix(neurons2.size,

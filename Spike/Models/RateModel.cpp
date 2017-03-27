@@ -265,11 +265,11 @@ void RateSynapses::weights(EigenMatrix const& w) {
   backend()->weights(w);
 }
 
-EigenVector RateSynapses::delay() const {
+Eigen::VectorXi RateSynapses::delay() const {
   return backend()->delay();
 }
 
-void RateSynapses::delay(EigenVector const& d) {
+void RateSynapses::delay(Eigen::VectorXi const& d) {
   backend()->delay(d);
 }
 
@@ -281,6 +281,12 @@ void RateSynapses::update_activation(FloatT dt) {
     activation_history.push_back(timesteps, activation());
 }
 */
+
+void RateSynapseGroup::delay(unsigned int d) {
+  Eigen::VectorXi delay_vector = parent->delay();
+  delay_vector.segment(neurons_post->start, neurons_post->size) = Eigen::VectorXi::Constant(neurons_post->size, d);
+  parent->delay(delay_vector);
+}
 
 const EigenMatrix RateSynapseGroup::weights() const {
   assert(parent != nullptr);

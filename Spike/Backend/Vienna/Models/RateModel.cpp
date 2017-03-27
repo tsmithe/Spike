@@ -10,14 +10,22 @@ SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses);
 namespace Backend {
   namespace Vienna {
     static const char* spike_ratemodel_program =
-      "__kernel void elementwise_prod(\n"
-      "          __global const float * vec1,\n"
-      "          __global const float * vec2, \n"
-      "          __global float * result,\n"
+      "__kernel void get_delayed_rates(\n"
+      "          __global const float * rate_hist,\n"
+      "          unsigned int start1, unsigned int start2, \n"
+      "          unsigned int stride1,   unsigned int stride2, \n"
+      "          unsigned int size1,  unsigned int size2, \n"
+      "          unsigned int internal_size1,  unsigned int internal_size2, \n"
+      "          __global const int * delay_idx, \n"
+      "          __global float * result, \n"
       "          unsigned int size) \n"
       "{ \n"
-      "  for (unsigned int i = get_global_id(0); i < size; i += get_global_size(0))\n"
-      "    result[i] = vec1[i] * vec2[i];\n"
+      "  int j; \n"
+      "  for (unsigned int i = get_global_id(0); i < size; i += get_global_size(0)) {\n"
+      "    j = delay_idx[j]; \n"
+      "    if (j < 0) j += size2; \n"
+      "    result[i] = rate_hist[(i * stride1 + start1) * internal_size2 + j * stride2 + start2];\n"
+      "  } \n"
       "};\n\n";
 
     void RateNeurons::prepare() {
@@ -90,11 +98,21 @@ namespace Backend {
       return viennacl::column(_rate_history, _rate_hist_idx);
     }
     
-    viennacl::vector<FloatT> RateNeurons::_rate(viennacl::vector<FloatT> const& n_back) {
+    viennacl::vector<FloatT> RateNeurons::_rate(viennacl::vector<int> const& n_back) {
       // TODO: performance!
       viennacl::vector<FloatT> res(frontend()->size);
-      viennacl::vector<FloatT> idx = viennacl::scalar_vector<FloatT>(frontend()->size, _rate_hist_idx);
+      viennacl::vector<int> idx = viennacl::scalar_vector<int>(frontend()->size, _rate_hist_idx);
       idx -= n_back;
+      viennacl::ocl::program& spike_prog = viennacl::ocl::current_context().get_program("spike_ratemodel_program");
+      viennacl::ocl::kernel& gather_kernel = spike_prog.get_kernel("get_delayed_rates");
+      viennacl::ocl::enqueue(gather_kernel(_rate_history,
+                                           cl_uint(_rate_history.start1()), cl_uint(_rate_history.start2()),
+                                           cl_uint(_rate_history.stride1()), cl_uint(_rate_history.stride2()),
+                                           cl_uint(_rate_history.size1()), cl_uint(_rate_history.size2()),
+                                           cl_uint(_rate_history.internal_size1()), cl_uint(_rate_history.internal_size2()),
+                                           idx, res, cl_uint(res.size())));
+      return res;
+
 
       /* 
       // TODO: performance -- just return a 'view'
@@ -343,6 +361,7 @@ namespace Backend {
       int size = frontend()->neurons->size;
 
       _weights = viennacl::zero_matrix<FloatT>(size, size);
+      _delays = viennacl::zero_vector<int>(size);
 
       // reset_state();
     }
@@ -374,6 +393,7 @@ namespace Backend {
       std::cout << "TODO " << group << "\n";
       int size = frontend()->neurons->size;
       _weights.resize(size, size);
+      _delays.resize(size);
       reset_state();
     }
       
@@ -391,8 +411,7 @@ namespace Backend {
     viennacl::vector<FloatT> RateSynapses::_activation() {
       // TODO: caching; perf enhancements
 
-      assert(_max_delay == 0);
-      viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons->_rate(/*_delay*/));
+      viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons->_rate(_delays));
 
       /*
       if (isanynan(viennacl::vector<FloatT>(1.0*activ))) {
@@ -412,16 +431,17 @@ namespace Backend {
         return activ;
     }
 
-    void RateSynapses::delay(EigenVector const& d) {
+    void RateSynapses::delay(Eigen::VectorXi const& d) {
       _max_delay = d.maxCoeff();
       if (neurons->_rate_history.size2() < (_max_delay+1))
         neurons->_rate_history.resize
           (neurons->_rate_history.size1(), _max_delay+1);
       viennacl::copy(d, _delays);
+      // std::cout << _delays << "\n" << _max_delay << "\n";
     }
 
-    EigenVector RateSynapses::delay() {
-      EigenVector _delay_cpu(_delays.size());
+    Eigen::VectorXi RateSynapses::delay() {
+      Eigen::VectorXi _delay_cpu(_delays.size());
       viennacl::copy(_delays, _delay_cpu);
       return _delay_cpu;
     }
