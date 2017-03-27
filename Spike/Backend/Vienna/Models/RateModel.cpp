@@ -10,21 +10,6 @@ namespace Backend {
   namespace Vienna {
     void RateNeurons::prepare() {
       reset_state();
-
-      int size = frontend()->size;
-
-      _rate_history = viennacl::zero_matrix<FloatT>(size, 1);
-
-      _total_activation = viennacl::zero_vector<FloatT>(size);
-
-      _ones = viennacl::scalar_vector<FloatT>(size, 1);
-      _half = viennacl::scalar_vector<FloatT>(size, 0.5);
-
-      /*
-      _alpha = viennacl::scalar_vector<FloatT>(size, frontend()->alpha);
-      _beta = frontend()->beta;
-      _tau = frontend()->tau;
-      */
     }
 
     void RateNeurons::reset_state() {
@@ -38,8 +23,34 @@ namespace Backend {
     }
 
     void RateNeurons::add_group(RateNeuronGroup* group) {
-      std::cout << "TODO " << group << "\n";
-      //prepare();
+      int old_size = _total_activation.size();
+      int size = frontend()->size;
+
+      _rate_history.resize(size, _rate_history.size2() < 1 ? 1 : _rate_history.size2());
+      _total_activation.resize(size);
+
+      _ones.resize(size);
+      _ones = viennacl::scalar_vector<FloatT>(size, 1);
+
+      _half.resize(size);
+      _half = viennacl::scalar_vector<FloatT>(size, 0.5);
+
+      _alpha.resize(size);
+      viennacl::range _alpha_r1(old_size, size);
+      viennacl::vector_range<viennacl::vector<FloatT> > _new_alpha(_alpha, _alpha_r1);
+      _new_alpha = viennacl::scalar_vector<FloatT>(group->size, group->alpha);
+
+      _beta.resize(size);
+      viennacl::range _beta_r1(old_size, size);
+      viennacl::vector_range<viennacl::vector<FloatT> > _new_beta(_beta, _beta_r1);
+      _new_beta = viennacl::scalar_vector<FloatT>(group->size, group->beta);
+
+      _tau_inv.resize(size);
+      viennacl::range _tau_r1(old_size, size);
+      viennacl::vector_range<viennacl::vector<FloatT> > _new_tau_inv(_tau_inv, _tau_r1);
+      _new_tau_inv = viennacl::scalar_vector<FloatT>(group->size, 1.0/(group->tau));
+
+      reset_state();
     }
       
     const EigenVector& RateNeurons::rate() {
@@ -90,10 +101,13 @@ namespace Backend {
     inline T RateNeurons::transfer(T const& total_activation) {
       // 2*logistic(x) = 1 + tanh(x/2)
       viennacl::vector<FloatT> transfer_tmp;
+      /*
       if (_beta == 1)
         transfer_tmp = viennacl::linalg::element_tanh(total_activation) + _ones;
       else
-        transfer_tmp = viennacl::linalg::element_tanh(_beta*total_activation) + _ones;
+      */
+      transfer_tmp = viennacl::linalg::element_tanh
+        (viennacl::linalg::element_prod(_beta, total_activation)) + _ones;
       return viennacl::linalg::element_prod(_half, transfer_tmp);
     }
 
@@ -156,7 +170,7 @@ namespace Backend {
         assert(false);
       }
       */
-      _new_rate = _rate() + (dt/_tau)*(-_rate() + trans);
+      _new_rate = _rate() + dt * viennacl::linalg::element_prod(_tau_inv, (-_rate() + trans));
 
       done_timestep = true;
       return false;

@@ -132,12 +132,12 @@ namespace Backend {
 
       virtual viennacl::vector<FloatT> _rate(unsigned int n_back=0);
 
-      FloatT _beta;
-      FloatT _tau;
-
       viennacl::vector<FloatT> _total_activation;
 
       viennacl::vector<FloatT> _alpha;
+      viennacl::vector<FloatT> _beta;
+      viennacl::vector<FloatT> _tau_inv;
+
       viennacl::vector<FloatT> _half;
       viennacl::vector<FloatT> _ones;
 
