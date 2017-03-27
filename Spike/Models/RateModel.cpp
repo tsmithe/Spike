@@ -291,6 +291,7 @@ const EigenMatrix RateSynapseGroup::weights() const {
 void RateSynapseGroup::weights(EigenMatrix const& w) {
   assert(parent != nullptr);
   EigenMatrix tmp(parent->weights());
+  std::cout << tmp.rows() << ", " << tmp.cols() << "\n";
   tmp.block(neurons_post->start, neurons_pre->start,
             neurons_post->size,  neurons_pre->size) = w;
   parent->weights(tmp);

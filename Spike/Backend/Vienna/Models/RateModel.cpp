@@ -39,6 +39,7 @@ namespace Backend {
 
     void RateNeurons::add_group(RateNeuronGroup* group) {
       std::cout << "TODO " << group << "\n";
+      //prepare();
     }
       
     const EigenVector& RateNeurons::rate() {
@@ -324,6 +325,9 @@ namespace Backend {
 
     void RateSynapses::add_group(RateSynapseGroup* group) {
       std::cout << "TODO " << group << "\n";
+      int size = frontend()->neurons->size;
+      _weights = viennacl::zero_matrix<FloatT>(size, size);
+      reset_state();
     }
       
     const EigenVector& RateSynapses::activation() {
@@ -374,8 +378,11 @@ namespace Backend {
     }
 
     const EigenMatrix& RateSynapses::weights() {
+      std::cout << "TODO: RateSynapses::weights elegance\n";
+      _weights_cpu.resize(neurons->frontend()->size, neurons->frontend()->size); // VERY HACKY
+
       // Ensure that host copy is up to date:
-      int curr_timestep = frontend()->timesteps;
+      int curr_timestep = -1; // TODO: frontend()->timesteps;
       if (curr_timestep != _weights_cpu_timestep) {
         viennacl::copy(_weights, _weights_cpu);
         _weights_cpu_timestep = curr_timestep;
