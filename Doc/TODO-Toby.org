@@ -588,6 +588,7 @@ CLOSED: [2017-03-24 Fri 21:00]
 + When a group is added, copy its elements to the CPU sparse matrix
 + This invalidates the backend weight matrix, which must be automatically updated when required
 **** TODO Use sparse matrix-matrix multiplication to select delayed rates?
+**** TODO Convenience Neurons.connect_input function: directly allow SynapseGroup input -- auto-create Synapses?
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
 *** TODO Clean up code

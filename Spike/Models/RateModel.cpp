@@ -92,6 +92,11 @@ void RateNeurons::reset_state() {
   }
 }
 
+int RateNeurons::add_group(RateNeuronGroup* group) {
+  assert(false);
+  return -1;
+}
+
 void RateNeurons::assert_dendritic_consistency
 (RateSynapses* synapses/*, RatePlasticity* plasticity*/) const {
   // Ensure that this set of neurons is post-synaptic:
@@ -235,6 +240,10 @@ void RateSynapses::reset_state() {
   backend()->reset_state();
 }
 
+int RateSynapses::add_group(RateSynapseGroup* group) {
+  assert(false);
+  return -1;
+}
 
 const EigenVector& RateSynapses::activation() const {
   return backend()->activation();
@@ -264,6 +273,14 @@ void RateSynapses::update_activation(FloatT dt) {
     activation_history.push_back(timesteps, activation());
 }
 */
+
+const EigenMatrix RateSynapseGroup::weights() const {
+  assert(false);
+}
+
+void RateSynapseGroup::weights(EigenMatrix const& w) {
+  assert(false);
+}
 
 /*
 RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps)

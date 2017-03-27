@@ -291,10 +291,15 @@ private:
 
 struct RateNeuronGroup {
   std::string label;
-  FloatT size;
+  unsigned int size;
   FloatT alpha = 0.0;
   FloatT beta = 1.0;
   FloatT tau = 1.0;
+
+  RateNeurons* parent = nullptr;
+  unsigned int start;
+
+  const EigenVector rate() const;
 };
 
 class RateNeurons : public virtual SpikeBase {
@@ -307,7 +312,7 @@ public:
 
   void reset_state() override;
 
-  virtual int AddGroup(RateNeuronGroup group) = 0;
+  virtual int add_group(RateNeuronGroup* group);
 
   void assert_dendritic_consistency(RateSynapses* synapses/*,
                                     RatePlasticity* plasticity*/) const;
@@ -388,11 +393,13 @@ struct RateSynapseGroup {
   unsigned int delay() const;
   void delay(unsigned int d);
 
-  const EigenVector& activation() const;
-  const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
+  const EigenVector activation() const;
+  const EigenMatrix weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
 
   FloatT scaling = 1;
+
+  RateSynapses* parent = nullptr;
 };
   
 
@@ -417,12 +424,15 @@ public:
   // EigenMatrix initial_weights;
   // bool initialized = false;
 
+  virtual int add_group(RateSynapseGroup* group);
+
   unsigned int delay() const;
   void delay(unsigned int d);
 
   const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
+  void weights_block(const EigenMatrix& w);
 
   std::vector<RateSynapseGroup*> synapse_groups;
 
@@ -432,6 +442,7 @@ public:
   EigenBuffer activation_history;
 
 private:
+  EigenMatrix _temp_weights;
   std::shared_ptr<::Backend::RateSynapses> _backend;
 };
 
