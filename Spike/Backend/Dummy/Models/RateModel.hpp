@@ -10,6 +10,7 @@ namespace Backend {
       ~RateSynapses() override = default;
 
       void prepare() override {
+        _weights = EigenMatrix::Zero(frontend()->neurons->size, frontend()->neurons->size);
       }
 
       void reset_state() override {
@@ -47,8 +48,8 @@ namespace Backend {
       }
 
     private:
-      Eigen::VectorXf _activation;
-      Eigen::MatrixXf _weights;
+      EigenVector _activation;
+      EigenMatrix _weights;
     };
 
     /*

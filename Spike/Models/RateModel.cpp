@@ -93,7 +93,7 @@ void RateNeurons::reset_state() {
 }
 
 int RateNeurons::add_group(RateNeuronGroup* group) {
-  std::cout << "RateNeurons::add_group TODO: allocate backend resources; construct parameter vectors.\n";
+  std::cout << "RateNeurons::add_group TODO: allocate backend resources; construct parameter vectors; update any synapses.\n";
   neuron_groups.push_back(group);
   group->parent = this;
   group->start = size;
