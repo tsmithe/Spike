@@ -1,10 +1,10 @@
 #include "RateModel.hpp"
 
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateNeurons);
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, DummyRateNeurons);
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, InputDummyRateNeurons);
+//SPIKE_EXPORT_BACKEND_TYPE(Vienna, DummyRateNeurons);
+//SPIKE_EXPORT_BACKEND_TYPE(Vienna, InputDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Vienna, RateSynapses);
-SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity);
+//SPIKE_EXPORT_BACKEND_TYPE(Vienna, RatePlasticity);
 
 namespace Backend {
   namespace Vienna {
@@ -20,9 +20,11 @@ namespace Backend {
       _ones = viennacl::scalar_vector<FloatT>(size, 1);
       _half = viennacl::scalar_vector<FloatT>(size, 0.5);
 
+      /*
       _alpha = viennacl::scalar_vector<FloatT>(size, frontend()->alpha);
       _beta = frontend()->beta;
       _tau = frontend()->tau;
+      */
     }
 
     void RateNeurons::reset_state() {
@@ -35,6 +37,10 @@ namespace Backend {
       _rate_cpu_timestep = frontend()->timesteps;
     }
 
+    void RateNeurons::add_group(RateNeuronGroup* group) {
+      std::cout << "TODO " << group << "\n";
+    }
+      
     const EigenVector& RateNeurons::rate() {
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
@@ -67,13 +73,15 @@ namespace Backend {
       return viennacl::column(_rate_history, i);
     }
 
-    void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
-                                    ::Backend::RatePlasticity* plasticity) {
+    void RateNeurons::connect_input(::Backend::RateSynapses* synapses/*,
+                                    ::Backend::RatePlasticity* plasticity*/) {
       ::Backend::Vienna::RateSynapses* _vienna_synapses
         = dynamic_cast<::Backend::Vienna::RateSynapses*>(synapses);
+      /*
       ::Backend::Vienna::RatePlasticity* _vienna_plasticity
         = dynamic_cast<::Backend::Vienna::RatePlasticity*>(plasticity);
-      _vienna_dendrites.push_back({_vienna_synapses, _vienna_plasticity});
+      */
+      _vienna_dendrites.push_back(/*{*/_vienna_synapses/*, _vienna_plasticity}*/);
     }
 
     /* NB: The argument is the total activation beyond the threshold `alpha` */
@@ -114,14 +122,14 @@ namespace Backend {
       }
 
       int i = 0;
-      for (const auto& dendrite_pair : _vienna_dendrites) {
-        auto& synapses = dendrite_pair.first;
+      for (const auto& dendrite/*_pair*/ : _vienna_dendrites) {
+        auto& synapses = dendrite/*_pair.first*/;
         auto activation_i = synapses->_activation();
 
         if (i == 0) {
-          if (frontend()->alpha == 0)
+          /*if (frontend()->alpha == 0)
             _total_activation = activation_i;
-          else
+            else*/
             _total_activation = activation_i - _alpha;
         } else {
           _total_activation += activation_i;
@@ -153,13 +161,14 @@ namespace Backend {
       return false;
     }
 
+    /*
     void DummyRateNeurons::prepare() {
       /*
       _rate_on.resize(frontend()->x_on.size());
       _rate_off.resize(frontend()->x_off.size());
       viennacl::copy(frontend()->x_on, _rate_on);
       viennacl::copy(frontend()->x_off, _rate_off);
-      */
+      * /
       _schedule_idx = 0;
       _curr_rate_t = 0;
     }
@@ -255,7 +264,7 @@ namespace Backend {
       v = frontend()->lambda * viennacl::linalg::element_exp
         (viennacl::linalg::element_div
          (viennacl::linalg::element_cos(d), sigma_IN_sqr));
-      */
+      * /
       // TODO: Probably want custom kernel!
       v = frontend()->lambda * viennacl::linalg::element_exp
         (viennacl::linalg::element_div
@@ -268,8 +277,10 @@ namespace Backend {
       viennacl::copy(_rate(), _rate_cpu);
       return _rate_cpu;
     }
+    */
 
     void RateSynapses::prepare() {
+      /*
       neurons_pre = dynamic_cast<::Backend::Vienna::RateNeurons*>
         (frontend()->neurons_pre->backend());
       neurons_post = dynamic_cast<::Backend::Vienna::RateNeurons*>
@@ -277,19 +288,25 @@ namespace Backend {
 
       int size_post = frontend()->neurons_post->size;
       int size_pre = frontend()->neurons_pre->size;
+      */
 
-      _weights = viennacl::zero_matrix<FloatT>(size_post, size_pre);
+      neurons = dynamic_cast<::Backend::Vienna::RateNeurons*>
+        (frontend()->neurons->backend());
+      int size = frontend()->neurons->size;
+
+      _weights = viennacl::zero_matrix<FloatT>(size, size);
 
       // reset_state();
     }
 
     void RateSynapses::reset_state() {
-      int size_post = frontend()->neurons_post->size;
-      int size_pre = frontend()->neurons_pre->size;
+      int size = frontend()->neurons->size;
+      // int size_post = frontend()->neurons_post->size;
+      // int size_pre = frontend()->neurons_pre->size;
       int timesteps = frontend()->timesteps;
 
       // _activation = viennacl::zero_vector<FloatT>(size_post);
-      _activation_cpu = EigenVector::Zero(size_post);
+      _activation_cpu = EigenVector::Zero(size);
       _activation_cpu_timestep = timesteps;
 
       // TODO: Better record of initial weights state:
@@ -305,6 +322,10 @@ namespace Backend {
     }
     */
 
+    void RateSynapses::add_group(RateSynapseGroup* group) {
+      std::cout << "TODO " << group << "\n";
+    }
+      
     const EigenVector& RateSynapses::activation() {
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
@@ -318,8 +339,9 @@ namespace Backend {
 
     viennacl::vector<FloatT> RateSynapses::_activation() {
       // TODO: caching; perf enhancements
-      
-      viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons_pre->_rate(_delay));
+
+      assert(_delay == 0);
+      viennacl::vector<FloatT> activ = viennacl::linalg::prod(_weights, neurons->_rate(_delay));
 
       /*
       if (isanynan(viennacl::vector<FloatT>(1.0*activ))) {
@@ -332,17 +354,18 @@ namespace Backend {
       }
       */
 
+      /*
       if (frontend()->scaling != 1)
         return frontend()->scaling * activ;
-      else
+      else */
         return activ;
     }
 
     void RateSynapses::delay(unsigned int d) {
       _delay = d;
-      if (neurons_pre->_rate_history.size2() < (d+1))
-        neurons_pre->_rate_history.resize
-          (neurons_pre->_rate_history.size1(), d+1);
+      if (neurons->_rate_history.size2() < (d+1))
+        neurons->_rate_history.resize
+          (neurons->_rate_history.size1(), d+1);
       // std::cout << neurons_pre << "= " << neurons_pre->_rate_history.size2() << "\n";
     }
 
@@ -380,6 +403,7 @@ namespace Backend {
       viennacl::copy(w, _weights);
     }
 
+    /*
     void RatePlasticity::prepare() {
       synapses = dynamic_cast<::Backend::Vienna::RateSynapses*>
         (frontend()->synapses->backend());
@@ -399,7 +423,7 @@ namespace Backend {
         synapses->_weights += dt * viennacl::linalg::element_prod
           (_multipliers, viennacl::linalg::outer_prod
            (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate()));
-      } else*/ {
+      } else* / {
         synapses->_weights += dt * epsilon * viennacl::linalg::outer_prod
           (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate());
       }
@@ -407,12 +431,13 @@ namespace Backend {
       normalize_matrix_rows(synapses->_weights);
     }
 
-    /* Can be used for maintaining a crude kind of sparseness: */
+    // Can be used for maintaining a crude kind of sparseness:
     void RatePlasticity::multipliers(EigenMatrix const& m) {
       _using_multipliers = true;
       viennacl::copy(m, _multipliers);
       _multipliers *= epsilon;
     }
+    */
 
     /*
     void RateElectrodes::prepare() {}

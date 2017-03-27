@@ -53,6 +53,8 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
+      void add_group(RateSynapseGroup* group) override;
+
       // void update_activation(FloatT dt) override;
       const EigenVector& activation() override;
       const EigenMatrix& weights() override;
@@ -73,10 +75,13 @@ namespace Backend {
       EigenMatrix _weights_cpu;
       int _weights_cpu_timestep = 0;
 
-      ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
-      ::Backend::Vienna::RateNeurons* neurons_post = nullptr;
+      // ::Backend::Vienna::RateNeurons* neurons_pre = nullptr;
+      // ::Backend::Vienna::RateNeurons* neurons_post = nullptr;
+
+      ::Backend::Vienna::RateNeurons* neurons = nullptr;
      };
 
+    /*
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RatePlasticity);
@@ -96,6 +101,7 @@ namespace Backend {
       viennacl::matrix<FloatT> _multipliers;
       bool _using_multipliers = false;
     };
+    */
 
     class RateNeurons : public virtual ::Backend::RateNeurons {
       friend class RateSynapses;
@@ -108,8 +114,11 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      void connect_input(::Backend::RateSynapses* synapses,
-                         ::Backend::RatePlasticity* plasticity) override;
+
+      void add_group(RateNeuronGroup* group) override;
+
+      void connect_input(::Backend::RateSynapses* synapses/*,
+                         ::Backend::RatePlasticity* plasticity*/) override;
 
       bool staged_integrate_timestep(FloatT dt) override;
 
@@ -140,10 +149,11 @@ namespace Backend {
       EigenVector _rate_cpu;
       int _rate_cpu_timestep = 0;
       std::vector<
-        std::pair<::Backend::Vienna::RateSynapses*,
-                  ::Backend::Vienna::RatePlasticity*> > _vienna_dendrites;
+        /*std::pair<*/::Backend::Vienna::RateSynapses*/*,
+                  ::Backend::Vienna::RatePlasticity*> */> _vienna_dendrites;
     };
 
+    /*
     class DummyRateNeurons : public virtual ::Backend::DummyRateNeurons,
                              public virtual ::Backend::Vienna::RateNeurons {
       friend class RateSynapses;
@@ -173,7 +183,7 @@ namespace Backend {
       /*
       viennacl::vector<FloatT> _rate_on;
       viennacl::vector<FloatT> _rate_off;
-      */
+      * /
       std::vector<std::pair<FloatT, viennacl::vector<FloatT>> > _rate_schedule;
       int _schedule_idx = 0;
       FloatT _curr_rate_t;
@@ -205,6 +215,7 @@ namespace Backend {
       viennacl::vector<FloatT> theta_pref;
       viennacl::vector<FloatT> d;
     };
+    */
 
     /*
     class RateElectrodes : public virtual ::Backend::RateElectrodes {
