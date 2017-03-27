@@ -93,8 +93,12 @@ void RateNeurons::reset_state() {
 }
 
 int RateNeurons::add_group(RateNeuronGroup* group) {
-  assert(false);
-  return -1;
+  std::cout << "RateNeurons::add_group TODO: allocate backend resources; construct parameter vectors.\n";
+  neuron_groups.push_back(group);
+  group->parent = this;
+  group->start = size;
+  size += group->size;
+  return neuron_groups.size() - 1;
 }
 
 void RateNeurons::assert_dendritic_consistency
@@ -241,8 +245,10 @@ void RateSynapses::reset_state() {
 }
 
 int RateSynapses::add_group(RateSynapseGroup* group) {
-  assert(false);
-  return -1;
+  std::cout << "RateSynapses::add_group TODO: check initial weights + copy; set up delay...\n";
+  synapse_groups.push_back(group);
+  group->parent = this;
+  return synapse_groups.size() - 1;
 }
 
 const EigenVector& RateSynapses::activation() const {
@@ -275,11 +281,17 @@ void RateSynapses::update_activation(FloatT dt) {
 */
 
 const EigenMatrix RateSynapseGroup::weights() const {
-  assert(false);
+  assert(parent != nullptr);
+  return parent->weights().block(neurons_post->start, neurons_pre->start,
+                                 neurons_post->size,  neurons_pre->size);
 }
 
 void RateSynapseGroup::weights(EigenMatrix const& w) {
-  assert(false);
+  assert(parent != nullptr);
+  EigenMatrix tmp(parent->weights());
+  tmp.block(neurons_post->start, neurons_pre->start,
+            neurons_post->size,  neurons_pre->size) = w;
+  parent->weights(tmp);
 }
 
 /*

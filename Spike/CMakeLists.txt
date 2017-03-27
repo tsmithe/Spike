@@ -38,7 +38,8 @@ add_library(Spike
 target_link_libraries(Spike PRIVATE pthread)
 
 target_link_libraries(Spike PRIVATE -Wl,--whole-archive
-  SpikeDummyHelpers 
+  SpikeDummyHelpers
+  SpikeDummyModels
   SpikeDummyNeurons
   SpikeDummyRecordingElectrodes
   SpikeDummySpikeAnalyser

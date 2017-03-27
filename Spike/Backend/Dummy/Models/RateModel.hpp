@@ -15,15 +15,10 @@ namespace Backend {
       void reset_state() override {
       }
 
-      void push_data_front() override {
-      }
+      // void update_activation(float dt) override {
+      // }
 
-      void pull_data_back() override {
-      }
-
-      void update_activation(float dt) override {
-      }
-
+      /*
       inline const Eigen::VectorXf& activation() override {
         return _activation;
       }
@@ -31,12 +26,32 @@ namespace Backend {
       inline const Eigen::MatrixXf& weights() override {
         return _weights;
       }
+      */
+
+      const EigenVector& activation() override {
+        return _activation;
+      }
+
+      const EigenMatrix& weights() override {
+        return _weights;
+      }
+
+      void weights(EigenMatrix const& w) override {
+      }
+
+      void delay(unsigned int) override {
+      }
+
+      unsigned int delay() override {
+        return 0;
+      }
 
     private:
       Eigen::VectorXf _activation;
       Eigen::MatrixXf _weights;
     };
 
+    /*
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RatePlasticity);
@@ -48,15 +63,10 @@ namespace Backend {
       void reset_state() override {
       }
 
-      void push_data_front() override {
-      }
-
-      void pull_data_back() override {
-      }
-
       void apply_plasticity(float dt) override {
       }
     };
+    */
 
     class RateNeurons : public virtual ::Backend::RateNeurons {
     public:
@@ -69,17 +79,11 @@ namespace Backend {
       void reset_state() override {
       }
 
-      void push_data_front() override {
+      void connect_input(::Backend::RateSynapses* synapses/*,
+                         ::Backend::RatePlasticity* plasticity*/) override {
       }
 
-      void pull_data_back() override {
-      }
-
-      void connect_input(::Backend::RateSynapses* synapses,
-                         ::Backend::RatePlasticity* plasticity) override {
-      }
-
-      void update_rate(float dt) override {
+      bool staged_integrate_timestep(FloatT dt) override {
       }
 
       inline const Eigen::VectorXf& rate() override {

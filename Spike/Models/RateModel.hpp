@@ -327,7 +327,7 @@ public:
 
   int size = 0;
 
-  std::vector<std::pair<int, RateNeuronGroup> > neuron_groups;
+  std::vector<RateNeuronGroup*> neuron_groups;
 
   int timesteps = 0;
 

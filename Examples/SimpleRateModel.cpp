@@ -48,28 +48,27 @@ int main() {
   // RateSynapses synapses2(ctx, &neurons2);
 
   RateSynapseGroup synapses11 = {&neurons1, &neurons1};
+  synapses.add_group(&synapses11);
   synapses11.weights(0.2 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons1.size,
                                                      true, 0, 0.1));
   RateSynapseGroup synapses12 = {&neurons1, &neurons2};
+  synapses.add_group(&synapses12);
   synapses12.weights(0.35 * Eigen::make_random_matrix(neurons2.size,
                                                       neurons1.size,
                                                       true, 0, 0));
   // synapses12.delay(100);
   RateSynapseGroup synapses21 = {&neurons2, &neurons1};
+  synapses.add_group(&synapses21);
   synapses21.weights(0.25 * Eigen::make_random_matrix(neurons1.size,
                                                      neurons2.size,
                                                      true, 0, 0));
   // synapses21.delay(100);
   RateSynapseGroup synapses22 = {&neurons2, &neurons2};
+  synapses.add_group(&synapses22);
   synapses22.weights(0.1 * Eigen::make_random_matrix(neurons2.size,
                                                      neurons2.size,
                                                      true, 0, -0.5));
-
-  synapses.add_group(&synapses11);
-  synapses.add_group(&synapses12);
-  synapses.add_group(&synapses21);
-  synapses.add_group(&synapses22);
 
   /*
   float eps = 0.001;
