@@ -265,11 +265,11 @@ void RateSynapses::weights(EigenMatrix const& w) {
   backend()->weights(w);
 }
 
-unsigned int RateSynapses::delay() const {
+EigenVector RateSynapses::delay() const {
   return backend()->delay();
 }
 
-void RateSynapses::delay(unsigned int d) {
+void RateSynapses::delay(EigenVector const& d) {
   backend()->delay(d);
 }
 

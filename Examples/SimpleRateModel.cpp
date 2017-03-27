@@ -28,8 +28,8 @@ int main() {
   RateNeurons neurons(ctx, /*1000,*/ "test_neurons"/*, 0, 1, 0.1*/);
   //RateNeurons neurons2(ctx,  /*800,*/ "test_neurons2"/*, 0, 1, 0.1*/);
 
-  RateNeuronGroup neurons1 = {"test_neurons1", 1000, 0, 1, 0.1};
-  RateNeuronGroup neurons2 = {"test_neurons2",  800, 0, 1, 0.1};
+  RateNeuronGroup neurons1 = {"test_neurons1", 1000, 0.0, 1.0, 0.1};
+  RateNeuronGroup neurons2 = {"test_neurons2",  800, 1.0, 2.0, 0.1};
 
   neurons.add_group(&neurons1);
   neurons.add_group(&neurons2);

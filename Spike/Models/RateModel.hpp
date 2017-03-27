@@ -156,8 +156,8 @@ namespace Backend {
     virtual const EigenMatrix& weights() = 0;
     virtual void weights(EigenMatrix const& w) = 0;
 
-    virtual void delay(unsigned int) = 0;
-    virtual unsigned int delay() = 0;
+    virtual void delay(EigenVector const&) = 0;
+    virtual EigenVector delay() = 0;
   };
 
   /*
@@ -434,8 +434,8 @@ public:
 
   virtual int add_group(RateSynapseGroup* group);
 
-  unsigned int delay() const;
-  void delay(unsigned int d);
+  EigenVector delay() const;
+  void delay(EigenVector const& d);
 
   const EigenVector& activation() const;
   const EigenMatrix& weights() const; // just single, instantaneous dense weights for now

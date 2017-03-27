@@ -43,11 +43,11 @@ namespace Backend {
       void weights(EigenMatrix const& w) override {
       }
 
-      void delay(unsigned int) override {
+      void delay(EigenVector const&) override {
       }
 
-      unsigned int delay() override {
-        return 0;
+      EigenVector delay() override {
+        return EigenVector::Zero(_weights.size());
       }
 
     private:
