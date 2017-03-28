@@ -242,8 +242,8 @@ const EigenVector& RateSynapses::activation() const {
   return backend()->activation();
 }
 
-const EigenMatrix& RateSynapses::weights() const {
-  return backend()->weights();
+void RateSynapses::get_weights(EigenMatrix& output) const {
+  return backend()->get_weights(output);
 }
 
 void RateSynapses::weights(EigenMatrix const& w) {
@@ -291,8 +291,11 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   timesteps += 1;
   synapses->timesteps += 1; // TODO: Tidy this up
   // TODO: Is this the best place for the buffering?
-  if (weights_buffer_interval && !(timesteps % weights_buffer_interval))
-    weights_history.push_back(timesteps, synapses->weights());
+  if (weights_buffer_interval && !(timesteps % weights_buffer_interval)) {
+    EigenMatrix tmp_buffer;
+    synapses->get_weights(tmp_buffer);
+    weights_history.push_back(timesteps, tmp_buffer);
+  }
 }
 
 void RatePlasticity::multipliers(EigenMatrix const& m) {

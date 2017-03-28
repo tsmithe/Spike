@@ -19,7 +19,7 @@ namespace Backend {
 
       // void update_activation(FloatT dt) override;
       const EigenVector& activation() override;
-      const EigenMatrix& weights() override;
+      void get_weights(EigenMatrix& output) override;
       void weights(EigenMatrix const& w) override;
 
       unsigned int delay() override;
@@ -48,12 +48,12 @@ namespace Backend {
 
       // void update_activation(FloatT dt) override;
       const EigenVector& activation() override;
-      const EigenMatrix& weights() override;
-      void weights(EigenMatrix const& w) override;
+      void get_weights(EigenSpMatrix& output) override;
+      void weights(EigenSpMatrix const& w) override;
 
     private:
       EigenVector _activation; // TODO: Need an explicit temporary?
-      EigenMatrix _weights;    // TODO: Generalize synapse types
+      EigenSpMatrix _weights;    // TODO: Generalize synapse types
 
       ::Backend::Eigen::RateNeurons* neurons_pre = nullptr;
       ::Backend::Eigen::RateNeurons* neurons_post = nullptr;

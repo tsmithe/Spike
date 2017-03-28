@@ -126,7 +126,11 @@ int main() {
   FloatT AHVxHD_HD_scaling = 165.0 / N_AHVxHD;
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
-  AHVxHD_HD.weights(EigenMatrix(HD_AHVxHD.weights().transpose()));
+  {
+    EigenMatrix HD_AHVxHD_W;
+    HD_AHVxHD.get_weights(HD_AHVxHD_W);
+    AHVxHD_HD.weights(EigenMatrix(HD_AHVxHD_W.transpose()));
+  }
   // {
   //   EigenMatrix AHVxHD_HD_W = EigenMatrix::Zero(N_HD, N_AHVxHD);
   //   /*

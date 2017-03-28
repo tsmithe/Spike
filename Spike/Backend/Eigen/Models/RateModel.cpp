@@ -237,7 +237,7 @@ namespace Backend {
       return _delay;
     }
 
-    const EigenMatrix& RateSynapses::weights() {
+    void RateSynapses::get_weights(EigenMatrix& output) {
       /*
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
@@ -247,7 +247,7 @@ namespace Backend {
       }
       */
 
-      return _weights; // _cpu;
+      output = _weights; // _cpu;
     }
 
     /*
@@ -280,11 +280,11 @@ namespace Backend {
       return RateSynapses::activation();
     }
 
-    const EigenMatrix& SparseRateSynapses::weights() {
-      return RateSynapses::weights();
+    void SparseRateSynapses::get_weights(EigenSpMatrix& output) {
+      assert("TODO" && false);
     }
 
-    void SparseRateSynapses::weights(EigenMatrix const& w) {
+    void SparseRateSynapses::weights(EigenSpMatrix const& w) {
       RateSynapses::weights(w);
     }
 

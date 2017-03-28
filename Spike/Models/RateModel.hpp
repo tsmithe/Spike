@@ -45,10 +45,12 @@ template<typename T>
 inline T infinity() { return std::numeric_limits<T>::infinity(); }
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 typedef float FloatT;
 typedef Eigen::VectorXf EigenVector;
 typedef Eigen::MatrixXf EigenMatrix;
+typedef Eigen::SparseMatrix<FloatT> EigenSpMatrix;
 
 inline void normalize_matrix_rows(EigenMatrix& R, FloatT scale=1) {
   for (int j = 0; j < R.rows(); ++j) {
@@ -149,7 +151,7 @@ namespace Backend {
     void reset_state() override = 0;
     // virtual void update_activation(FloatT dt) = 0;
     virtual const EigenVector& activation() = 0;
-    virtual const EigenMatrix& weights() = 0;
+    virtual void get_weights(EigenMatrix& output) = 0;
     virtual void weights(EigenMatrix const& w) = 0;
 
     virtual void delay(unsigned int) = 0;
@@ -163,8 +165,8 @@ namespace Backend {
     void reset_state() override = 0;
     // virtual void update_activation(FloatT dt) = 0;
     virtual const EigenVector& activation() = 0;
-    virtual const EigenMatrix& weights() = 0;
-    virtual void weights(EigenMatrix const& w) = 0;
+    virtual void get_weights(EigenSpMatrix& output) = 0;
+    virtual void weights(EigenSpMatrix const& w) = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -404,7 +406,7 @@ public:
   void delay(unsigned int d);
 
   const EigenVector& activation() const;
-  const EigenMatrix& weights() const; // just single, instantaneous dense weights for now
+  void get_weights(EigenMatrix& output) const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
 
   FloatT scaling = 1;
@@ -422,6 +424,7 @@ class SparseRateSynapses : public virtual RateSynapses {
 public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(SparseRateSynapses, RateSynapses);
+  void get_weights(EigenSpMatrix& output) const; // just single, instantaneous dense weights for now
 private:
   std::shared_ptr<::Backend::SparseRateSynapses> _backend;
 };
