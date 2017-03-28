@@ -16,13 +16,6 @@ namespace Backend {
       _rate_history = EigenMatrix::Zero(size, 1);
 
       _total_activation = EigenVector::Zero(size);
-
-      _ones = EigenVector::Constant(size, 1);
-      _half = EigenVector::Constant(size, 0.5);
-
-      _alpha = EigenVector::Constant(size, frontend()->alpha);
-      _beta = frontend()->beta;
-      _tau = frontend()->tau;
     }
 
     void RateNeurons::reset_state() {
@@ -31,29 +24,19 @@ namespace Backend {
 
       _rate_history = EigenMatrix::Zero(_rate_history.rows(),
                                         _rate_history.cols());
-      _rate_cpu = EigenVector::Zero(size);
-      _rate_cpu_timestep = frontend()->timesteps;
+      _rate = EigenVector::Zero(size);
     }
 
     const EigenVector& RateNeurons::rate() {
-      // Ensure that host copy is up to date:
-      int curr_timestep = frontend()->timesteps;
-      if (curr_timestep != _rate_cpu_timestep) {
-        _rate_cpu = _rate();
-        _rate_cpu_timestep = curr_timestep;
-      }
-
-      return _rate_cpu;
+      return rate(0);
     }
 
-    EigenVector RateNeurons::_rate(unsigned int n_back) {
+    const EigenVector& RateNeurons::rate(unsigned int n_back) {
       // TODO: performance -- just return a 'view'
       int i = _rate_hist_idx - n_back;
       if (i < 0) i += _rate_history.cols();
-      // if (n_back != 0) {
-      //   std::cout << this << "- " << _rate_hist_idx << " - " << n_back << " - " << _rate_history.size2() << " - " << i << "\n";
-      // }
-      return _rate_history.col(i);
+      _rate = _rate_history.col(i);
+      return _rate;
     }
 
     void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
@@ -69,33 +52,16 @@ namespace Backend {
     template<typename T>
     inline T RateNeurons::transfer(T const& total_activation) {
       // 2*logistic(x) = 1 + tanh(x/2)
-      EigenVector transfer_tmp;
-      if (_beta == 1)
-        transfer_tmp = total_activation.array().tanh().matrix() + _ones;
+      if (frontend()->beta == 1)
+        return 0.5*(total_activation.array().tanh() + 1).matrix();
       else
-        transfer_tmp = (_beta*total_activation).array().tanh().matrix() + _ones;
-      return _half.cwiseProduct(transfer_tmp);
+        return 0.5*((frontend()->beta*total_activation).array().tanh() + 1).matrix();
     }
 
     bool RateNeurons::staged_integrate_timestep(FloatT dt) {
       if (done_timestep) {
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.cols();
-        // std::cout << this << ": " << _rate_hist_idx << "\n";
-        /*
-        viennacl::range _rate_hist_r1(0, _rate_history.size1());
-        viennacl::range _rate_hist_r2(_rate_hist_idx, _rate_hist_idx + 1);
-        viennacl::matrix_range<viennacl::matrix<FloatT> > _rate_history_col
-          (_rate_history, _rate_hist_r1, _rate_hist_r2);
-
-        viennacl::matrix_base<FloatT> _new_rate_as_matrix
-          (_new_rate.handle(),
-           _new_rate.size(), _new_rate.start(),
-           _new_rate.stride(), _new_rate.internal_size(),
-           1, 0, 1, 1, // 1 column; start 0, stride 1, internal columns 1
-           _rate_history.row_major());
-        _rate_history_col = _new_rate_as_matrix;
-        */
         _rate_history.col(_rate_hist_idx) = _new_rate;
 
         done_timestep = false; // false for next time
@@ -105,38 +71,21 @@ namespace Backend {
       int i = 0;
       for (const auto& dendrite_pair : _eigen_dendrites) {
         auto& synapses = dendrite_pair.first;
-        auto activation_i = synapses->_activation();
+        auto activation_i = synapses->activation();
 
         if (i == 0) {
           if (frontend()->alpha == 0)
             _total_activation = activation_i;
           else
-            _total_activation = activation_i - _alpha;
+            _total_activation = (activation_i.array() - frontend()->alpha).matrix();
         } else {
           _total_activation += activation_i;
         }
 
-        /*
-        if (isanynan(activation_i)) {
-          std::cout << "\n !!!!!!!!!!!!!!!!!! "
-                    << i << " " << synapses->frontend() << "\n";
-          assert(false);
-        }
-        */
-
         i++;
       }
 
-      auto trans = transfer(_total_activation);
-      /*
-      if(isanynan(trans)) {
-        std::cout << "\n" << trans << "\n";
-        if(isanynan(_total_activation))
-          std::cout << "\n!!!!! !!!!!";
-        assert(false);
-      }
-      */
-      _new_rate = _rate() + (dt/_tau)*(-_rate() + trans);
+      _new_rate = rate() + (dt/frontend()->tau)*(-rate() + transfer(_total_activation));
 
       done_timestep = true;
       return false;
@@ -155,7 +104,7 @@ namespace Backend {
     }
 
     void DummyRateNeurons::add_rate(FloatT duration, EigenVector rates) {
-      _rate_schedule.push_back({duration, rates});
+      // _rate_schedule.push_back({duration, rates});
     }
 
     bool DummyRateNeurons::staged_integrate_timestep(FloatT dt) {
@@ -163,10 +112,10 @@ namespace Backend {
       dt_ = dt;
 
       _curr_rate_t += dt;
-      if (_curr_rate_t > _rate_schedule[_schedule_idx].first) {
-        _curr_rate_t = _curr_rate_t - _rate_schedule[_schedule_idx].first;
+      if (_curr_rate_t > frontend()->rate_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - frontend()->rate_schedule[_schedule_idx].first;
         _schedule_idx++;
-        if (_schedule_idx >= _rate_schedule.size())
+        if (_schedule_idx >= frontend()->rate_schedule.size())
           _schedule_idx = 0;
       }
 
@@ -177,14 +126,15 @@ namespace Backend {
       return frontend()->rate_schedule[_schedule_idx].second;
     }
 
-    EigenVector DummyRateNeurons::_rate(unsigned int n_back) {
-      return _rate_schedule[_schedule_idx].second;
+    EigenVector const& DummyRateNeurons::rate(unsigned int n_back) {
+      assert(n_back == 0);
+      return frontend()->rate_schedule[_schedule_idx].second;
     }
 
     void InputDummyRateNeurons::prepare() {
       theta_pref.resize(frontend()->size);
       d.resize(frontend()->size);
-      _rate_cpu.resize(frontend()->size);
+      _rate.resize(frontend()->size);
 
       theta_pref = frontend()->theta_pref;
 
@@ -216,28 +166,21 @@ namespace Backend {
       return true;
     }
 
-    EigenVector InputDummyRateNeurons::_rate(unsigned int n_back) {
+    EigenVector const& InputDummyRateNeurons::rate(unsigned int n_back) {
       assert(n_back == 0); // TODO: support delays here?
 
-      if (t > frontend()->t_stop_after)
-        return EigenVector::Zero(frontend()->size);
+      if (t > frontend()->t_stop_after) {
+        _rate = EigenVector::Zero(frontend()->size); 
+        return _rate;
+      }
 
-      // TODO: FIX THIS HERE !
-      EigenVector v(frontend()->size);
-      /*
-      v = frontend()->lambda * viennacl::linalg::element_exp
-        (viennacl::linalg::element_div
-         (viennacl::linalg::element_cos(d), sigma_IN_sqr));
-      */
-      // TODO: Probably want custom kernel!
-      v = frontend()->lambda *
+      _rate = frontend()->lambda *
         (-d.cwiseProduct(d).cwiseQuotient(2*sigma_IN_sqr)).array().exp().matrix();
-      return v;
+      return _rate;
     }
 
     EigenVector const& InputDummyRateNeurons::rate() {
-      _rate_cpu = _rate();
-      return _rate_cpu;
+      return rate(0);
     }
 
     void RateSynapses::prepare() {
@@ -259,13 +202,10 @@ namespace Backend {
       int size_pre = frontend()->neurons_pre->size;
       int timesteps = frontend()->timesteps;
 
-      _activation_cpu = EigenVector::Zero(size_post);
-      _activation_cpu_timestep = timesteps;
+      _activation = EigenVector::Zero(size_post);
 
       // TODO: Better record of initial weights state:
       // _weights = frontend()->initial_weights;
-      // _weights_cpu = frontend()->initial_weights;
-      // _weights_cpu_timestep = timesteps;
     }
 
     /*
@@ -276,36 +216,12 @@ namespace Backend {
     */
 
     const EigenVector& RateSynapses::activation() {
-      // Ensure that host copy is up to date:
-      int curr_timestep = frontend()->timesteps;
-      if (curr_timestep != _activation_cpu_timestep) {
-        _activation_cpu = _activation();
-        _activation_cpu_timestep = curr_timestep;
-      }
-
-      return _activation_cpu;
-    }
-
-    EigenVector RateSynapses::_activation() {
-      // TODO: caching; perf enhancements
-      
-      EigenVector activ = _weights * neurons_pre->_rate(_delay);
-
-      /*
-      if (isanynan(viennacl::vector<FloatT>(1.0*activ))) {
-        if (isanynan(_weights)) {
-          std::cout << _weights << "\n";
-        }
-        std::cout << "\n !!!!!!!!!!!!!!!!!! "
-                  << frontend() << "\n";
-        assert(false);
-      }
-      */
-
       if (frontend()->scaling != 1)
-        return frontend()->scaling * activ;
+        _activation = frontend()->scaling * _weights * neurons_pre->rate(_delay);
       else
-        return activ;
+        _activation = _weights * neurons_pre->rate(_delay);
+
+      return _activation;
     }
 
     void RateSynapses::delay(unsigned int d) {
@@ -321,14 +237,16 @@ namespace Backend {
     }
 
     const EigenMatrix& RateSynapses::weights() {
+      /*
       // Ensure that host copy is up to date:
       int curr_timestep = frontend()->timesteps;
       if (curr_timestep != _weights_cpu_timestep) {
         _weights_cpu = _weights;
         _weights_cpu_timestep = curr_timestep;
       }
+      */
 
-      return _weights_cpu;
+      return _weights; // _cpu;
     }
 
     /*
@@ -345,9 +263,8 @@ namespace Backend {
     */
 
     void RateSynapses::weights(EigenMatrix const& w) {
-      _weights_cpu = w;
-      _weights_cpu_timestep = frontend()->timesteps;
       _weights = w;
+      // _weights_cpu_timestep = frontend()->timesteps;
     }
 
     void RatePlasticity::prepare() {
@@ -371,8 +288,8 @@ namespace Backend {
            (synapses->neurons_post->_rate(), synapses->neurons_pre->_rate()));
       } else*/ {
         synapses->_weights +=
-          dt * epsilon * (synapses->neurons_post->_rate()
-                          * synapses->neurons_pre->_rate().transpose());
+          dt * epsilon * (synapses->neurons_post->rate()
+                          * synapses->neurons_pre->rate().transpose());
       }
 
       normalize_matrix_rows(synapses->_weights);
