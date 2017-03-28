@@ -37,6 +37,10 @@ add_library(Spike
 
 target_link_libraries(Spike PRIVATE pthread)
 
+if (MKL_FOUND)
+  target_link_libraries(Spike PRIVATE -Wl,--no-as-needed ${MKL_LIBRARIES} -Wl,--as-needed)
+endif()
+
 target_link_libraries(Spike PRIVATE -Wl,--whole-archive
   SpikeDummyHelpers 
   SpikeDummyNeurons

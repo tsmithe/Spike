@@ -97,6 +97,13 @@ endif()
 mark_as_advanced(EIGEN_INCLUDE_DIR)
 include_directories(BEFORE SYSTEM "${EIGEN_INCLUDE_DIR}")
 
+# find MKL
+set(MKL_MULTI_THREADED ON)
+find_package(MKL)
+if(MKL_FOUND)
+  add_definitions(-DEIGEN_USE_MKL_ALL)
+endif()
+
 find_package(OpenMP)
 if(OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")

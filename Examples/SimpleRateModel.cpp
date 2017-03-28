@@ -54,7 +54,7 @@ int main() {
   synapses32.weights(0.25 * EigenMatrix::Identity(neurons2.size,
                                                   neurons3.size));
 
-  float eps = 0; // .001;
+  float eps = 0.001;
   RatePlasticity plasticity01(ctx, &synapses01, 0);
   RatePlasticity plasticity11(ctx, &synapses11, eps);
   RatePlasticity plasticity12(ctx, &synapses12, eps);
