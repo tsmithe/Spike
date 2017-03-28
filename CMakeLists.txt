@@ -34,6 +34,10 @@ option(BUILD_WITH_CUDA
   "Enable CUDA backend"
   ON)
 
+option(BUILD_WITH_EIGEN
+  "Enable Eigen backend"
+  ON)
+
 option(BUILD_WITH_OPENCL
   "Enable OpenCL backend"
   ON)

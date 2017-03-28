@@ -15,7 +15,7 @@ def accumulate_activation(root, net_post, nets_pre, size, dtype=np.float32):
 
 def read_weights(root, net_post, net_pre,
                  size_post, size_pre, dtype=np.float32):
-    w = np.fromfile(root + '/' + net_post + '/'
+    w = np.memmap(root + '/' + net_post + '/'
                     + 'weights_' + net_pre + '_' + net_post + '.bin', dtype)
     w = w.reshape(w.size/(size_pre*size_post), size_pre, size_post)
     return w.transpose((0, 2, 1))

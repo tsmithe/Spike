@@ -15,6 +15,7 @@ int main() {
 
   // Tell Spike to talk
   ctx->verbose = true;
+  ctx->backend = "Eigen";
 
   // Set up some Neurons, Synapses and Electrodes
   int N_ROT = 1;

@@ -46,6 +46,18 @@ target_link_libraries(Spike PRIVATE -Wl,--whole-archive
   SpikeDummySynapses
   -Wl,--no-whole-archive)
 
+if (BUILD_WITH_EIGEN)
+  target_link_libraries(Spike PRIVATE -Wl,--whole-archive
+    # SpikeEigenHelpers 
+    SpikeEigenModels
+    # SpikeEigenNeurons
+    # SpikeEigenRecordingElectrodes
+    # SpikeEigenSpikeAnalyser
+    # SpikeEigenSTDP
+    # SpikeEigenSynapses
+    -Wl,--no-whole-archive)
+endif()
+
 if (BUILD_WITH_CUDA)
   target_link_libraries(Spike PRIVATE -Wl,--whole-archive
     SpikeCUDAHelpers
