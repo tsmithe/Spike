@@ -4,6 +4,7 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, InputDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, SparseRateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
 
 namespace Backend {
@@ -265,6 +266,26 @@ namespace Backend {
     void RateSynapses::weights(EigenMatrix const& w) {
       _weights = w;
       // _weights_cpu_timestep = frontend()->timesteps;
+    }
+
+    void SparseRateSynapses::prepare() {
+      RateSynapses::prepare();
+    }
+
+    void SparseRateSynapses::reset_state() {
+      RateSynapses::reset_state();
+    }
+
+    const EigenVector& SparseRateSynapses::activation() {
+      return RateSynapses::activation();
+    }
+
+    const EigenMatrix& SparseRateSynapses::weights() {
+      return RateSynapses::weights();
+    }
+
+    void SparseRateSynapses::weights(EigenMatrix const& w) {
+      RateSynapses::weights(w);
     }
 
     void RatePlasticity::prepare() {

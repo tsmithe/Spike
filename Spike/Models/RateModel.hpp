@@ -129,6 +129,7 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
+class SparseRateSynapses;
 class RateSynapses;
 class RatePlasticity;
 class RateElectrodes;
@@ -153,6 +154,17 @@ namespace Backend {
 
     virtual void delay(unsigned int) = 0;
     virtual unsigned int delay() = 0;
+  };
+
+  class SparseRateSynapses : public virtual RateSynapses {
+  public:
+    SPIKE_ADD_BACKEND_FACTORY(SparseRateSynapses);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    // virtual void update_activation(FloatT dt) = 0;
+    virtual const EigenVector& activation() = 0;
+    virtual const EigenMatrix& weights() = 0;
+    virtual void weights(EigenMatrix const& w) = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -404,6 +416,14 @@ public:
 
 private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
+};
+
+class SparseRateSynapses : public virtual RateSynapses {
+public:
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(SparseRateSynapses, RateSynapses);
+private:
+  std::shared_ptr<::Backend::SparseRateSynapses> _backend;
 };
 
 // TODO: Some nice Synapse factories for random initializations

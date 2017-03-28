@@ -10,6 +10,7 @@ namespace Backend {
       friend class RateNeurons;
       friend class RatePlasticity;
     public:
+      RateSynapses() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateSynapses);
       ~RateSynapses() override = default;
 
@@ -27,6 +28,30 @@ namespace Backend {
     private:
       unsigned int _delay = 0;
 
+      EigenVector _activation; // TODO: Need an explicit temporary?
+      EigenMatrix _weights;    // TODO: Generalize synapse types
+
+      ::Backend::Eigen::RateNeurons* neurons_pre = nullptr;
+      ::Backend::Eigen::RateNeurons* neurons_post = nullptr;
+     };
+
+    class SparseRateSynapses : public virtual ::Backend::SparseRateSynapses,
+                               public virtual ::Backend::Eigen::RateSynapses {
+      friend class RateNeurons;
+      friend class RatePlasticity;
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(SparseRateSynapses);
+      ~SparseRateSynapses() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      // void update_activation(FloatT dt) override;
+      const EigenVector& activation() override;
+      const EigenMatrix& weights() override;
+      void weights(EigenMatrix const& w) override;
+
+    private:
       EigenVector _activation; // TODO: Need an explicit temporary?
       EigenMatrix _weights;    // TODO: Generalize synapse types
 
