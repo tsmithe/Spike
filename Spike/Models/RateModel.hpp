@@ -108,34 +108,35 @@ inline void read_binary(const char* filename, Matrix& matrix,
   in.close();
 }
 
-inline EigenMatrix make_random_matrix(int J, int N, float scale,
+inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
                                       bool scale_by_norm=1, float sparseness=0,
-                                      float mean=0) {
+                                      float mean=0, bool gaussian=0) {
+
   auto global_random_generator = std::mt19937();
+  std::normal_distribution<> gauss;
+  std::uniform_real_distribution<> U(0, 1);
 
   // J rows, each of N columns
   // Each row ~uniformly distributed on the N-sphere
   EigenMatrix R = EigenMatrix::Zero(J, N);
-  std::normal_distribution<> gauss;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < J; ++j) {
-      R(j, i) = gauss(global_random_generator) + mean;
+      if (sparseness > 0
+          && U(global_random_generator) < sparseness) {
+        R(j, i) = 0;
+      } else {
+        if (gaussian)
+          R(j, i) = gauss(global_random_generator) + mean;
+        else
+          R(j, i) = U(global_random_generator) + mean;
+      }
     }
   }
+
   if (scale_by_norm)
     normalize_matrix_rows(R, scale);
   else
     R.array() *= scale;
-
-  if (sparseness > 0) {
-    std::uniform_real_distribution<> U(0, 1);
-    for (int i = 0; i < N; ++i) {
-      for (int j = 0; j < J; ++j) {
-        if (U(global_random_generator) < sparseness)
-          R(j, i) = 0;
-      }
-    }
-  }
 
   return R;
 }
@@ -336,8 +337,7 @@ private:
 class InputDummyRateNeurons : public virtual DummyRateNeurons {
 public:
   InputDummyRateNeurons(Context* ctx, int size_, std::string label_,
-                        FloatT sigma_IN_, FloatT lambda_, // gamma_,
-                        FloatT revolutions_per_second_);
+                        FloatT sigma_IN_, FloatT lambda_);
   ~InputDummyRateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -345,10 +345,12 @@ public:
 
   FloatT sigma_IN;
   FloatT lambda;
-  FloatT revolutions_per_second;
   FloatT t_stop_after = infinity<FloatT>();
 
   EigenVector theta_pref;
+
+  std::vector<std::pair<FloatT, FloatT> > revs_schedule;
+  void add_rate(FloatT duration, FloatT revs_per_sec);
 
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;

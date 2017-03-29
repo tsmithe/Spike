@@ -164,12 +164,10 @@ void DummyRateNeurons::add_rate(FloatT duration, EigenVector const& rates) {
 
 InputDummyRateNeurons::InputDummyRateNeurons
 (Context* ctx, int size_, std::string label_,
- FloatT sigma_IN_, FloatT lambda_,
- FloatT revolutions_per_second_)
+ FloatT sigma_IN_, FloatT lambda_)
   : DummyRateNeurons(nullptr, size_, label_),
     RateNeurons(nullptr, size_, label_, 0, 1, 1),
-    sigma_IN(sigma_IN_),
-    revolutions_per_second(revolutions_per_second_) {
+    sigma_IN(sigma_IN_) {
 
   lambda = lambda_;
 
@@ -182,6 +180,10 @@ InputDummyRateNeurons::InputDummyRateNeurons
 }
 
 InputDummyRateNeurons::~InputDummyRateNeurons() {
+}
+
+void InputDummyRateNeurons::add_rate(FloatT duration, FloatT revs_per_second) {
+  revs_schedule.push_back({duration, revs_per_second});
 }
 
 RateSynapses::RateSynapses(Context* ctx,

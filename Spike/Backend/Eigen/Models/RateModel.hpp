@@ -121,7 +121,6 @@ namespace Backend {
     protected:
       FloatT t, dt_;
 
-    private:
       int _schedule_idx = 0;
       FloatT _curr_rate_t;
     };

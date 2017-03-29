@@ -132,6 +132,9 @@ namespace Backend {
     }
 
     void InputDummyRateNeurons::prepare() {
+      _schedule_idx = 0;
+      _curr_rate_t = 0;
+
       theta_pref.resize(frontend()->size);
       d.resize(frontend()->size);
       _rate.resize(frontend()->size);
@@ -156,7 +159,17 @@ namespace Backend {
       if (t > frontend()->t_stop_after)
         return true;
 
-      theta += dt * 2 * M_PI * frontend()->revolutions_per_second;
+      _curr_rate_t += dt;
+      if (_curr_rate_t > frontend()->revs_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - frontend()->revs_schedule[_schedule_idx].first;
+        _schedule_idx++;
+        if (_schedule_idx >= frontend()->revs_schedule.size())
+          _schedule_idx = 0;
+      }
+
+      FloatT revs = frontend()->revs_schedule[_schedule_idx].second;
+
+      theta += dt * 2 * M_PI * revs;
       if (theta > 2*M_PI)
         theta -= 2*M_PI;
 

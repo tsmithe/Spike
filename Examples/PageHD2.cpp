@@ -7,7 +7,6 @@ int main() {
   feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT simulation_time = 3.6; // 4.1; // seconds (TODO units)
   
   // Create Model
   RateModel model;
@@ -23,44 +22,53 @@ int main() {
   int N_AHV = N_ROT + N_NOROT;
   EigenVector ROT_off = EigenVector::Zero(N_AHV);
   ROT_off.head(N_NOROT) = EigenVector::Ones(N_NOROT);
-  EigenVector ROT_on = EigenVector::Ones(N_ROT);
-  ROT_off.head(N_NOROT) = EigenVector::Zero(N_NOROT);
+  EigenVector ROT_on = EigenVector::Ones(N_AHV);
+  ROT_on.head(N_NOROT) = EigenVector::Zero(N_NOROT);
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
+  AHV.add_rate(0.6, ROT_on);
   AHV.add_rate(0.6, ROT_off);
-  AHV.add_rate(2, ROT_on);
-  AHV.add_rate(1, ROT_off);
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
-  FloatT lambda_VIS = 8;
-  FloatT revs_per_sec_VIS = 0; // NB: Initialisation is static
-  InputDummyRateNeurons VIS(ctx, N_VIS, "VIS",
-                            sigma_VIS, lambda_VIS, revs_per_sec_VIS);
-  VIS.t_stop_after = 0.1;
+  FloatT lambda_VIS = 450.0;
+  FloatT revs_per_sec = 1;
+  InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
+  VIS.add_rate(0.6, revs_per_sec);
+  VIS.add_rate(0.6, 0);
+  VIS.t_stop_after = 50*1.2;
   auto& VIS_tuning = VIS.theta_pref;
 
   int N_HD = 500;
   FloatT alpha_HD = 4.2;
-  FloatT beta_HD = 0.7;
+  FloatT beta_HD = 0.2;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
+  DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
+  EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
+  EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
+  HD_VIS_INH.add_rate(VIS.t_stop_after, HD_VIS_INH_on);
+  HD_VIS_INH.add_rate(100.0, HD_VIS_INH_off);
+
   int N_AHVxHD = N_AHV;
-  FloatT alpha_AHVxHD = 16.0;
-  FloatT beta_AHVxHD = 0.2;
+  FloatT alpha_AHVxHD = 113.0;
+  FloatT beta_AHVxHD = 0.3;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
   
-  FloatT HD_inhibition = -5;
+  FloatT HD_inhibition = -1;
   RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition/N_HD, "HD_HD");
-  {
-    EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
-    HD_HD.weights(HD_HD_W);
-  }
+  EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
+  HD_HD.weights(HD_HD_W);
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
   VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
+  VIS_HD.make_sparse();
+
+  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, 420.0, "VIS_INH_HD");
+  VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
+  VIS_INH_HD.make_sparse();
 
   // NOTA BENE
   // 
@@ -71,38 +79,32 @@ int main() {
   // HD_tuning).
   assert(N_VIS == N_HD);
   
-  FloatT axonal_delay = 1.1e-2; // seconds (TODO units)
-  FloatT HD_AHVxHD_scaling = 130.0 / N_HD;
+  FloatT axonal_delay = 1e-2; // seconds (TODO units)
+  FloatT HD_AHVxHD_scaling = 2400.0 / (0.05*N_HD);
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
-  {
-    EigenMatrix HD_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_HD);
-    HD_AHVxHD.weights(HD_AHVxHD_W);
-  }
+  HD_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
+                                              0.95, 0, false));
   HD_AHVxHD.make_sparse();
 
-  FloatT AHVxHD_HD_scaling = 165.0 / N_AHVxHD;
+  FloatT AHVxHD_HD_scaling = 10000.0 / N_AHVxHD;
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
-  {
-    EigenMatrix AHVxHD_HD_W = EigenMatrix::Zero(N_HD, N_AHVxHD);
-    // HD_AHVxHD.get_weights(HD_AHVxHD_W);
-    AHVxHD_HD.weights(AHVxHD_HD_W);
-  }
+  AHVxHD_HD.weights(Eigen::make_random_matrix(N_HD, N_AHVxHD));
 
-  FloatT AHVxHD_inhibition = -5.7;
+  FloatT AHVxHD_inhibition = -1000.0;
   RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
                              AHVxHD_inhibition/N_AHVxHD, "AHVxHD_AHVxHD");
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
-  FloatT AHV_AHVxHD_scaling = 8.3 / N_AHV;
+  FloatT AHV_AHVxHD_scaling = 5000.0 / N_AHV;
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
-  EigenMatrix AHV_AHVxHD_W = EigenMatrix::Zero(N_AHVxHD, N_AHV);
-  AHV_AHVxHD.weights(AHV_AHVxHD_W);
+  AHV_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_AHV));
 
   float eps = 0.01;
   RatePlasticity plast_HD_HD(ctx, &HD_HD, eps);
   RatePlasticity plast_VIS_HD(ctx, &VIS_HD, 0);
+  RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD, 0);
   RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD, eps);
   RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD, eps);
   RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD, eps);
@@ -110,6 +112,7 @@ int main() {
 
   HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
+  HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
   HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
   AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
@@ -124,6 +127,7 @@ int main() {
   // Add Neurons and Electrodes to Model
   model.add(&VIS);
   model.add(&HD);
+  model.add(&HD_VIS_INH);
   model.add(&AHVxHD);
   model.add(&AHV);
 
@@ -133,7 +137,7 @@ int main() {
   model.add(&AHV_elecs);
 
   // Set simulation time parameters:
-  model.set_simulation_time(simulation_time, timestep);
+  model.set_simulation_time(VIS.t_stop_after + 10, timestep);
   model.set_buffer_intervals((float)2e-3); // TODO: Use proper units
   model.set_weights_buffer_interval(100);
 
