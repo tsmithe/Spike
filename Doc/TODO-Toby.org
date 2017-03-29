@@ -479,20 +479,28 @@ CLOSED: [2017-03-22 Wed 13:40]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:35]
 :END:
-***** PROGRESS Recurrent inhibition: HD
+***** DONE Recurrent inhibition: HD
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:35]
 :END:
-***** PROGRESS Recurrent inhibition: AHVxHD
+***** DONE Recurrent inhibition: AHVxHD
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:55]
 :END:
-***** PROGRESS Identity: VIS -> HD
+***** DONE Identity: VIS -> HD
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:10]
 :END:
-***** PROGRESS Identity ('segregated'): AHV -> AHVxHD
+***** DONE Identity ('segregated'): AHV -> AHVxHD
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:20]
 :END:
 ***** PROGRESS Offset/non-offset: HD -> AHVxHD
@@ -504,10 +512,15 @@ CLOSED: [2017-03-22 Wed 13:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:20]
 :END:
 ****** TODO Check this!
-**** TODO For self-organising model
-***** TODO Details go here!
-*** PROGRESS Axonal conduction delays
+**** DONE For self-organising model: just random!
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-29 Wed 22:40]
+:END:
+*** DONE Axonal conduction delays
+CLOSED: [2017-03-29 Wed 22:40]
+:LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
 **** DONE RateSynapses::delay sets storage size for corresponding presynaptic RateNeurons
@@ -515,13 +528,21 @@ CLOSED: [2017-01-30 Mon 15:35]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-01-30 Mon 15:35]
 :END:
-**** TODO Performance enhancements: references, not copies, where possible
-*** PROGRESS Input 'networks'
+**** DONE Performance enhancements: references, not copies, where possible
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-29 Wed 22:40]
+:END:
+*** DONE Input 'networks'
+CLOSED: [2017-03-29 Wed 22:40]
+:LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 16:35]
 :END:
-**** PROGRESS VIS: Pre-defined Gaussian bump + identity connections to HD
+**** DONE VIS: Pre-defined Gaussian bump + identity connections to HD
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
 :END:
 **** DONE Compute VIS according to recent Page & Stringer
@@ -529,25 +550,39 @@ CLOSED: [2017-03-22 Wed 13:40]
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-03-22 Wed 13:40]
 :END:
-**** PROGRESS AHV: ROT and NOROT
+**** DONE AHV: ROT and NOROT
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:45]
 :END:
-*** PROGRESS Implement plasticity rules, including competition
+*** DONE Implement plasticity rules, including competition
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
-**** TODO At first, no plasticity
-**** PROGRESS Weight normalization
+**** DONE At first, no plasticity
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-29 Wed 22:40]
+:END:
+**** DONE Weight normalization
+CLOSED: [2017-03-29 Wed 22:40]
+:LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 13:05]
 :END:
-*** PROGRESS Support sparse connectivity
+*** DONE Support sparse connectivity
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
-**** PROGRESS Sparse Hebb update: use element_prod to zero unconnected inputs
+**** DONE Sparse Hebb update: use element_prod to zero unconnected inputs
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-01-30 Mon 15:35]
 :END:
 *** PROGRESS Simulation protocol
@@ -558,16 +593,23 @@ CLOSED: [2017-03-22 Wed 13:40]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
 :END:
-***** PROGRESS VIS -> HD initialisation
+***** DONE VIS -> HD initialisation
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
 :END:
-***** PROGRESS NOROT, ROT, NOROT
+***** DONE NOROT, ROT, NOROT
+CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:15]
 :END:
-**** TODO Self-organising model
-***** TODO Details here ...
+**** PROGRESS Self-organising model
+:LOGBOOK:
+- State "PROGRESS"   from "TODO"       [2017-03-29 Wed 22:40]
+:END:
+***** TODO Need to turn off plasticity at some point...
 ** Software engineering
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
