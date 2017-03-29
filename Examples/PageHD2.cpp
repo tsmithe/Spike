@@ -103,7 +103,6 @@ int main() {
   float eps = 0.01;
   RatePlasticity plast_HD_HD(ctx, &HD_HD, eps);
   RatePlasticity plast_VIS_HD(ctx, &VIS_HD, 0);
-  //plast_VIS_HD.multipliers(EigenMatrix::Ones(N_HD, N_VIS));
   RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD, eps);
   RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD, eps);
   RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD, eps);

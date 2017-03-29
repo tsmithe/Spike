@@ -230,8 +230,8 @@ namespace Backend {
       _sp_weights.setFromTriplets(coefficients.begin(), coefficients.end());
       _sparsity.setFromTriplets(sparsity_coeffs.begin(),sparsity_coeffs.end());
 
-      // _sp_weights.makeCompressed();
-      // _sparsity.makeCompressed();
+      _sp_weights.makeCompressed();
+      _sparsity.makeCompressed();
 
       is_sparse = true;
     }
@@ -291,12 +291,14 @@ namespace Backend {
       if (epsilon == 0)
         return;
 
+      unsigned int delay = synapses->delay();
+
       auto hebb = synapses->neurons_post->rate()
-        * synapses->neurons_pre->rate().transpose();
+        * synapses->neurons_pre->rate(delay).transpose();
 
       if (synapses->is_sparse) {
         auto dW = dt * epsilon * synapses->_sparsity.cwiseProduct(hebb);
-        synapses->_sp_weights = synapses->_sp_weights + dW;
+        synapses->_sp_weights += dW;
         normalize_matrix_rows(synapses->_sp_weights);
       } else {
         synapses->_weights += dt * epsilon * hebb;
