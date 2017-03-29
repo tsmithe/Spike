@@ -250,6 +250,10 @@ void RateSynapses::weights(EigenMatrix const& w) {
   backend()->weights(w);
 }
 
+void RateSynapses::make_sparse() {
+  backend()->make_sparse();
+}
+
 unsigned int RateSynapses::delay() const {
   return backend()->delay();
 }
@@ -264,6 +268,37 @@ void RateSynapses::update_activation(FloatT dt) {
   timesteps += 1;
   if (activation_buffer_interval && !(timesteps % activation_buffer_interval))
     activation_history.push_back(timesteps, activation());
+}
+*/
+
+/*
+SparseRateSynapses::SparseRateSynapses(Context* ctx,
+                                       RateNeurons* neurons_pre_,
+                                       RateNeurons* neurons_post_,
+                                       FloatT scaling_,
+                                       std::string label_)
+  : RateSynapses(ctx, neurons_pre_, neurons_post_, scaling_, label_)
+  /*neurons_pre(neurons_pre_), neurons_post(neurons_post_),
+    scaling(scaling_), label(label_)* / {
+
+  /*
+  init_backend(ctx);
+  // reset_state();
+  if(!(label.length()))
+    label = neurons_pre->label;
+
+  // initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created synapses '" << label
+              << "' (at " << this <<  ") from "
+              << neurons_pre->label << " to " << neurons_post->label << ".\n";
+  }
+  * /
+
+  if (ctx->verbose) {
+    std::cout << "Spike: SparseRateSynapses at " << this << "\n";
+  }
 }
 */
 
@@ -666,7 +701,7 @@ SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
-SPIKE_MAKE_INIT_BACKEND(SparseRateSynapses);
+//SPIKE_MAKE_INIT_BACKEND(SparseRateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
 // SPIKE_MAKE_INIT_BACKEND(RateElectrodes);
 // SPIKE_MAKE_INIT_BACKEND(RateModel);

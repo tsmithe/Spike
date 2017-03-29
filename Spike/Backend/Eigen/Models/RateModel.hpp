@@ -22,6 +22,8 @@ namespace Backend {
       void get_weights(EigenMatrix& output) override;
       void weights(EigenMatrix const& w) override;
 
+      void make_sparse() override;
+
       unsigned int delay() override;
       void delay(unsigned int d) override;
 
@@ -30,12 +32,18 @@ namespace Backend {
 
       EigenVector _activation; // TODO: Need an explicit temporary?
       EigenMatrix _weights;    // TODO: Generalize synapse types
+      EigenSpMatrix _sp_weights;
+      EigenSpMatrix _sparsity;
+
+      bool is_sparse = false;
 
       ::Backend::Eigen::RateNeurons* neurons_pre = nullptr;
       ::Backend::Eigen::RateNeurons* neurons_post = nullptr;
      };
 
-    class SparseRateSynapses : public virtual ::Backend::SparseRateSynapses,
+    /*
+    class SparseRateSynapses : public virtual ::Backend::Eigen::RateSynapsesBase,
+                               public virtual ::Backend::SparseRateSynapses,
                                public virtual ::Backend::Eigen::RateSynapses {
       friend class RateNeurons;
       friend class RatePlasticity;
@@ -48,6 +56,7 @@ namespace Backend {
 
       // void update_activation(FloatT dt) override;
       const EigenVector& activation() override;
+      const EigenVector& activation_() override;
       void get_weights(EigenSpMatrix& output) override;
       void weights(EigenSpMatrix const& w) override;
 
@@ -58,6 +67,7 @@ namespace Backend {
       ::Backend::Eigen::RateNeurons* neurons_pre = nullptr;
       ::Backend::Eigen::RateNeurons* neurons_post = nullptr;
      };
+    */
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
@@ -72,7 +82,7 @@ namespace Backend {
       void multipliers(EigenMatrix const& m) override;
 
     private:
-      ::Backend::Eigen::RateSynapses* synapses = nullptr;
+      ::Backend::Eigen::RateSynapses/*Base*/* synapses = nullptr;
       FloatT epsilon = 0;
 
       EigenMatrix _multipliers;

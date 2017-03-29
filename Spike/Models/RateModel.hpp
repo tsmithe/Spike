@@ -48,15 +48,31 @@ inline T infinity() { return std::numeric_limits<T>::infinity(); }
 #include <Eigen/Sparse>
 
 typedef float FloatT;
-typedef Eigen::VectorXf EigenVector;
-typedef Eigen::MatrixXf EigenMatrix;
-typedef Eigen::SparseMatrix<FloatT> EigenSpMatrix;
+typedef Eigen::Matrix<FloatT, Eigen::Dynamic, 1> EigenVector;
+typedef Eigen::Matrix<FloatT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> EigenMatrix;
+typedef Eigen::SparseMatrix<FloatT, Eigen::RowMajor> EigenSpMatrix;
 
 inline void normalize_matrix_rows(EigenMatrix& R, FloatT scale=1) {
-  for (int j = 0; j < R.rows(); ++j) {
-    FloatT row_norm = R.row(j).norm();
+  for (int i = 0; i < R.rows(); ++i) {
+    FloatT row_norm = R.row(i).norm();
     if (row_norm > 0)
-      R.row(j) /= scale*row_norm;
+      R.row(i) /= scale*row_norm;
+  }
+}
+
+inline void normalize_matrix_rows(EigenSpMatrix& R, FloatT scale=1) {
+  assert(R.rows() == R.outerSize());
+  for (int i = 0; i < R.rows(); ++i) {
+    FloatT row_norm = 0;
+    for (EigenSpMatrix::InnerIterator it(R, i); it; ++it) {
+      FloatT val = it.value();
+      row_norm += val * val;
+    }
+    if (row_norm > 0) {
+      for (EigenSpMatrix::InnerIterator it(R, i); it; ++it) {
+        it.valueRef() /= scale*row_norm;
+      }
+    }
   }
 }
 
@@ -131,7 +147,7 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
-class SparseRateSynapses;
+//class SparseRateSynapses;
 class RateSynapses;
 class RatePlasticity;
 class RateElectrodes;
@@ -154,10 +170,13 @@ namespace Backend {
     virtual void get_weights(EigenMatrix& output) = 0;
     virtual void weights(EigenMatrix const& w) = 0;
 
+    virtual void make_sparse() = 0;
+
     virtual void delay(unsigned int) = 0;
     virtual unsigned int delay() = 0;
   };
 
+  /*
   class SparseRateSynapses : public virtual RateSynapses {
   public:
     SPIKE_ADD_BACKEND_FACTORY(SparseRateSynapses);
@@ -168,6 +187,7 @@ namespace Backend {
     virtual void get_weights(EigenSpMatrix& output) = 0;
     virtual void weights(EigenSpMatrix const& w) = 0;
   };
+  */
 
   class RatePlasticity : public virtual SpikeBackendBase {
   public:
@@ -409,6 +429,8 @@ public:
   void get_weights(EigenMatrix& output) const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
 
+  void make_sparse();
+
   FloatT scaling = 1;
 
   int timesteps = 0;
@@ -420,14 +442,22 @@ private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
 };
 
+/*
 class SparseRateSynapses : public virtual RateSynapses {
 public:
+  SparseRateSynapses(Context* ctx,
+                     RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
+                     FloatT scaling_=1, std::string label_="");
+
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(SparseRateSynapses, RateSynapses);
+
   void get_weights(EigenSpMatrix& output) const; // just single, instantaneous dense weights for now
+
 private:
   std::shared_ptr<::Backend::SparseRateSynapses> _backend;
 };
+*/
 
 // TODO: Some nice Synapse factories for random initializations
 
