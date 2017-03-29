@@ -138,8 +138,8 @@ int main() {
 
   // Set simulation time parameters:
   model.set_simulation_time(VIS.t_stop_after + 10, timestep);
-  model.set_buffer_intervals((float)2e-3); // TODO: Use proper units
-  model.set_weights_buffer_interval(100);
+  model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
+  model.set_weights_buffer_interval(ceil(0.2/timestep));
 
   // Run!
   model.start();
