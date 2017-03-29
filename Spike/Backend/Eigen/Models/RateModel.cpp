@@ -306,7 +306,7 @@ namespace Backend {
 
       unsigned int delay = synapses->delay();
 
-      auto hebb = synapses->neurons_post->rate()
+      EigenMatrix hebb = synapses->neurons_post->rate()
         * synapses->neurons_pre->rate(delay).transpose();
 
       if (synapses->is_sparse) {

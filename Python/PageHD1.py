@@ -24,6 +24,8 @@ def imshow(arr):
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     
     fig, ax = plt.subplots()
+    w, h = plt.figaspect(arr.shape[0] / (arr.shape[1]+10))
+    fig.set_size_inches(w, h)
     im = ax.imshow(arr, interpolation='none', aspect='auto')
 
     divider = make_axes_locatable(ax)

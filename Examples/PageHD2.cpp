@@ -4,7 +4,7 @@
 // TODO: Add signal handlers
 
 int main() {
-  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+  //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   FloatT timestep = 5e-4; // seconds (TODO units)
   
@@ -66,7 +66,7 @@ int main() {
   VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
   VIS_HD.make_sparse();
 
-  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, 420.0, "VIS_INH_HD");
+  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, -420.0, "VIS_INH_HD");
   VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
   VIS_INH_HD.make_sparse();
 
@@ -101,7 +101,7 @@ int main() {
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
   AHV_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_AHV));
 
-  float eps = 0.01;
+  float eps = 0.1;
   RatePlasticity plast_HD_HD(ctx, &HD_HD, eps);
   RatePlasticity plast_VIS_HD(ctx, &VIS_HD, 0);
   RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD, 0);
