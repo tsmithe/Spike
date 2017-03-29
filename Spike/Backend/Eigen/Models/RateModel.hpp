@@ -41,34 +41,6 @@ namespace Backend {
       ::Backend::Eigen::RateNeurons* neurons_post = nullptr;
      };
 
-    /*
-    class SparseRateSynapses : public virtual ::Backend::Eigen::RateSynapsesBase,
-                               public virtual ::Backend::SparseRateSynapses,
-                               public virtual ::Backend::Eigen::RateSynapses {
-      friend class RateNeurons;
-      friend class RatePlasticity;
-    public:
-      SPIKE_MAKE_BACKEND_CONSTRUCTOR(SparseRateSynapses);
-      ~SparseRateSynapses() override = default;
-
-      void prepare() override;
-      void reset_state() override;
-
-      // void update_activation(FloatT dt) override;
-      const EigenVector& activation() override;
-      const EigenVector& activation_() override;
-      void get_weights(EigenSpMatrix& output) override;
-      void weights(EigenSpMatrix const& w) override;
-
-    private:
-      EigenVector _activation; // TODO: Need an explicit temporary?
-      EigenSpMatrix _weights;    // TODO: Generalize synapse types
-
-      ::Backend::Eigen::RateNeurons* neurons_pre = nullptr;
-      ::Backend::Eigen::RateNeurons* neurons_post = nullptr;
-     };
-    */
-
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RatePlasticity);
@@ -78,8 +50,6 @@ namespace Backend {
       void reset_state() override;
 
       void apply_plasticity(FloatT dt) override;
-
-      void multipliers(EigenMatrix const& m) override;
 
     private:
       ::Backend::Eigen::RateSynapses/*Base*/* synapses = nullptr;
@@ -182,26 +152,6 @@ namespace Backend {
       EigenVector theta_pref;
       EigenVector d;
     };
-
-    /*
-    class RateElectrodes : public virtual ::Backend::RateElectrodes {
-    public:
-      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateElectrodes);
-      ~RateElectrodes() override = default;
-
-      void prepare() override;
-      void reset_state() override;
-    };
-
-    class RateModel : public virtual ::Backend::RateModel {
-    public:
-      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateModel);
-      ~RateModel() override = default;
-
-      void prepare() override;
-      void reset_state() override;
-    };
-    */
   } // namespace Eigen
 } // namespace Backend
 

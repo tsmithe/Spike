@@ -147,7 +147,6 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale,
 class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
-//class SparseRateSynapses;
 class RateSynapses;
 class RatePlasticity;
 class RateElectrodes;
@@ -165,7 +164,7 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(RateSynapses);
     void prepare() override = 0;
     void reset_state() override = 0;
-    // virtual void update_activation(FloatT dt) = 0;
+
     virtual const EigenVector& activation() = 0;
     virtual void get_weights(EigenMatrix& output) = 0;
     virtual void weights(EigenMatrix const& w) = 0;
@@ -176,19 +175,6 @@ namespace Backend {
     virtual unsigned int delay() = 0;
   };
 
-  /*
-  class SparseRateSynapses : public virtual RateSynapses {
-  public:
-    SPIKE_ADD_BACKEND_FACTORY(SparseRateSynapses);
-    void prepare() override = 0;
-    void reset_state() override = 0;
-    // virtual void update_activation(FloatT dt) = 0;
-    virtual const EigenVector& activation() = 0;
-    virtual void get_weights(EigenSpMatrix& output) = 0;
-    virtual void weights(EigenSpMatrix const& w) = 0;
-  };
-  */
-
   class RatePlasticity : public virtual SpikeBackendBase {
   public:
     ~RatePlasticity() override = default;
@@ -197,16 +183,7 @@ namespace Backend {
     void reset_state() override = 0;
 
     virtual void apply_plasticity(FloatT dt) = 0;
-
-    virtual void multipliers(EigenMatrix const&) = 0;
   };
-
-  /*
-  class HebbPlasticity : public virtual RatePlasticity {
-  public:
-    SPIKE_ADD_BACKEND_FACTORY(HebbPlasticity);
-  };
-  */
 
   class RateNeurons : public virtual SpikeBackendBase {
   public:
@@ -242,20 +219,6 @@ namespace Backend {
     bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
-
-  /*
-  class RateElectrodes : public virtual SpikeBackendBase {
-  public:
-    ~RateElectrodes() override = default;
-    SPIKE_ADD_BACKEND_FACTORY(RateElectrodes);
-  };
-
-  class RateModel : public virtual SpikeBackendBase {
-  public:
-    ~RateModel() override = default;
-    SPIKE_ADD_BACKEND_FACTORY(RateModel);
-  };
-  */
 }
 
 static_assert(std::has_virtual_destructor<Backend::RateNeurons>::value,
@@ -264,10 +227,6 @@ static_assert(std::has_virtual_destructor<Backend::RateSynapses>::value,
               "contract violated");
 static_assert(std::has_virtual_destructor<Backend::RatePlasticity>::value,
               "contract violated");
-/*
-static_assert(std::has_virtual_destructor<Backend::RateModel>::value,
-              "contract violated");
-*/
 
 struct EigenBuffer {
   std::list<std::pair<int, EigenMatrix> > buf;
@@ -361,11 +320,6 @@ private:
 
 class DummyRateNeurons : public virtual RateNeurons {
 public:
-  /*
-  DummyRateNeurons(Context* ctx, int size_, std::string label_/*,
-                   FloatT t_on_, FloatT t_off_,
-                   EigenVector const& x_on_, EigenVector const& x_off_* /);
-  */
   DummyRateNeurons(Context* ctx, int size_, std::string label_);
   ~DummyRateNeurons() override;
 
@@ -390,7 +344,7 @@ public:
   SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
 
   FloatT sigma_IN;
-  FloatT /*gamma,*/ lambda;
+  FloatT lambda;
   FloatT revolutions_per_second;
   FloatT t_stop_after = infinity<FloatT>();
 
@@ -412,15 +366,10 @@ public:
 
   void reset_state() override;
 
-  // void update_activation(FloatT dt);
-
   RateNeurons* neurons_pre = nullptr;
   RateNeurons* neurons_post = nullptr;
 
   std::string label;
-
-  // EigenMatrix initial_weights;
-  // bool initialized = false;
 
   unsigned int delay() const;
   void delay(unsigned int d);
@@ -442,26 +391,6 @@ private:
   std::shared_ptr<::Backend::RateSynapses> _backend;
 };
 
-/*
-class SparseRateSynapses : public virtual RateSynapses {
-public:
-  SparseRateSynapses(Context* ctx,
-                     RateNeurons* neurons_pre_, RateNeurons* neurons_post_,
-                     FloatT scaling_=1, std::string label_="");
-
-  void init_backend(Context* ctx) override;
-  SPIKE_ADD_BACKEND_GETSET(SparseRateSynapses, RateSynapses);
-
-  void get_weights(EigenSpMatrix& output) const; // just single, instantaneous dense weights for now
-
-private:
-  std::shared_ptr<::Backend::SparseRateSynapses> _backend;
-};
-*/
-
-// TODO: Some nice Synapse factories for random initializations
-
-
 class RatePlasticity : public virtual SpikeBase {
 public:
   RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps);
@@ -471,8 +400,6 @@ public:
   SPIKE_ADD_BACKEND_GETSET(RatePlasticity, SpikeBase);
 
   void reset_state() override;
-
-  void multipliers(EigenMatrix const& m);
 
   void apply_plasticity(FloatT dt);
 
@@ -488,37 +415,12 @@ private:
   std::shared_ptr<::Backend::RatePlasticity> _backend;
 };
 
-
-// TODO: Various RatePlasiticity specialisations for different learning rules
-
-/*
-class HebbPlasticity : public virtual RatePlasticity {
-public:
-  RatePlasticity(Context* ctx, RateSynapses* syns);
-  ~RatePlasticity() override;
-
-  void init_backend(Context* ctx) override;
-  SPIKE_ADD_BACKEND_GETSET(RatePlasticity, SpikeBase);
-
-private:
-  std::shared_ptr<::Backend::HebbPlasticity> _backend;
-};
-*/
-
-
-class RateElectrodes /* : public virtual SpikeBase */ {
+class RateElectrodes {
   friend class RateModel;
 
 public:
-  RateElectrodes(/*Context* ctx,*/ std::string prefix, RateNeurons* neurons_);
-  ~RateElectrodes() /*override*/;
-
-  /*
-  void init_backend(Context* ctx) override;
-  SPIKE_ADD_BACKEND_GETSET(RateElectrodes, SpikeBase);
-  */
-
-  void reset_state() /*override*/;
+  RateElectrodes(std::string prefix, RateNeurons* neurons_);
+  ~RateElectrodes();
 
   std::string output_prefix;
   std::string output_dir;
@@ -533,26 +435,16 @@ public:
 
 protected:
   void block_until_empty() const;
-
-/*
-private:
-  std::shared_ptr<::Backend::RateElectrodes> _backend;
-*/
 };
 
-class RateModel /* : public virtual SpikeBase */ {
+class RateModel {
 public:
   RateModel(Context* ctx=nullptr);
-  ~RateModel() /*override*/;
+  ~RateModel();
 
   Context* context = nullptr;
 
-  // void init_backend() /*override*/;
-  /*
-  SPIKE_ADD_BACKEND_GETSET(RateModel, SpikeBase);
-  */
-
-  void reset_state() /*override*/;
+  void reset_state();
 
   FloatT t = 0;
   FloatT dt = 0;
@@ -599,8 +491,4 @@ private:
 
   void stop_electrodes() const;
   void wait_for_electrodes() const;
-  /*
-private:
-  std::shared_ptr<::Backend::RateModel> _backend;
-  */
 };

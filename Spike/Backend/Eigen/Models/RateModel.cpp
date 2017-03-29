@@ -4,7 +4,6 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, InputDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
-//SPIKE_EXPORT_BACKEND_TYPE(Eigen, SparseRateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
 
 namespace Backend {
@@ -195,7 +194,15 @@ namespace Backend {
 
       _weights = EigenMatrix::Zero(size_post, size_pre);
 
-      // reset_state();
+      reset_state();
+    }
+
+    void RateSynapses::reset_state() {
+      int size_post = frontend()->neurons_post->size;
+      int size_pre = frontend()->neurons_pre->size;
+      int timesteps = frontend()->timesteps;
+
+      _activation = EigenVector::Zero(size_post);
     }
 
     void RateSynapses::make_sparse() {
@@ -223,26 +230,11 @@ namespace Backend {
       _sp_weights.setFromTriplets(coefficients.begin(), coefficients.end());
       _sparsity.setFromTriplets(sparsity_coeffs.begin(),sparsity_coeffs.end());
 
+      // _sp_weights.makeCompressed();
+      // _sparsity.makeCompressed();
+
       is_sparse = true;
     }
-
-    void RateSynapses::reset_state() {
-      int size_post = frontend()->neurons_post->size;
-      int size_pre = frontend()->neurons_pre->size;
-      int timesteps = frontend()->timesteps;
-
-      _activation = EigenVector::Zero(size_post);
-
-      // TODO: Better record of initial weights state:
-      // _weights = frontend()->initial_weights;
-    }
-
-    /*
-    void RateSynapses::update_activation(FloatT dt) {
-      // TODO:: Generalise activation function
-      // _activation = viennacl::linalg::prod(_weights, neurons_pre->_rate);
-    }
-    */
 
     const EigenVector& RateSynapses::activation() {
       auto __compute_activation = [&](auto& __weights) {
@@ -266,7 +258,6 @@ namespace Backend {
       if (neurons_pre->_rate_history.cols() < (d+1))
         neurons_pre->_rate_history.resize
           (neurons_pre->_rate_history.rows(), d+1);
-      // std::cout << neurons_pre << "= " << neurons_pre->_rate_history.size2() << "\n";
     }
 
     unsigned int RateSynapses::delay() {
@@ -274,67 +265,17 @@ namespace Backend {
     }
 
     void RateSynapses::get_weights(EigenMatrix& output) {
-      /*
-      // Ensure that host copy is up to date:
-      int curr_timestep = frontend()->timesteps;
-      if (curr_timestep != _weights_cpu_timestep) {
-        _weights_cpu = _weights;
-        _weights_cpu_timestep = curr_timestep;
-      }
-      */
-
       if (is_sparse) {
         output = _sp_weights;
       } else {
-        output = _weights; // _cpu;
+        output = _weights;
       }
     }
-
-    /*
-    const EigenVector& RateSynapses::activation() {
-      // Ensure that host copy is up to date:
-      int curr_timestep = frontend()->timesteps;
-      if (curr_timestep != _activation_cpu_timestep) {
-        viennacl::copy(_activation, _activation_cpu);
-        _activation_cpu_timestep = curr_timestep;
-      }
-
-      return _activation_cpu;
-    }
-    */
 
     void RateSynapses::weights(EigenMatrix const& w) {
       assert(!is_sparse);
       _weights = w;
-      // _weights_cpu_timestep = frontend()->timesteps;
     }
-
-    /*
-    void SparseRateSynapses::prepare() {
-      RateSynapses::prepare();
-    }
-
-    void SparseRateSynapses::reset_state() {
-      RateSynapses::reset_state();
-    }
-
-    const EigenVector& SparseRateSynapses::activation() {
-      return EigenVector::Zero(frontend()->neurons_post->size); //RateSynapses::activation();
-    }
-
-    const EigenVector& SparseRateSynapses::activation_() {
-      std::cout << "!!!!!!!!!!!!!!\n";
-      return activation();
-    }
-
-    void SparseRateSynapses::get_weights(EigenSpMatrix& output) {
-      assert("TODO" && false);
-    }
-
-    void SparseRateSynapses::weights(EigenSpMatrix const& w) {
-      RateSynapses::weights(w);
-    }
-    */
 
     void RatePlasticity::prepare() {
       synapses = dynamic_cast<::Backend::Eigen::RateSynapses/*Base*/*>
@@ -350,14 +291,6 @@ namespace Backend {
       if (epsilon == 0)
         return;
 
-        /*
-        if (_using_multipliers) {
-          __W += dt *
-            _multipliers.cwiseProduct(synapses->neurons_post->_rate()
-                                      * synapses->neurons_pre->_rate().transpose());
-        } else {
-        */
-
       auto hebb = synapses->neurons_post->rate()
         * synapses->neurons_pre->rate().transpose();
 
@@ -371,16 +304,5 @@ namespace Backend {
       }
     }
 
-    /* Can be used for maintaining a crude kind of sparseness: */
-    void RatePlasticity::multipliers(EigenMatrix const& m) {
-      assert(false);
-      _using_multipliers = true;
-      _multipliers = epsilon * m;
-    }
-
-    /*
-    void RateElectrodes::prepare() {}
-    void RateElectrodes::reset_state() {}
-    */
   }
 }

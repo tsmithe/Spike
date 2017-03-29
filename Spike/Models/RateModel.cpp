@@ -143,29 +143,10 @@ const EigenVector& RateNeurons::rate() const {
   return backend()->rate();
 }
 
-/*
-void RateNeurons::update_dendritic_activation(FloatT dt) const {
-  for (auto& dendrite_pair : dendrites)
-    dendrite_pair.first->update_activation(dt);
-}
-*/
-
 void RateNeurons::apply_plasticity(FloatT dt) const {
   for (auto& dendrite_pair : dendrites)
     dendrite_pair.second->apply_plasticity(dt);
 }
-
-/*
-DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_,
-                                   /*FloatT t_on_, FloatT t_off_,
-                                   EigenVector const& x_on_,
-                                   EigenVector const& x_off_ * /)
-  : RateNeurons(nullptr, size_, label_, 0, 1, 1)/*,
-    t_on(t_on_), t_off(t_off_), x_on(x_on_), x_off(x_off_) * / {
-  if (ctx)
-    init_backend(ctx);
-}
-*/
 
 DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
   : RateNeurons(nullptr, size_, label_, 0, 1, 1) {
@@ -183,14 +164,13 @@ void DummyRateNeurons::add_rate(FloatT duration, EigenVector const& rates) {
 
 InputDummyRateNeurons::InputDummyRateNeurons
 (Context* ctx, int size_, std::string label_,
- FloatT sigma_IN_, FloatT lambda_, // FloatT gamma_,
+ FloatT sigma_IN_, FloatT lambda_,
  FloatT revolutions_per_second_)
   : DummyRateNeurons(nullptr, size_, label_),
     RateNeurons(nullptr, size_, label_, 0, 1, 1),
-    sigma_IN(sigma_IN_), /*gamma(gamma_),*/
+    sigma_IN(sigma_IN_),
     revolutions_per_second(revolutions_per_second_) {
 
-  // lambda = gamma / exp(1 / pow(sigma_IN, 2));
   lambda = lambda_;
 
   theta_pref = EigenVector::Zero(size);
@@ -216,8 +196,6 @@ RateSynapses::RateSynapses(Context* ctx,
   // reset_state();
   if(!(label.length()))
     label = neurons_pre->label;
-
-  // initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
 
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label
@@ -262,46 +240,6 @@ void RateSynapses::delay(unsigned int d) {
   backend()->delay(d);
 }
 
-/*
-void RateSynapses::update_activation(FloatT dt) {
-  backend()->update_activation(dt);
-  timesteps += 1;
-  if (activation_buffer_interval && !(timesteps % activation_buffer_interval))
-    activation_history.push_back(timesteps, activation());
-}
-*/
-
-/*
-SparseRateSynapses::SparseRateSynapses(Context* ctx,
-                                       RateNeurons* neurons_pre_,
-                                       RateNeurons* neurons_post_,
-                                       FloatT scaling_,
-                                       std::string label_)
-  : RateSynapses(ctx, neurons_pre_, neurons_post_, scaling_, label_)
-  /*neurons_pre(neurons_pre_), neurons_post(neurons_post_),
-    scaling(scaling_), label(label_)* / {
-
-  /*
-  init_backend(ctx);
-  // reset_state();
-  if(!(label.length()))
-    label = neurons_pre->label;
-
-  // initial_weights = EigenMatrix::Zero(neurons_pre->size, neurons_post->size);
-
-  if (ctx->verbose) {
-    std::cout << "Spike: Created synapses '" << label
-              << "' (at " << this <<  ") from "
-              << neurons_pre->label << " to " << neurons_post->label << ".\n";
-  }
-  * /
-
-  if (ctx->verbose) {
-    std::cout << "Spike: SparseRateSynapses at " << this << "\n";
-  }
-}
-*/
-
 RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps)
   : synapses(syns), epsilon(eps) {
   init_backend(ctx);
@@ -333,15 +271,8 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   }
 }
 
-void RatePlasticity::multipliers(EigenMatrix const& m) {
-  backend()->multipliers(m);
-}
-
-RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
-                               RateNeurons* neurons_)
+RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
   : output_prefix(prefix), neurons(neurons_) {
-
-  // init_backend(ctx);
 
   {
     const int err = mkdir(output_prefix.c_str(),
@@ -391,8 +322,6 @@ RateElectrodes::RateElectrodes(/*Context* ctx,*/ std::string prefix,
        (weights_fname, plasticity->weights_history));
   }
 
-  // reset_state();
-
   if (neurons->backend()->context->verbose) {
     std::cout << "Spike: Created electrodes for " << neurons->label
               << " writing to " << output_prefix << ".\n";
@@ -424,9 +353,6 @@ void RateElectrodes::write_output_info() const {
   }
 
   output_info_file.close();
-}
-
-void RateElectrodes::reset_state() {
 }
 
 void RateElectrodes::start() const {
@@ -570,8 +496,6 @@ void RateModel::set_stop_trigger(bool* trigger) {
 void RateModel::reset_state() {
   for (auto& n : neuron_groups)
     n->reset_state();
-  for (auto& e : electrodes)
-    e->reset_state();
   t = 0;
 }
 
@@ -701,7 +625,4 @@ SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
-//SPIKE_MAKE_INIT_BACKEND(SparseRateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
-// SPIKE_MAKE_INIT_BACKEND(RateElectrodes);
-// SPIKE_MAKE_INIT_BACKEND(RateModel);
