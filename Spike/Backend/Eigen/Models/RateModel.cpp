@@ -62,7 +62,7 @@ namespace Backend {
       if (done_timestep) {
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.cols();
-        _rate_history.col(_rate_hist_idx) = _new_rate;
+        _rate_history.col(_rate_hist_idx).swap(_new_rate);
 
         done_timestep = false; // false for next time
         return true;
@@ -306,15 +306,15 @@ namespace Backend {
 
       unsigned int delay = synapses->delay();
 
-      EigenMatrix hebb = synapses->neurons_post->rate()
-        * synapses->neurons_pre->rate(delay).transpose();
+      auto dW
+        = (dt * epsilon) * (synapses->neurons_post->rate()
+                            * synapses->neurons_pre->rate(delay).transpose());
 
       if (synapses->is_sparse) {
-        auto dW = dt * epsilon * synapses->_sparsity.cwiseProduct(hebb);
-        synapses->_sp_weights += dW;
+        synapses->_sp_weights += synapses->_sparsity.cwiseProduct(dW);
         normalize_matrix_rows(synapses->_sp_weights);
       } else {
-        synapses->_weights += dt * epsilon * hebb;
+        synapses->_weights.noalias() += dW;
         normalize_matrix_rows(synapses->_weights);
       }
     }

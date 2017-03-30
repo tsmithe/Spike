@@ -137,9 +137,9 @@ int main() {
   model.add(&AHV_elecs);
 
   // Set simulation time parameters:
-  model.set_simulation_time(VIS.t_stop_after + 10, timestep);
+  model.set_simulation_time(VIS.t_stop_after + 12, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
-  model.set_weights_buffer_interval(ceil(0.2/timestep));
+  model.set_weights_buffer_interval(ceil(1.0/timestep));
 
   // Run!
   model.start();
