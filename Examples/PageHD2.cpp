@@ -25,16 +25,16 @@ int main() {
   EigenVector ROT_on = EigenVector::Ones(N_AHV);
   ROT_on.head(N_NOROT) = EigenVector::Zero(N_NOROT);
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
-  AHV.add_rate(0.6, ROT_on);
-  AHV.add_rate(0.6, ROT_off);
+  AHV.add_schedule(0.6, ROT_on);
+  AHV.add_schedule(0.6, ROT_off);
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 450.0;
   FloatT revs_per_sec = 1;
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
-  VIS.add_rate(0.6, revs_per_sec);
-  VIS.add_rate(0.6, 0);
+  VIS.add_schedule(0.6, revs_per_sec);
+  VIS.add_schedule(0.6, 0);
   VIS.t_stop_after = 50*1.2;
   auto& VIS_tuning = VIS.theta_pref;
 
@@ -47,8 +47,8 @@ int main() {
   DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
   EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
-  HD_VIS_INH.add_rate(VIS.t_stop_after, HD_VIS_INH_on);
-  HD_VIS_INH.add_rate(100.0, HD_VIS_INH_off);
+  HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
+  HD_VIS_INH.add_schedule(100.0, HD_VIS_INH_off);
 
   int N_AHVxHD = N_AHV;
   FloatT alpha_AHVxHD = 113.0;
@@ -102,13 +102,28 @@ int main() {
   AHV_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_AHV));
 
   float eps = 0.1;
-  RatePlasticity plast_HD_HD(ctx, &HD_HD, eps);
-  RatePlasticity plast_VIS_HD(ctx, &VIS_HD, 0);
-  RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD, 0);
-  RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD, eps);
-  RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD, eps);
-  RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD, eps);
-  RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD, eps);
+  RatePlasticity plast_HD_HD(ctx, &HD_HD);
+  plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
+  plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
+
+  RatePlasticity plast_VIS_HD(ctx, &VIS_HD);
+  RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD);
+
+  RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD);
+  plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
+
+  RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
+  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
+
+  RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD);
+  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
+
+  RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
+  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
   HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);

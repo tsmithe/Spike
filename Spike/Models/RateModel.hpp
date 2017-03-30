@@ -206,7 +206,7 @@ namespace Backend {
     void reset_state() override = 0;
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
-    virtual void add_rate(FloatT duration, EigenVector rates) = 0;
+    virtual void add_schedule(FloatT duration, EigenVector rates) = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
     virtual const EigenVector& rate() = 0;
   };
@@ -328,7 +328,7 @@ public:
   SPIKE_ADD_BACKEND_GETSET(DummyRateNeurons, RateNeurons);
 
   std::vector<std::pair<FloatT, EigenVector> > rate_schedule;
-  void add_rate(FloatT duration, EigenVector const& rates);
+  void add_schedule(FloatT duration, EigenVector const& rates);
   
 private:
   std::shared_ptr<::Backend::DummyRateNeurons> _backend;
@@ -350,7 +350,7 @@ public:
   EigenVector theta_pref;
 
   std::vector<std::pair<FloatT, FloatT> > revs_schedule;
-  void add_rate(FloatT duration, FloatT revs_per_sec);
+  void add_schedule(FloatT duration, FloatT revs_per_sec);
 
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;
@@ -395,7 +395,7 @@ private:
 
 class RatePlasticity : public virtual SpikeBase {
 public:
-  RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps);
+  RatePlasticity(Context* ctx, RateSynapses* syns);
   ~RatePlasticity() override;
 
   void init_backend(Context* ctx) override;
@@ -403,10 +403,12 @@ public:
 
   void reset_state() override;
 
+  std::vector<std::pair<FloatT, FloatT> > plasticity_schedule;
+  void add_schedule(FloatT duration, FloatT eps);
+
   void apply_plasticity(FloatT dt);
 
   RateSynapses* synapses = nullptr;
-  FloatT epsilon = 0;
 
   int timesteps = 0;
 

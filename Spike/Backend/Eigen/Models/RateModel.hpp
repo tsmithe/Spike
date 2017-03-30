@@ -55,6 +55,9 @@ namespace Backend {
       ::Backend::Eigen::RateSynapses/*Base*/* synapses = nullptr;
       FloatT epsilon = 0;
 
+      int _schedule_idx = 0;
+      FloatT _curr_rate_t = 0;
+
       EigenMatrix _multipliers;
       bool _using_multipliers = false;
     };
@@ -116,7 +119,7 @@ namespace Backend {
       const EigenVector& rate() override;
       EigenVector const& rate(unsigned int n_back=0) override;
 
-      void add_rate(FloatT duration, EigenVector rates) override;
+      void add_schedule(FloatT duration, EigenVector rates) override;
 
     protected:
       FloatT t, dt_;

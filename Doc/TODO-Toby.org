@@ -611,7 +611,7 @@ CLOSED: [2017-03-29 Wed 22:40]
 :END:
 ***** TODO Need to turn off plasticity at some point...
 ** Software engineering
-*** TODO General scheduling mechanism
+*** TODO Generalise scheduling mechanism
 *** TODO Documentation
 *** TODO Split classes into separate compilation units
 *** TODO Clean up code

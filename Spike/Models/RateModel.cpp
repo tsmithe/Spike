@@ -157,8 +157,8 @@ DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
 DummyRateNeurons::~DummyRateNeurons() {
 }
 
-void DummyRateNeurons::add_rate(FloatT duration, EigenVector const& rates) {
-  backend()->add_rate(duration, rates);
+void DummyRateNeurons::add_schedule(FloatT duration, EigenVector const& rates) {
+  backend()->add_schedule(duration, rates);
   rate_schedule.push_back({duration, rates});
 }
 
@@ -182,7 +182,7 @@ InputDummyRateNeurons::InputDummyRateNeurons
 InputDummyRateNeurons::~InputDummyRateNeurons() {
 }
 
-void InputDummyRateNeurons::add_rate(FloatT duration, FloatT revs_per_second) {
+void InputDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_second) {
   revs_schedule.push_back({duration, revs_per_second});
 }
 
@@ -242,8 +242,8 @@ void RateSynapses::delay(unsigned int d) {
   backend()->delay(d);
 }
 
-RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns, FloatT eps)
-  : synapses(syns), epsilon(eps) {
+RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
+  : synapses(syns) {
   init_backend(ctx);
   // reset_state();
 
@@ -259,6 +259,10 @@ void RatePlasticity::reset_state() {
   timesteps = 0;
   weights_history.clear();
   backend()->reset_state();
+}
+
+void RatePlasticity::add_schedule(FloatT duration, FloatT eps) {
+  plasticity_schedule.push_back({duration, eps});
 }
 
 void RatePlasticity::apply_plasticity(FloatT dt) {

@@ -17,7 +17,7 @@ def read_weights(root, net_post, net_pre,
                  size_post, size_pre, dtype=np.float32):
     w = np.memmap(root + '/' + net_post + '/'
                     + 'weights_' + net_pre + '_' + net_post + '.bin', dtype)
-    w = w.reshape(w.size/(size_pre*size_post), size_pre, size_post)
+    w = w.reshape(int(w.size/(size_pre*size_post)), size_pre, size_post)
     return w #.transpose((0, 2, 1))
 
 def imshow(arr):

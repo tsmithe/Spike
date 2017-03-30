@@ -82,7 +82,7 @@ namespace Backend {
           _total_activation += activation_i;
         }
 
-        i++;
+        ++i;
       }
 
       _new_rate = rate() + (dt/frontend()->tau)*(-rate() + transfer(_total_activation));
@@ -103,7 +103,7 @@ namespace Backend {
                                          ::Backend::RatePlasticity*) {
     }
 
-    void DummyRateNeurons::add_rate(FloatT duration, EigenVector rates) {
+    void DummyRateNeurons::add_schedule(FloatT duration, EigenVector rates) {
       // _rate_schedule.push_back({duration, rates});
     }
 
@@ -114,7 +114,7 @@ namespace Backend {
       _curr_rate_t += dt;
       if (_curr_rate_t > frontend()->rate_schedule[_schedule_idx].first) {
         _curr_rate_t = _curr_rate_t - frontend()->rate_schedule[_schedule_idx].first;
-        _schedule_idx++;
+        ++_schedule_idx;
         if (_schedule_idx >= frontend()->rate_schedule.size())
           _schedule_idx = 0;
       }
@@ -162,7 +162,7 @@ namespace Backend {
       _curr_rate_t += dt;
       if (_curr_rate_t > frontend()->revs_schedule[_schedule_idx].first) {
         _curr_rate_t = _curr_rate_t - frontend()->revs_schedule[_schedule_idx].first;
-        _schedule_idx++;
+        ++_schedule_idx;
         if (_schedule_idx >= frontend()->revs_schedule.size())
           _schedule_idx = 0;
       }
@@ -293,7 +293,6 @@ namespace Backend {
     void RatePlasticity::prepare() {
       synapses = dynamic_cast<::Backend::Eigen::RateSynapses/*Base*/*>
         (frontend()->synapses->backend());
-      epsilon = frontend()->epsilon;
       reset_state();
     }
 
@@ -301,6 +300,19 @@ namespace Backend {
     }
 
     void RatePlasticity::apply_plasticity(FloatT dt) {
+      if (!(frontend()->plasticity_schedule.size()))
+        return;
+
+      _curr_rate_t += dt;
+      if (_curr_rate_t > frontend()->plasticity_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - frontend()->plasticity_schedule[_schedule_idx].first;
+        ++_schedule_idx;
+        if (_schedule_idx >= frontend()->plasticity_schedule.size())
+          _schedule_idx = 0;
+      }
+
+      epsilon = frontend()->plasticity_schedule[_schedule_idx].second;
+
       if (epsilon == 0)
         return;
 
