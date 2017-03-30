@@ -71,6 +71,16 @@ void Agent::connect_actor(RateNeurons* actor_) {
 
 void Agent::update_per_dt(FloatT dt) {
   assert("TODO" && false);
+  /*
+     + Turn actor into a velocity (assume a continuous state space)
+       - this ~is the `output' of the RateModel
+     + Set new position according to this velocity, dt, and the maze structure
+     + Update the state vector according to the new position
+       - NB this should probably be in AgentSenseRateNeurons
+       - each element of the state vector measures `inverse distance' ??
+
+     % NB: eventually, want to be able to represent self-embeddedness
+   */
 }
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
