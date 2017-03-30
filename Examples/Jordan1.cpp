@@ -12,6 +12,8 @@ int main() {
   RateModel model;
   Context* ctx = model.context;
 
+  Agent agent;
+
   // Tell Spike to talk
   ctx->verbose = true;
   ctx->backend = "Eigen";
@@ -39,10 +41,12 @@ int main() {
   FloatT eps = 0.1;
 
   // Construct neurons
-  RateNeurons STATE(ctx, N_STATE, "STATE", alpha_STATE, beta_STATE, tau_STATE);
+  AgentSenseRateNeurons STATE(ctx, &agent, "STATE");
   RateNeurons ACT(ctx, N_ACT, "ACT", alpha_ACT, beta_ACT, tau_ACT);
   RateNeurons STATExACT(ctx, N_STATExACT, "STATExACT",
                         alpha_STATExACT, beta_STATExACT, tau_STATExACT);
+
+  agent.connect_actor(&ACT);
 
   // Construct synapses
   RateSynapses STATE_STATExACT(ctx, &STATE, &STATExACT,
