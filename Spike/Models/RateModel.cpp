@@ -65,6 +65,10 @@ void BufferWriter::stop() {
   file.flush();
 }
 
+void Agent::connect_actor(RateNeurons* actor_) {
+  actor = actor_;
+}
+
 void Agent::update_per_dt(FloatT dt) {
   assert("TODO" && false);
 }
@@ -188,6 +192,20 @@ InputDummyRateNeurons::~InputDummyRateNeurons() {
 
 void InputDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_second) {
   revs_schedule.push_back({duration, revs_per_second});
+}
+
+AgentSenseRateNeurons::AgentSenseRateNeurons(Context* ctx,
+                                             Agent* agent_, std::string label_)
+  : RateNeurons(nullptr, 0 /*size_*/, label_, 0, 1, 1),
+    agent(agent_) {
+
+  if (ctx)
+    init_backend(ctx);
+
+  assert("TODO" && false);
+}
+
+AgentSenseRateNeurons::~AgentSenseRateNeurons() {
 }
 
 RateSynapses::RateSynapses(Context* ctx,
@@ -649,5 +667,6 @@ void RateModel::stop_electrodes() const {
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(AgentSenseRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);

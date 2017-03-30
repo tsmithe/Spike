@@ -3,6 +3,7 @@
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, InputDummyRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentSenseRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
 
@@ -101,6 +102,7 @@ namespace Backend {
 
     void DummyRateNeurons::connect_input(::Backend::RateSynapses*,
                                          ::Backend::RatePlasticity*) {
+      assert("You shouldn't be doing this" && false);
     }
 
     void DummyRateNeurons::add_schedule(FloatT duration, EigenVector rates) {
@@ -194,6 +196,33 @@ namespace Backend {
 
     EigenVector const& InputDummyRateNeurons::rate() {
       return rate(0);
+    }
+
+    void AgentSenseRateNeurons::prepare() {
+      assert("TODO" && false);
+    }
+
+    void AgentSenseRateNeurons::reset_state() {
+      assert("TODO" && false);
+    }
+
+    void AgentSenseRateNeurons::connect_input(::Backend::RateSynapses*,
+                                              ::Backend::RatePlasticity*) {
+      assert("You shouldn't be doing this" && false);
+    }
+
+    bool AgentSenseRateNeurons::staged_integrate_timestep(FloatT dt) {
+      assert("TODO" && false);
+    }
+
+    EigenVector const& AgentSenseRateNeurons::rate() {
+      assert(false);
+      return TODO;
+    }
+
+    EigenVector const& AgentSenseRateNeurons::rate(unsigned int n_back) {
+      assert(false);
+      return TODO;
     }
 
     void RateSynapses::prepare() {
@@ -330,6 +359,5 @@ namespace Backend {
         normalize_matrix_rows(synapses->_weights);
       }
     }
-
   }
 }

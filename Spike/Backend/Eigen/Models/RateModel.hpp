@@ -18,7 +18,7 @@ namespace Backend {
       void reset_state() override;
 
       // void update_activation(FloatT dt) override;
-      const EigenVector& activation() override;
+      EigenVector const& activation() override;
       void get_weights(EigenMatrix& output) override;
       void weights(EigenMatrix const& w) override;
 
@@ -81,8 +81,8 @@ namespace Backend {
       template<typename T>
       inline T transfer(T const& total_activation);
 
-      virtual const EigenVector& rate(unsigned int n_back);
-      const EigenVector& rate() override;
+      virtual EigenVector const& rate(unsigned int n_back);
+      EigenVector const& rate() override;
 
     private:
       bool done_timestep = false;
@@ -116,7 +116,7 @@ namespace Backend {
                          ::Backend::RatePlasticity*) override;
 
       bool staged_integrate_timestep(FloatT dt) override;
-      const EigenVector& rate() override;
+      EigenVector const& rate() override;
       EigenVector const& rate(unsigned int n_back=0) override;
 
       void add_schedule(FloatT duration, EigenVector rates) override;
@@ -141,7 +141,7 @@ namespace Backend {
       void reset_state() override;
 
       bool staged_integrate_timestep(FloatT dt) override;
-      const EigenVector& rate() override;
+      EigenVector const& rate() override;
       EigenVector const& rate(unsigned int n_back=0) override;
 
     private:
@@ -153,6 +153,30 @@ namespace Backend {
 
       EigenVector theta_pref;
       EigenVector d;
+    };
+
+    class AgentSenseRateNeurons
+      : public virtual ::Backend::AgentSenseRateNeurons,
+        public virtual ::Backend::Eigen::RateNeurons {
+      friend class RateSynapses;
+      friend class RatePlasticity;
+    public:
+      // AgentSenseRateNeurons() = default;
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(AgentSenseRateNeurons);
+      ~AgentSenseRateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      void connect_input(::Backend::RateSynapses*,
+                         ::Backend::RatePlasticity*) override;
+
+      bool staged_integrate_timestep(FloatT dt) override;
+      EigenVector const& rate() override;
+      EigenVector const& rate(unsigned int n_back=0) override;
+
+    protected:
+      EigenVector TODO;
     };
   } // namespace Eigen
 } // namespace Backend
