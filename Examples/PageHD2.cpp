@@ -59,37 +59,6 @@ int main() {
 
   FloatT eps = 0.1;
 
-
-  DummyRateNeurons AHV(ctx, N_AHV, "AHV");
-  AHV.add_schedule(0.6, ROT_on);
-  AHV.add_schedule(0.6, ROT_off);
-
-  InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
-  VIS.add_schedule(0.6, revs_per_sec);
-  VIS.add_schedule(0.6, 0);
-  VIS.t_stop_after = 50*1.2;
-
-  RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
-
-  DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
-  HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
-  HD_VIS_INH.add_schedule(100.0, HD_VIS_INH_off);
-
-  RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
-                     alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
-  
-  RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition, "HD_HD");
-  EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
-  HD_HD.weights(HD_HD_W);
-
-  RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
-  VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
-  VIS_HD.make_sparse();
-
-  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_INH_HD");
-  VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
-  VIS_INH_HD.make_sparse();
-
   // NOTA BENE
   // 
   // The following assert reflects assumptions of the prewired model.
@@ -98,47 +67,64 @@ int main() {
   // this case (see VIS_tuning above, and its use below as a surrogate for
   // HD_tuning).
   assert(N_VIS == N_HD);
-  
+
+  // Construct neurons
+  DummyRateNeurons AHV(ctx, N_AHV, "AHV");
+
+  InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
+  RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
+
+  DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
+
+  RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
+                     alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
+
+  // Construct synapses
+  RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition, "HD_HD");
+
+  RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
+
+  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_INH_HD");
+ 
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
+
+  RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
+  RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
+                             AHVxHD_inhibition/N_AHVxHD, "AHVxHD_AHVxHD");
+  RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
+
+  // Set initial weights
+  EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
+  HD_HD.weights(HD_HD_W);
+
+  VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
+  VIS_HD.make_sparse();
+
+  VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
+  VIS_INH_HD.make_sparse();
+
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
   HD_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
                                               0.95, 0, false));
   HD_AHVxHD.make_sparse();
 
-  RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
   AHVxHD_HD.weights(Eigen::make_random_matrix(N_HD, N_AHVxHD));
 
-  RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
-                             AHVxHD_inhibition/N_AHVxHD, "AHVxHD_AHVxHD");
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
-  RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
   AHV_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_AHV));
 
+  // Construct plasticity
   RatePlasticity plast_HD_HD(ctx, &HD_HD);
-  plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
-  plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
-
   RatePlasticity plast_VIS_HD(ctx, &VIS_HD);
   RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD);
-
   RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD);
-  plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
-
   RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
-  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
-
   RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD);
-  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
-
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
-  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
+  // Connect synapses and plasticity to neurons
   HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
@@ -146,6 +132,31 @@ int main() {
   AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
+
+  // Set up schedule
+  // + cycle between ROT_on and ROT_off every 0.6s, until VIS.t_stop_after
+  // + after VIS.t_stop_after, turn off plasticity
+  AHV.add_schedule(0.6, ROT_on);
+  VIS.add_schedule(0.6, revs_per_sec);
+
+  AHV.add_schedule(0.6, ROT_off);
+  VIS.add_schedule(0.6, 0);
+
+  VIS.t_stop_after = 50*1.2;
+
+  HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
+  plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
+  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+
+  HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
+  plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
+  plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
+  plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs("HD_out", &VIS);

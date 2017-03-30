@@ -291,7 +291,7 @@ namespace Backend {
     }
 
     void RatePlasticity::prepare() {
-      synapses = dynamic_cast<::Backend::Eigen::RateSynapses/*Base*/*>
+      synapses = dynamic_cast<::Backend::Eigen::RateSynapses*>
         (frontend()->synapses->backend());
       reset_state();
     }

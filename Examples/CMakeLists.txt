@@ -1,6 +1,7 @@
 foreach(example
     PageHD1
     PageHD2
+    Jordan1
     SimpleRateModel
     CPUTest
     TSCSOptimiseFourLayerVisionSpikingModelFiringRates
