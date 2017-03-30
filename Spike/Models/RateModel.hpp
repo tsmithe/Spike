@@ -148,6 +148,7 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
 class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
+class AgentSenseRateNeurons;
 class RateSynapses;
 class RatePlasticity;
 class RateElectrodes;
@@ -204,11 +205,11 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(DummyRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
-    virtual void connect_input(RateSynapses* synapses,
-                               RatePlasticity* plasticity) = 0;
+    void connect_input(RateSynapses* synapses,
+                       RatePlasticity* plasticity) override = 0;
     virtual void add_schedule(FloatT duration, EigenVector rates) = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
-    virtual const EigenVector& rate() = 0;
+    const EigenVector& rate() override = 0;
   };
 
   class InputDummyRateNeurons : public virtual DummyRateNeurons {
@@ -218,7 +219,19 @@ namespace Backend {
     void prepare() override = 0;
     void reset_state() override = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
-    virtual const EigenVector& rate() = 0;
+    const EigenVector& rate() override = 0;
+  };
+
+  class AgentSenseRateNeurons : public virtual RateNeurons {
+  public:
+    ~AgentSenseRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(AgentSenseRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    void connect_input(RateSynapses* synapses,
+                       RatePlasticity* plasticity) override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
+    const EigenVector& rate() override = 0;
   };
 }
 
@@ -277,6 +290,15 @@ public:
                        // Or one thread per Electrodes?
 private:
   bool running = false;
+};
+
+class Agent {
+public:
+  void connect_actor(RateNeurons* actor_);
+  void update_per_dt(FloatT dt);
+
+private:
+  RateNeurons* actor;
 };
 
 class RateNeurons : public virtual SpikeBase {
@@ -354,6 +376,20 @@ public:
 
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;
+};
+
+class AgentSenseRateNeurons : public virtual RateNeurons {
+public:
+  AgentSenseRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  ~AgentSenseRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(AgentSenseRateNeurons, RateNeurons);
+
+  Agent* agent;
+
+private:
+  std::shared_ptr<::Backend::AgentSenseRateNeurons> _backend;
 };
 
 class RateSynapses : public virtual SpikeBase {
@@ -456,11 +492,14 @@ public:
 
   int timesteps = 0;
 
+  Agent* agent = nullptr;
+
   std::vector<RateNeurons*> neuron_groups;
   std::vector<RateElectrodes*> electrodes;
 
   void add(RateNeurons* neurons);
   void add(RateElectrodes* elecs);
+  void add(Agent* w);
 
   int rate_buffer_interval = 0;
   int activation_buffer_interval = 0;

@@ -65,6 +65,10 @@ void BufferWriter::stop() {
   file.flush();
 }
 
+void Agent::update_per_dt(FloatT dt) {
+  assert("TODO" && false);
+}
+
 RateNeurons::RateNeurons(Context* ctx, int size_,
                          std::string label_,
                          FloatT alpha_, FloatT beta_, FloatT tau_)
@@ -429,6 +433,18 @@ void RateModel::add(RateElectrodes* elecs) {
   }
 }
 
+void RateModel::add(Agent* a) {
+  if (agent && context->verbose)
+    std::cout << "Spike: RateModel at " << this
+              << " already associated with Agent at " << agent << " !\n";
+
+  agent = a;
+
+  if (context->verbose)
+    std::cout << "Spike: RateModel " << this
+              << " associated with Agent " << agent << "\n";
+}
+
 void RateModel::set_rate_buffer_interval(int n_timesteps) {
   rate_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups)
@@ -540,6 +556,9 @@ void RateModel::wait_for_electrodes() const {
 }
 
 void RateModel::update_model_per_dt() {
+  if (agent)
+    agent->update_per_dt(dt);
+
   std::vector<RateNeurons*> grps(neuron_groups);
 
   // Loop through the neuron groups, computing the rate update in stages.
