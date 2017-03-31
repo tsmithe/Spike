@@ -3,6 +3,7 @@
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, InputDummyRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, RandomDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentSenseRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
@@ -195,6 +196,41 @@ namespace Backend {
     }
 
     EigenVector const& InputDummyRateNeurons::rate() {
+      return rate(0);
+    }
+
+    void RandomDummyRateNeurons::prepare() {
+      _rate.resize(frontend()->size);
+    }
+
+    void RandomDummyRateNeurons::reset_state() {
+    }
+
+    bool RandomDummyRateNeurons::staged_integrate_timestep(FloatT dt) {
+      t += dt;
+      dt_ = dt;
+
+      if (t > frontend()->t_stop_after) {
+        _rate = EigenVector::Zero(frontend()->size);
+        return true;
+      }
+
+      EigenVector rand_activ
+        = ::Eigen::make_random_matrix(frontend()->size, 1, 4,
+                                      false, 0, 0, true);
+      // _rate += (dt/frontend()->tau)*(-_rate + transfer(rand_activ));
+      _rate.swap(rand_activ);
+      // _rate = EigenVector::Random(frontend()->size);
+
+      return true;
+    }
+
+    EigenVector const& RandomDummyRateNeurons::rate(unsigned int n_back) {
+      assert(n_back == 0); // TODO: support delays here?
+      return _rate;
+    }
+
+    EigenVector const& RandomDummyRateNeurons::rate() {
       return rate(0);
     }
 

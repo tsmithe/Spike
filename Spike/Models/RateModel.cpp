@@ -1,5 +1,9 @@
 #include "RateModel.hpp"
 
+namespace Eigen {
+std::mt19937 global_random_generator;
+}
+
 SpikeException::SpikeException(std::string msg) : _msg(msg) {}
 const char* SpikeException::what() const noexcept {
   return _msg.c_str();
@@ -105,8 +109,13 @@ void Agent::update_per_dt(FloatT dt) {
   position.noalias() += (dt * velocity_scaling) * (actor_tuning * actor->rate());
   if (position(0) > bound_x)
     position(0) = bound_x;
+  else if (position(0) < 0)
+    position(0) = 0;
+
   if (position(1) > bound_y)
     position(1) = bound_y;
+  else if (position(1) < 0)
+    position(1) = 0;
 }
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
@@ -229,6 +238,26 @@ InputDummyRateNeurons::~InputDummyRateNeurons() {
 void InputDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_second) {
   revs_schedule.push_back({duration, revs_per_second});
 }
+
+RandomDummyRateNeurons::RandomDummyRateNeurons
+(Context* ctx, int size_, std::string label_)
+  : DummyRateNeurons(nullptr, size_, label_),
+    RateNeurons(nullptr, size_, label_, 4, 1, 1) {
+
+  // TODO: Generalize / parameterize RandomDummyRateNeurons
+
+  if (ctx)
+    init_backend(ctx);
+}
+
+RandomDummyRateNeurons::~RandomDummyRateNeurons() {
+}
+
+/*
+void RandomDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_second) {
+  revs_schedule.push_back({duration, revs_per_second});
+}
+*/
 
 AgentSenseRateNeurons::AgentSenseRateNeurons(Context* ctx,
                                              Agent* agent_, std::string label_)
@@ -580,7 +609,10 @@ void RateModel::simulation_loop() {
 
     // Print simulation time every 0.05s:
     if (!((timesteps * 20) % timesteps_per_second)) {
-      printf("\r%.2f", t);
+      if (agent)
+        printf("\r%.2f: %.2f, %.2f", t, agent->position(0), agent->position(1));
+      else
+        printf("\r%.2f", t);
       std::cout.flush();
     }
 
@@ -702,6 +734,7 @@ void RateModel::stop_electrodes() const {
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(RandomDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(AgentSenseRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);

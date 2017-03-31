@@ -108,11 +108,12 @@ inline void read_binary(const char* filename, Matrix& matrix,
   in.close();
 }
 
+// TODO: Fix RNG 
+extern std::mt19937 global_random_generator;
 inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
                                       bool scale_by_norm=1, float sparseness=0,
                                       float mean=0, bool gaussian=0) {
 
-  auto global_random_generator = std::mt19937();
   std::normal_distribution<> gauss;
   std::uniform_real_distribution<> U(0, 1);
 
@@ -148,6 +149,7 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
 class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
+class RandomDummyRateNeurons;
 class AgentSenseRateNeurons;
 class RateSynapses;
 class RatePlasticity;
@@ -216,6 +218,16 @@ namespace Backend {
   public:
     ~InputDummyRateNeurons() override = default;
     SPIKE_ADD_BACKEND_FACTORY(InputDummyRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
+    const EigenVector& rate() override = 0;
+  };
+
+  class RandomDummyRateNeurons : public virtual DummyRateNeurons {
+  public:
+    ~RandomDummyRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(RandomDummyRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
@@ -384,6 +396,24 @@ public:
 
 private:
   std::shared_ptr<::Backend::InputDummyRateNeurons> _backend;
+};
+
+// TODO: Generalize / parameterize RandomDummyRateNeurons
+class RandomDummyRateNeurons : public virtual DummyRateNeurons {
+public:
+  RandomDummyRateNeurons(Context* ctx, int size_, std::string label_);
+  ~RandomDummyRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(RandomDummyRateNeurons, DummyRateNeurons);
+
+  FloatT t_stop_after = infinity<FloatT>();
+
+  // std::vector<std::pair<FloatT, FloatT> > revs_schedule;
+  // void add_schedule(FloatT duration, FloatT revs_per_sec);
+
+private:
+  std::shared_ptr<::Backend::RandomDummyRateNeurons> _backend;
 };
 
 class AgentSenseRateNeurons : public virtual RateNeurons {

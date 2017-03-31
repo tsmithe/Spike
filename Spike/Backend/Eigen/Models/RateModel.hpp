@@ -155,6 +155,26 @@ namespace Backend {
       EigenVector d;
     };
 
+    class RandomDummyRateNeurons
+      : public virtual ::Backend::RandomDummyRateNeurons,
+        protected virtual ::Backend::Eigen::DummyRateNeurons {
+      friend class RateSynapses;
+      friend class RatePlasticity;
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(RandomDummyRateNeurons);
+      ~RandomDummyRateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      bool staged_integrate_timestep(FloatT dt) override;
+      EigenVector const& rate() override;
+      EigenVector const& rate(unsigned int n_back=0) override;
+
+    private:
+      EigenVector _rate;
+    };
+
     class AgentSenseRateNeurons
       : public virtual ::Backend::AgentSenseRateNeurons,
         public virtual ::Backend::Eigen::RateNeurons {
