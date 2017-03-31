@@ -176,7 +176,8 @@ namespace Backend {
       EigenVector const& rate(unsigned int n_back=0) override;
 
     protected:
-      EigenVector TODO;
+      EigenVector _rate;
+      //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
     };
   } // namespace Eigen
 } // namespace Backend

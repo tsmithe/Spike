@@ -199,11 +199,10 @@ namespace Backend {
     }
 
     void AgentSenseRateNeurons::prepare() {
-      assert("TODO" && false);
+      _rate.resize(frontend()->size);
     }
 
     void AgentSenseRateNeurons::reset_state() {
-      assert("TODO" && false);
     }
 
     void AgentSenseRateNeurons::connect_input(::Backend::RateSynapses*,
@@ -212,17 +211,31 @@ namespace Backend {
     }
 
     bool AgentSenseRateNeurons::staged_integrate_timestep(FloatT dt) {
-      assert("TODO" && false);
+      int n = 0;
+      Agent* agent = frontend()->agent;
+      ::Eigen::Matrix<FloatT, 2, 1> here;
+      FloatT max_dist = sqrt(agent->bound_x * agent->bound_x
+                             + agent->bound_y * agent->bound_y);
+      for (int i = 0; i < agent->bound_y; ++i) {
+        for (int j = 0; j < agent->bound_x; ++j) {
+          here = {j, i};
+          FloatT distance = (agent->position - here).norm();
+          _rate(n) = (max_dist - distance) / max_dist;
+          ++n;
+        }
+      }
+      return true;
     }
 
     EigenVector const& AgentSenseRateNeurons::rate() {
-      assert(false);
-      return TODO;
+      return rate(0);
     }
 
     EigenVector const& AgentSenseRateNeurons::rate(unsigned int n_back) {
-      assert(false);
-      return TODO;
+      if (n_back)
+        assert("Delays not yet supported here" && false);
+
+      return _rate;
     }
 
     void RateSynapses::prepare() {

@@ -294,11 +294,19 @@ private:
 
 class Agent {
 public:
+  Agent();
+  Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_);
+
   void connect_actor(RateNeurons* actor_);
   void update_per_dt(FloatT dt);
 
+  Eigen::Matrix<FloatT, 2, 1> position;
+  FloatT bound_x = 10, bound_y = 10;
+  FloatT velocity_scaling = 1;
+
 private:
   RateNeurons* actor;
+  Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
 };
 
 class RateNeurons : public virtual SpikeBase {

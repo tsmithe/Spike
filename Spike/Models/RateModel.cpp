@@ -65,12 +65,33 @@ void BufferWriter::stop() {
   file.flush();
 }
 
+Agent::Agent() {
+  position = Eigen::Matrix<FloatT, 2, 1>::Zero();
+}
+
+Agent::Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_)
+  : bound_x(bound_x_), bound_y(bound_y_), velocity_scaling(velocity_scaling_)
+{
+  position = Eigen::Matrix<FloatT, 2, 1>::Zero(); // TODO: is this line needed?
+}
+
 void Agent::connect_actor(RateNeurons* actor_) {
   actor = actor_;
+
+  // NB: For now, the tuning of the actor is imposed,
+  //     and assumes movement on a 2D plane.
+  actor_tuning.resize(2, actor->size);
+  FloatT angle = 0;
+  for (int i = 0; i < actor->size; ++i) {
+    Eigen::Matrix<FloatT, 2, 1> direction(2);
+    direction(0) = cos(angle);
+    direction(1) = sin(angle);
+    actor_tuning.col(i) = direction;
+    angle += 2 * M_PI / actor->size;
+  }
 }
 
 void Agent::update_per_dt(FloatT dt) {
-  assert("TODO" && false);
   /*
      + Turn actor into a velocity (assume a continuous state space)
        - this ~is the `output' of the RateModel
@@ -81,6 +102,11 @@ void Agent::update_per_dt(FloatT dt) {
 
      % NB: eventually, want to be able to represent self-embeddedness
    */
+  position.noalias() += (dt * velocity_scaling) * (actor_tuning * actor->rate());
+  if (position(0) > bound_x)
+    position(0) = bound_x;
+  if (position(1) > bound_y)
+    position(1) = bound_y;
 }
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
@@ -206,13 +232,12 @@ void InputDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_second
 
 AgentSenseRateNeurons::AgentSenseRateNeurons(Context* ctx,
                                              Agent* agent_, std::string label_)
-  : RateNeurons(nullptr, 0 /*size_*/, label_, 0, 1, 1),
+  : RateNeurons(nullptr, ceil(agent_->bound_x * agent_->bound_y),
+                label_, 0, 1, 1),
     agent(agent_) {
 
   if (ctx)
     init_backend(ctx);
-
-  assert("TODO" && false);
 }
 
 AgentSenseRateNeurons::~AgentSenseRateNeurons() {

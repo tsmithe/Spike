@@ -19,12 +19,12 @@ int main() {
   ctx->backend = "Eigen";
 
   // Set parameters:
-  int N_STATE = 50;
+  int N_STATE = ceil(agent.bound_x * agent.bound_y);
   FloatT alpha_STATE = 0.0;
   FloatT beta_STATE = 1.0;
   FloatT tau_STATE = 1e-2;
 
-  int N_ACT = 50;
+  int N_ACT = 10;
   FloatT alpha_ACT = 0.0;
   FloatT beta_ACT = 1.0;
   FloatT tau_ACT = 1e-2;
@@ -37,6 +37,7 @@ int main() {
   FloatT STATE_STATExACT_scaling = 1;
   FloatT ACT_STATExACT_scaling = 1;
   FloatT STATExACT_STATExACT_scaling = 1;
+  FloatT STATExACT_ACT_scaling = 1;
 
   FloatT eps = 0.1;
 
@@ -51,11 +52,13 @@ int main() {
   // Construct synapses
   RateSynapses STATE_STATExACT(ctx, &STATE, &STATExACT,
                                STATE_STATExACT_scaling, "STATE_STATExACT");
-  RateSynapses ACT_STATExACT(ctx, &STATE, &STATExACT,
-                             STATE_STATExACT_scaling, "STATE_STATExACT");
+  RateSynapses ACT_STATExACT(ctx, &ACT, &STATExACT,
+                             ACT_STATExACT_scaling, "ACT_STATExACT");
   RateSynapses STATExACT_STATExACT(ctx, &STATExACT, &STATExACT,
                                    STATExACT_STATExACT_scaling,
                                    "STATExACT_STATExACT");
+  RateSynapses STATExACT_ACT(ctx, &STATExACT, &ACT,
+                             STATExACT_ACT_scaling, "STATExACT_ACT");
 
   // Set initial weights
   STATE_STATExACT.weights(Eigen::make_random_matrix(N_STATExACT, N_STATE));
@@ -64,16 +67,19 @@ int main() {
                                                         N_STATExACT));
   // STATExACT_STATExACT.make_sparse();
   // STATExACT_STATExACT.delay(ceil(axonal_delay / timestep));
+  STATExACT_ACT.weights(Eigen::make_random_matrix(N_ACT, N_STATExACT));
 
   // Construct plasticity
   RatePlasticity plast_STATE_STATExACT(ctx, &STATE_STATExACT);
   RatePlasticity plast_ACT_STATExACT(ctx, &ACT_STATExACT);
   RatePlasticity plast_STATExACT_STATExACT(ctx, &STATExACT_STATExACT);
+  RatePlasticity plast_STATExACT_ACT(ctx, &STATExACT_ACT);
 
   // Connect synapses and plasticity to neurons
   STATExACT.connect_input(&STATE_STATExACT, &plast_STATE_STATExACT);
   STATExACT.connect_input(&ACT_STATExACT, &plast_ACT_STATExACT);
   STATExACT.connect_input(&STATExACT_STATExACT, &plast_STATExACT_STATExACT);
+  ACT.connect_input(&STATExACT_ACT, &plast_STATExACT_ACT);
 
   // Set up schedule
   // ...
