@@ -28,11 +28,11 @@ int main() {
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
-  FloatT lambda_VIS = 450.0;
+  FloatT lambda_VIS = 453.0;
   FloatT revs_per_sec = 1;
 
   int N_HD = 500;
-  FloatT alpha_HD = 4.2;
+  FloatT alpha_HD = 20.0;
   FloatT beta_HD = 0.2;
   FloatT tau_HD = 1e-2;
 
@@ -41,21 +41,23 @@ int main() {
 
   FloatT VIS_INH_scaling = -420.0;
 
+  FloatT HD_inhibition = -1.0 / N_HD;
+
+
   int N_AHVxHD = N_AHV;
-  FloatT alpha_AHVxHD = 113.0;
+  FloatT alpha_AHVxHD = 20.0;
   FloatT beta_AHVxHD = 0.3;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT HD_inhibition = -1 / N_HD;
+  FloatT AHVxHD_HD_scaling = 5920.0 / N_AHVxHD;
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
-  FloatT HD_AHVxHD_scaling = 2400.0 / (0.05*N_HD);
 
-  FloatT AHVxHD_HD_scaling = 10000.0 / N_AHVxHD;
+  FloatT HD_AHVxHD_scaling = 7500.0 / N_HD;
 
-  FloatT AHVxHD_inhibition = -1000.0;
+  FloatT AHV_AHVxHD_scaling = 500.0 / N_AHV;
 
-  FloatT AHV_AHVxHD_scaling = 5000.0 / N_AHV;
+  FloatT AHVxHD_inhibition = -2000.0 / N_AHVxHD;
 
   FloatT eps = 0.1;
 
@@ -134,15 +136,15 @@ int main() {
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
 
   // Set up schedule
-  // + cycle between ROT_on and ROT_off every 0.6s, until VIS.t_stop_after
+  // + cycle between ROT_on and ROT_off every 0.2s, until VIS.t_stop_after
   // + after VIS.t_stop_after, turn off plasticity
-  AHV.add_schedule(0.6, ROT_on);
-  VIS.add_schedule(0.6, revs_per_sec);
+  AHV.add_schedule(0.1, ROT_on);
+  VIS.add_schedule(0.1, revs_per_sec);
 
-  AHV.add_schedule(0.6, ROT_off);
-  VIS.add_schedule(0.6, 0);
+  AHV.add_schedule(0.1, ROT_off);
+  VIS.add_schedule(0.1, 0);
 
-  VIS.t_stop_after = 50*1.2;
+  VIS.t_stop_after = 50*2; // 50 rotations; 2 seconds per full rotation
 
   HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
