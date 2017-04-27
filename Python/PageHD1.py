@@ -10,15 +10,18 @@ def read_activations(root, net_post, net_pre, size, dtype=np.float32):
                       'activation_' + net_pre + '_' + net_post + '.bin', dtype)
 
 def accumulate_activation(root, net_post, nets_pre, size, dtype=np.float32):
-    return np.sum([read_activations(root, net_post, net_pre, size, dtype)
-                   for net_pre in nets_pre], 0)
+    activs = [read_activations(root, net_post, net_pre, size, dtype)
+              for net_pre in nets_pre]
+    min_len = min([a.shape[1] for a in activs])
+    activs = [a[:, :min_len] for a in activs]
+    return np.sum(activs, 0)
 
 def read_weights(root, net_post, net_pre,
                  size_post, size_pre, dtype=np.float32):
     w = np.memmap(root + '/' + net_post + '/'
                     + 'weights_' + net_pre + '_' + net_post + '.bin', dtype)
     w = w.reshape(int(w.size/(size_pre*size_post)), size_pre, size_post)
-    return w #.transpose((0, 2, 1))
+    return w
 
 def imshow(arr):
     from mpl_toolkits.axes_grid1 import make_axes_locatable
