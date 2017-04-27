@@ -3,8 +3,15 @@
 
 // TODO: Add signal handlers
 
-int main() {
+int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+
+  bool read_weights = false;
+  std::string weights_path;
+  if (argc > 1) {
+    read_weights = true;
+    weights_path = argv[1];
+  }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
   
@@ -39,9 +46,9 @@ int main() {
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
   EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
-  FloatT VIS_INH_scaling = -420.0;
+  FloatT VIS_INH_scaling = -400.0;
 
-  FloatT HD_inhibition = -1500.0 / N_HD; // 500
+  FloatT HD_inhibition = -300.0 / N_HD; // 500
 
 
   int N_AHVxHD = N_AHV;
@@ -49,15 +56,15 @@ int main() {
   FloatT beta_AHVxHD = 0.3;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT AHVxHD_HD_scaling = 9000.0 / N_AHVxHD; // 5000
+  FloatT AHVxHD_HD_scaling = 22000.0 / N_AHVxHD; // 5000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT HD_AHVxHD_scaling = 10000.0 / N_HD; // 8000
+  FloatT HD_AHVxHD_scaling = 11500.0 / N_HD; // 8000
 
-  FloatT AHV_AHVxHD_scaling = 600.0 / N_AHV; // 500
+  FloatT AHV_AHVxHD_scaling = 520.0 / N_AHV; // 500
 
-  FloatT AHVxHD_inhibition = -2800000.0 / N_AHVxHD; // 20000
+  FloatT AHVxHD_inhibition = -550.0 / N_AHVxHD; // 20000
 
   FloatT eps = 0.1;
 
@@ -92,12 +99,13 @@ int main() {
 
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
-                             AHVxHD_inhibition/N_AHVxHD, "AHVxHD_AHVxHD");
+                             AHVxHD_inhibition, "AHVxHD_AHVxHD");
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
 
   // Set initial weights
-  EigenMatrix HD_HD_W = EigenMatrix::Ones(N_HD, N_HD);
-  HD_HD.weights(HD_HD_W);
+
+  // -- Fixed weights:
+  HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
 
   VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
   VIS_HD.make_sparse();
@@ -105,17 +113,32 @@ int main() {
   VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
   VIS_INH_HD.make_sparse();
 
-  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
-  HD_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
-                                              0.95, 0, false));
-  HD_AHVxHD.make_sparse();
-
-  AHVxHD_HD.delay(ceil(axonal_delay / timestep));
-  AHVxHD_HD.weights(Eigen::make_random_matrix(N_HD, N_AHVxHD));
-
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
-  AHV_AHVxHD.weights(Eigen::make_random_matrix(N_AHVxHD, N_AHV));
+  // -- Variable weights:
+  AHVxHD_HD.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_AHVxHD_HD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_AHVxHD_HD, N_HD, N_AHVxHD);
+  }
+  AHVxHD_HD.weights(W_AHVxHD_HD);
+
+  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true, 0.95, 0, false);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_HD_AHVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_HD_AHVxHD, N_AHVxHD, N_HD);
+  }
+  HD_AHVxHD.weights(W_HD_AHVxHD);
+  HD_AHVxHD.make_sparse();
+
+  EigenMatrix W_AHV_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_AHV);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_AHV_AHVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_AHV_AHVxHD, N_AHVxHD, N_AHV);
+  }
+  AHV_AHVxHD.weights(W_AHV_AHVxHD);
 
   // Construct plasticity
   RatePlasticity plast_HD_HD(ctx, &HD_HD);
@@ -138,17 +161,17 @@ int main() {
   // Set up schedule
   // + cycle between ROT_on and ROT_off every 0.2s, until VIS.t_stop_after
   // + after VIS.t_stop_after, turn off plasticity
-  AHV.add_schedule(0.1, ROT_on);
-  VIS.add_schedule(0.1, revs_per_sec);
+  AHV.add_schedule(0.23, ROT_on);
+  VIS.add_schedule(0.23, revs_per_sec);
 
-  AHV.add_schedule(0.1, ROT_off);
-  VIS.add_schedule(0.1, 0);
+  AHV.add_schedule(0.23, ROT_off);
+  VIS.add_schedule(0.23, 0);
 
   VIS.t_stop_after = 1000*2; // 2 seconds per full rotation
 
   HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
-  plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  //plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
+  //plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
