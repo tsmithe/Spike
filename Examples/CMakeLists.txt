@@ -1,6 +1,7 @@
 foreach(example
     PageHD1
     PageHD2
+    PageHD2_VIS
     Jordan1
     SimpleRateModel
     CPUTest

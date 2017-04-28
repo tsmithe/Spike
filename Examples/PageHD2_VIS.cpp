@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
   int N_VIS = 500;
   FloatT sigma_VIS = M_PI / 9;
-  FloatT lambda_VIS = 453.0;
+  FloatT lambda_VIS = 6.0;
   FloatT revs_per_sec = 1;
 
   int N_HD = 500;
@@ -43,30 +43,29 @@ int main(int argc, char *argv[]) {
   FloatT beta_HD = 0.2;
   FloatT tau_HD = 1e-2;
 
-  EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
-  EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
+  // EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
+  // EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
-  FloatT VIS_INH_scaling = -400.0;
-
+  FloatT VIS_INH_scaling = -80.0 / N_HD;
   FloatT HD_inhibition = -320.0 / N_HD; // 500
-
 
   int N_AHVxHD = N_AHV;
   FloatT alpha_AHVxHD = 20.0;
   FloatT beta_AHVxHD = 0.3;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT AHVxHD_HD_scaling = 22000.0 / N_AHVxHD; // 5000
+  FloatT AHVxHD_HD_scaling = 12000.0 / N_AHVxHD; // 5000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT HD_AHVxHD_scaling = 9200.0 / N_HD; // 8000
+  FloatT HD_AHVxHD_scaling = 10000.0 / N_HD; // 8000
 
-  FloatT AHV_AHVxHD_scaling = 1200.0 / N_AHV; // 500
+  FloatT AHV_AHVxHD_scaling = 600.0 / N_AHV; // 500
 
-  FloatT AHVxHD_inhibition = -1350.0 / N_AHVxHD; // 20000
+  FloatT AHVxHD_inhibition = -1400.0 / N_AHVxHD; // 20000
 
-  FloatT eps = 0.1;
+  FloatT eps_VIS_HD = 0.125;
+  FloatT eps = 0.075;
 
   // NOTA BENE
   // 
@@ -83,7 +82,7 @@ int main(int argc, char *argv[]) {
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
-  DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
+  // DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
 
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
@@ -93,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
 
-  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_INH_HD");
+  RateSynapses VIS_INH_HD(ctx, &HD, &HD, VIS_INH_scaling, "VIS_INH_HD");
  
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
 
@@ -107,15 +106,20 @@ int main(int argc, char *argv[]) {
   // -- Fixed weights:
   HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
 
-  VIS_HD.weights(EigenMatrix::Identity(N_HD, N_VIS));
-  VIS_HD.make_sparse();
-
   VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
   VIS_INH_HD.make_sparse();
 
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
+  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_VIS_HD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
+  }
+  VIS_HD.weights(W_VIS_HD);
+  // VIS_HD.make_sparse();
+
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
   if (read_weights) {
@@ -169,14 +173,15 @@ int main(int argc, char *argv[]) {
 
   VIS.t_stop_after = 1000*2; // 2 seconds per full rotation
 
-  HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
+  // HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   //plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
   //plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_VIS_HD.add_schedule(VIS.t_stop_after, eps_VIS_HD);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
 
-  HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
+  // HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
   plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
@@ -184,15 +189,15 @@ int main(int argc, char *argv[]) {
   plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
   // Have to construct electrodes after neurons:
-  RateElectrodes VIS_elecs("HD_out", &VIS);
-  RateElectrodes HD_elecs("HD_out", &HD);
-  RateElectrodes AHVxHD_elecs("HD_out", &AHVxHD);
-  RateElectrodes AHV_elecs("HD_out", &AHV);
+  RateElectrodes VIS_elecs("HD_VIS_out", &VIS);
+  RateElectrodes HD_elecs("HD_VIS_out", &HD);
+  RateElectrodes AHVxHD_elecs("HD_VIS_out", &AHVxHD);
+  RateElectrodes AHV_elecs("HD_VIS_out", &AHV);
 
   // Add Neurons and Electrodes to Model
   model.add(&VIS);
   model.add(&HD);
-  model.add(&HD_VIS_INH);
+  // model.add(&HD_VIS_INH);
   model.add(&AHVxHD);
   model.add(&AHV);
 

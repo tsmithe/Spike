@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 def read_rates(root, net, size, fname='rate.bin', dtype=np.float32):
     r = np.memmap(root + '/' + net + '/' + fname, dtype)
+    r = r[:int(r.size/size) * size]
     return r.reshape(int(r.size/size), size).T
 
 def read_activations(root, net_post, net_pre, size, dtype=np.float32):
@@ -20,6 +21,7 @@ def read_weights(root, net_post, net_pre,
                  size_post, size_pre, dtype=np.float32):
     w = np.memmap(root + '/' + net_post + '/'
                     + 'weights_' + net_pre + '_' + net_post + '.bin', dtype)
+    w = w[:int(w.size/(size_pre*size_post)) * size_pre * size_post]
     w = w.reshape(int(w.size/(size_pre*size_post)), size_pre, size_post)
     return w
 
