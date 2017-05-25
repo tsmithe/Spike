@@ -33,50 +33,41 @@ int main(int argc, char *argv[]) {
   EigenVector ROT_on = EigenVector::Ones(N_AHV);
   ROT_on.head(N_NOROT) = EigenVector::Zero(N_NOROT);
 
-  int N_VIS = 500;
+  int N_VIS = 1000;
   FloatT sigma_VIS = M_PI / 9;
-  FloatT lambda_VIS = 6.0;
+  FloatT lambda_VIS = 1.0;
   FloatT revs_per_sec = 1;
 
   int N_HD = 500;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.2;
+  FloatT beta_HD = 0.3;
   FloatT tau_HD = 1e-2;
 
   // EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
   // EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
-  FloatT VIS_INH_scaling = -80.0 / N_HD;
-  FloatT HD_inhibition = -320.0 / N_HD; // 500
-
   int N_AHVxHD = N_AHV;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.3;
+  FloatT beta_AHVxHD = 0.4;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT AHVxHD_HD_scaling = 12000.0 / N_AHVxHD; // 5000
+  FloatT VIS_HD_scaling = 900.0 / (N_VIS*0.05);
+
+  FloatT VIS_INH_scaling = -250.0 / N_HD; //-600.0 / N_HD;
+  FloatT HD_inhibition = -320.0 / N_HD; // 500
+
+  FloatT AHVxHD_HD_scaling = 800.0 / (N_AHVxHD*0.05); // 5000
+
+  FloatT HD_AHVxHD_scaling = 20000.0 / N_HD; // 8000
+  FloatT AHV_AHVxHD_scaling = 700.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -1000.0 / N_AHVxHD; // 20000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT HD_AHVxHD_scaling = 10000.0 / N_HD; // 8000
+  FloatT eps_VIS_HD = 0.13;
+  FloatT eps = 0.07;
 
-  FloatT AHV_AHVxHD_scaling = 600.0 / N_AHV; // 500
-
-  FloatT AHVxHD_inhibition = -1400.0 / N_AHVxHD; // 20000
-
-  FloatT eps_VIS_HD = 0.125;
-  FloatT eps = 0.075;
-
-  // NOTA BENE
-  // 
-  // The following assert reflects assumptions of the prewired model.
-  // In particular, we assume that the HD cells are over-ridden by the VIS
-  // input, and that the tuning of VIS is identical to the tuning of HD in
-  // this case (see VIS_tuning above, and its use below as a surrogate for
-  // HD_tuning).
-  assert(N_VIS == N_HD);
-
-  // Construct neurons
+   // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
 
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
@@ -90,7 +81,7 @@ int main(int argc, char *argv[]) {
   // Construct synapses
   RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition, "HD_HD");
 
-  RateSynapses VIS_HD(ctx, &VIS, &HD, 1, "VIS_HD");
+  RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
 
   RateSynapses VIS_INH_HD(ctx, &HD, &HD, VIS_INH_scaling, "VIS_INH_HD");
  
@@ -106,19 +97,18 @@ int main(int argc, char *argv[]) {
   // -- Fixed weights:
   HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
 
-  VIS_INH_HD.weights(EigenMatrix::Identity(N_HD, N_HD));
-  VIS_INH_HD.make_sparse();
+  VIS_INH_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
 
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
-  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS);
+  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
   }
   VIS_HD.weights(W_VIS_HD);
-  // VIS_HD.make_sparse();
+  VIS_HD.make_sparse();
 
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
@@ -154,13 +144,13 @@ int main(int argc, char *argv[]) {
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
-  HD.connect_input(&HD_HD, &plast_HD_HD);
+  //HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
-  HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
-  AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
-  AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
-  AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
+  //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
+  //AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
+  //AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
+  //AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
 
   // Set up schedule
   // + cycle between ROT_on and ROT_off every 0.2s, until VIS.t_stop_after
@@ -176,12 +166,15 @@ int main(int argc, char *argv[]) {
   // HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   //plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
   //plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_VIS_HD.add_schedule(VIS.t_stop_after, eps_VIS_HD);
+  plast_VIS_HD.add_schedule(100, eps_VIS_HD/4.0);
+  plast_VIS_HD.add_schedule(100, eps_VIS_HD/2.0);
+  plast_VIS_HD.add_schedule(VIS.t_stop_after-200, eps_VIS_HD);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
 
   // HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
+  plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
@@ -209,7 +202,7 @@ int main(int argc, char *argv[]) {
   // Set simulation time parameters:
   model.set_simulation_time(VIS.t_stop_after + 12, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
-  model.set_weights_buffer_interval(ceil(1.0/timestep));
+  model.set_weights_buffer_interval(ceil(2.0/timestep));
 
   // Run!
   model.start();

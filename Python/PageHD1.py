@@ -10,12 +10,15 @@ def read_activations(root, net_post, net_pre, size, dtype=np.float32):
     return read_rates(root, net_post, size,
                       'activation_' + net_pre + '_' + net_post + '.bin', dtype)
 
-def accumulate_activation(root, net_post, nets_pre, size, dtype=np.float32):
+def accumulate_activation(root, net_post, nets_pre, size, sl=None, dtype=np.float32):
     activs = [read_activations(root, net_post, net_pre, size, dtype)
               for net_pre in nets_pre]
     min_len = min([a.shape[1] for a in activs])
     activs = [a[:, :min_len] for a in activs]
-    return np.sum(activs, 0)
+    if sl is None:
+        return np.sum(activs, 0)
+    else:
+        return np.sum([a[:, sl] for a in activs], 0)
 
 def read_weights(root, net_post, net_pre,
                  size_post, size_pre, dtype=np.float32):
