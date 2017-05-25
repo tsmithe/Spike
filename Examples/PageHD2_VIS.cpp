@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   int N_HD = 500;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.3;
+  FloatT beta_HD = 0.4;
   FloatT tau_HD = 1e-2;
 
   // EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
@@ -48,12 +48,12 @@ int main(int argc, char *argv[]) {
 
   int N_AHVxHD = N_AHV;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.4;
+  FloatT beta_AHVxHD = 0.5;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 900.0 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 2000.0 / (N_VIS*0.1); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -250.0 / N_HD; //-600.0 / N_HD;
+  FloatT VIS_INH_scaling = -220.0 / N_HD; // -160 / N_HD;
   FloatT HD_inhibition = -320.0 / N_HD; // 500
 
   FloatT AHVxHD_HD_scaling = 800.0 / (N_AHVxHD*0.05); // 5000
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT eps_VIS_HD = 0.13;
-  FloatT eps = 0.07;
+  FloatT eps_VIS_HD = 0.2;
+  FloatT eps = 0.08;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
-  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
+  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.9, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
@@ -144,31 +144,38 @@ int main(int argc, char *argv[]) {
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
-  //HD.connect_input(&HD_HD, &plast_HD_HD);
+  HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
   //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
-  //AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
-  //AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
-  //AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
+  AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
+  AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
+  AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
 
   // Set up schedule
   // + cycle between ROT_on and ROT_off every 0.2s, until VIS.t_stop_after
   // + after VIS.t_stop_after, turn off plasticity
-  AHV.add_schedule(0.23, ROT_on);
-  VIS.add_schedule(0.23, revs_per_sec);
+  AHV.add_schedule(0.37, ROT_on);
+  VIS.add_schedule(0.37, revs_per_sec);
 
-  AHV.add_schedule(0.23, ROT_off);
-  VIS.add_schedule(0.23, 0);
+  AHV.add_schedule(0.37, ROT_off);
+  VIS.add_schedule(0.37, 0);
 
   VIS.t_stop_after = 1000*2; // 2 seconds per full rotation
 
   // HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   //plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
   //plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_VIS_HD.add_schedule(100, eps_VIS_HD/4.0);
-  plast_VIS_HD.add_schedule(100, eps_VIS_HD/2.0);
-  plast_VIS_HD.add_schedule(VIS.t_stop_after-200, eps_VIS_HD);
+  plast_VIS_HD.add_schedule(10, 1.0);
+  plast_VIS_HD.add_schedule(20, 0.5);
+  plast_VIS_HD.add_schedule(70, eps_VIS_HD*2);
+  plast_VIS_HD.add_schedule(2, 0);
+  plast_VIS_HD.add_schedule(100, eps_VIS_HD);
+  plast_VIS_HD.add_schedule(2, 0);
+  plast_VIS_HD.add_schedule(292, eps_VIS_HD);
+  plast_VIS_HD.add_schedule(2, 0);
+  plast_VIS_HD.add_schedule(VIS.t_stop_after-500, eps_VIS_HD*0.6);
+  plast_VIS_HD.add_schedule(2, 0);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
