@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   int N_AHVxHD = 1000;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.5;
+  FloatT beta_AHVxHD = 0.4;
   FloatT tau_AHVxHD = 1e-2;
 
   FloatT VIS_HD_scaling = 2000.0 / (N_VIS*0.1); // 1200 / (N_VIS*0.05);
@@ -56,11 +56,11 @@ int main(int argc, char *argv[]) {
   FloatT VIS_INH_scaling = -220.0 / N_HD; // -160 / N_HD;
   FloatT HD_inhibition = -320.0 / N_HD; // 500
 
-  FloatT AHVxHD_HD_scaling = 800.0 / (N_AHVxHD*0.05); // 5000
+  FloatT AHVxHD_HD_scaling = 200.0 / (N_AHVxHD*0.05); // 5000
 
-  FloatT HD_AHVxHD_scaling = 18000.0 / N_HD; // 8000
-  FloatT AHV_AHVxHD_scaling = 200.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -160.0 / N_AHVxHD; // 20000
+  FloatT HD_AHVxHD_scaling = 15000.0 / N_HD; // 8000
+  FloatT AHV_AHVxHD_scaling = 220.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -50.0 / N_AHVxHD; // 20000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
@@ -144,10 +144,10 @@ int main(int argc, char *argv[]) {
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
-  //HD.connect_input(&HD_HD, &plast_HD_HD);
+  HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
-  //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
+  HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
   AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
