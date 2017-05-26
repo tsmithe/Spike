@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Set parameters
-  int N_ROT = 500;
-  int N_NOROT = 500;
+  int N_ROT = 50;
+  int N_NOROT = 50;
   int N_AHV = N_ROT + N_NOROT;
 
   EigenVector ROT_off = EigenVector::Zero(N_AHV);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   // EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
   // EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
-  int N_AHVxHD = N_AHV;
+  int N_AHVxHD = 1000;
   FloatT alpha_AHVxHD = 20.0;
   FloatT beta_AHVxHD = 0.5;
   FloatT tau_AHVxHD = 1e-2;
@@ -58,14 +58,14 @@ int main(int argc, char *argv[]) {
 
   FloatT AHVxHD_HD_scaling = 800.0 / (N_AHVxHD*0.05); // 5000
 
-  FloatT HD_AHVxHD_scaling = 20000.0 / N_HD; // 8000
-  FloatT AHV_AHVxHD_scaling = 700.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -1000.0 / N_AHVxHD; // 20000
+  FloatT HD_AHVxHD_scaling = 18000.0 / N_HD; // 8000
+  FloatT AHV_AHVxHD_scaling = 200.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -160.0 / N_AHVxHD; // 20000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
   FloatT eps_VIS_HD = 0.2;
-  FloatT eps = 0.08;
+  FloatT eps = 0.1;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
-  HD.connect_input(&HD_HD, &plast_HD_HD);
+  //HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
   //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   plast_VIS_HD.add_schedule(2, 0);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps);
+  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps*2);
 
   // HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
