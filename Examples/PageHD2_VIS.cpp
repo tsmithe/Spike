@@ -51,16 +51,16 @@ int main(int argc, char *argv[]) {
   FloatT beta_AHVxHD = 0.4;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 2000.0 / (N_VIS*0.1); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 4500.0 / (N_VIS*0.1); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -220.0 / N_HD; // -160 / N_HD;
+  FloatT VIS_INH_scaling = -500.0 / N_HD; // -160 / N_HD;
   FloatT HD_inhibition = -320.0 / N_HD; // 500
 
-  FloatT AHVxHD_HD_scaling = 200.0 / (N_AHVxHD*0.05); // 5000
+  FloatT AHVxHD_HD_scaling = 145.0 / (N_AHVxHD*0.05); // 5000
 
   FloatT HD_AHVxHD_scaling = 15000.0 / N_HD; // 8000
-  FloatT AHV_AHVxHD_scaling = 220.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -50.0 / N_AHVxHD; // 20000
+  FloatT AHV_AHVxHD_scaling = 250.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -140.0 / N_AHVxHD; // 20000
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   plast_VIS_HD.add_schedule(2, 0);
   plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps*2);
+  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps*1.5);
 
   // HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
