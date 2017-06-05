@@ -43,20 +43,20 @@ int main(int argc, char *argv[]) {
   FloatT beta_HD = 0.4;
   FloatT tau_HD = 1e-2;
 
-  // EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
-  // EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
+  EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
+  EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
   int N_AHVxHD = 1000;
   FloatT alpha_AHVxHD = 20.0;
   FloatT beta_AHVxHD = 0.4;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 4500.0 / (N_VIS*0.1); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 2400.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -500.0 / N_HD; // -160 / N_HD;
-  FloatT HD_inhibition = -320.0 / N_HD; // 500
+  FloatT VIS_INH_scaling = -5.0 / (N_VIS*0.05); // -160 / N_HD;
+  FloatT HD_inhibition = -100.0 / N_HD; // 500
 
-  FloatT AHVxHD_HD_scaling = 145.0 / (N_AHVxHD*0.05); // 5000
+  FloatT AHVxHD_HD_scaling = 120.0 / (N_AHVxHD*0.05); // 5000
 
   FloatT HD_AHVxHD_scaling = 15000.0 / N_HD; // 8000
   FloatT AHV_AHVxHD_scaling = 250.0 / N_AHV; // 500
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   InputDummyRateNeurons VIS(ctx, N_VIS, "VIS", sigma_VIS, lambda_VIS);
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
-  // DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
+  DummyRateNeurons HD_VIS_INH(ctx, N_HD, "HD_VIS_INH");
 
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
 
-  RateSynapses VIS_INH_HD(ctx, &HD, &HD, VIS_INH_scaling, "VIS_INH_HD");
+  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_INH_HD");
+  // RateSynapses VIS_INH_HD(ctx, &HD, &HD, VIS_INH_scaling, "VIS_INH_HD");
  
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
 
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
   HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
-  HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
+  //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
   AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
@@ -163,7 +164,7 @@ int main(int argc, char *argv[]) {
 
   VIS.t_stop_after = 1000*2; // 2 seconds per full rotation
 
-  // HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
+  HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   //plast_HD_HD.add_schedule(VIS.t_stop_after, eps);
   //plast_AHVxHD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_VIS_HD.add_schedule(10, 1.0);
@@ -180,7 +181,7 @@ int main(int argc, char *argv[]) {
   plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
   plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps*1.5);
 
-  // HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
+  HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
@@ -197,14 +198,14 @@ int main(int argc, char *argv[]) {
   // Add Neurons and Electrodes to Model
   model.add(&VIS);
   model.add(&HD);
-  // model.add(&HD_VIS_INH);
-  model.add(&AHVxHD);
-  model.add(&AHV);
+  model.add(&HD_VIS_INH);
+  //model.add(&AHVxHD);
+  //model.add(&AHV);
 
   model.add(&VIS_elecs);
   model.add(&HD_elecs);
-  model.add(&AHVxHD_elecs);
-  model.add(&AHV_elecs);
+  //model.add(&AHVxHD_elecs);
+  //model.add(&AHV_elecs);
 
   // Set simulation time parameters:
   model.set_simulation_time(VIS.t_stop_after + 12, timestep);
