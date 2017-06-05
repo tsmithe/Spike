@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
   int N_HD = 500;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.4;
+  FloatT beta_HD = 0.3;
   FloatT tau_HD = 1e-2;
 
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
@@ -51,12 +51,12 @@ int main(int argc, char *argv[]) {
   FloatT beta_AHVxHD = 0.4;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 2400.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 2800.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -5.0 / (N_VIS*0.05); // -160 / N_HD;
-  FloatT HD_inhibition = -100.0 / N_HD; // 500
+  FloatT VIS_INH_scaling = -7.0 / (N_VIS*0.05); // -160 / N_HD;
+  FloatT HD_inhibition = -80.0 / N_HD; // 500
 
-  FloatT AHVxHD_HD_scaling = 120.0 / (N_AHVxHD*0.05); // 5000
+  FloatT AHVxHD_HD_scaling = 150.0 / (N_AHVxHD*0.05); // 5000
 
   FloatT HD_AHVxHD_scaling = 15000.0 / N_HD; // 8000
   FloatT AHV_AHVxHD_scaling = 250.0 / N_AHV; // 500
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   HD.connect_input(&HD_HD, &plast_HD_HD);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
   HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
-  //HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
+  HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
   AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
@@ -199,13 +199,13 @@ int main(int argc, char *argv[]) {
   model.add(&VIS);
   model.add(&HD);
   model.add(&HD_VIS_INH);
-  //model.add(&AHVxHD);
-  //model.add(&AHV);
+  model.add(&AHVxHD);
+  model.add(&AHV);
 
   model.add(&VIS_elecs);
   model.add(&HD_elecs);
-  //model.add(&AHVxHD_elecs);
-  //model.add(&AHV_elecs);
+  model.add(&AHVxHD_elecs);
+  model.add(&AHV_elecs);
 
   // Set simulation time parameters:
   model.set_simulation_time(VIS.t_stop_after + 12, timestep);
