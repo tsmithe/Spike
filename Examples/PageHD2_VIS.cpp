@@ -8,10 +8,13 @@ int main(int argc, char *argv[]) {
 
   bool read_weights = false;
   std::string weights_path;
-  if (argc > 1) {
+
+  /*
+  if (argc == 2) {
     read_weights = true;
     weights_path = argv[1];
   }
+  */
 
   FloatT timestep = 5e-4; // seconds (TODO units)
   
@@ -20,7 +23,7 @@ int main(int argc, char *argv[]) {
   Context* ctx = model.context;
 
   // Tell Spike to talk
-  ctx->verbose = true;
+  //ctx->verbose = true;
   ctx->backend = "Eigen";
 
   // Set parameters
@@ -33,39 +36,54 @@ int main(int argc, char *argv[]) {
   EigenVector ROT_on = EigenVector::Ones(N_AHV);
   ROT_on.head(N_NOROT) = EigenVector::Zero(N_NOROT);
 
-  int N_VIS = 1000;
+  int N_VIS = 200;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
   FloatT revs_per_sec = 1;
 
-  int N_HD = 500;
+  int N_HD = 400;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.4;
+  FloatT beta_HD = 0.5;
   FloatT tau_HD = 1e-2;
 
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
   EigenVector HD_VIS_INH_off = EigenVector::Zero(N_HD);
 
-  int N_AHVxHD = 1000;
+  int N_AHVxHD = 800;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.3;
+  FloatT beta_AHVxHD = 0.5;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 1400.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 2000.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -7.0 / (N_VIS*0.05); // -160 / N_HD;
-  FloatT HD_inhibition = -300.0 / N_HD; // 500
+  FloatT VIS_INH_scaling = -3.0 / (N_VIS*0.05); // -160 / N_HD;
+  FloatT HD_inhibition = -300.0 / N_HD; // 300
 
-  FloatT AHVxHD_HD_scaling = 4000.0 / N_AHVxHD; // 5000
+  FloatT AHVxHD_HD_scaling = 5500.0 / N_AHVxHD; // 5000
 
-  FloatT HD_AHVxHD_scaling = 450.0 / (N_HD*0.05); // 8000
-  FloatT AHV_AHVxHD_scaling = 320.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -200.0 / N_AHVxHD; // 20000
+  FloatT HD_AHVxHD_scaling = 550.0 / (N_HD*0.05); // 8000
+  FloatT AHV_AHVxHD_scaling = 220.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -900.0 / N_AHVxHD; // 20000
+
+  if (argc == 3) {
+    /*
+    AHVxHD_HD_scaling = atof(argv[1]) / N_AHVxHD;
+    HD_AHVxHD_scaling = atof(argv[2]) / (N_HD*0.05);
+    AHVxHD_inhibition = -atof(argv[3]) / N_AHVxHD;
+    */
+    VIS_INH_scaling = -atof(argv[1]) / (N_VIS*0.05);
+    HD_inhibition = -atof(argv[2]) / N_HD;
+
+    std::cout << argv[1] << ", " << argv[2] /*<< ", " << argv[3] /*<< ", " << argv[4]*/ << "\n";
+  } else if (argc > 1 && argc != 3) {
+    printf("ERROR COUNTING ARGV\n");
+    return 64;
+  }
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
   FloatT eps_VIS_HD = 0.2;
-  FloatT eps = 0.1;
+  FloatT eps = 0.03;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
@@ -105,7 +123,7 @@ int main(int argc, char *argv[]) {
   AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
-  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.9, 0, false);
+  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
@@ -162,11 +180,13 @@ int main(int argc, char *argv[]) {
   VIS.add_schedule(0.37, revs_per_sec);
   VIS_cf.add_schedule(0.37, revs_per_sec);
 
+#ifdef ENABLE_COMB
   AHV.add_schedule(0.37, ROT_off);
   VIS.add_schedule(0.37, 0);
   VIS_cf.add_schedule(0.37, 0);
+#endif
 
-  VIS.t_stop_after = 2500;
+  VIS.t_stop_after = 410;
 
   HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   /*
@@ -183,13 +203,16 @@ int main(int argc, char *argv[]) {
   plast_VIS_HD.add_schedule(VIS.t_stop_after-500, eps_VIS_HD*0.6);
   plast_VIS_HD.add_schedule(2, 0);
   */
-  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after, eps);
-  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after, eps);
-  /*
-  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after, eps*1.5);
-  */
+  plast_VIS_HD.add_schedule(VIS.t_stop_after-10, eps_VIS_HD);
+#ifdef ENABLE_COMB
+  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after-10, eps);
+  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after-10, eps);
+
+  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after-10, eps);
 
   HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
+#endif
+
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
@@ -209,17 +232,21 @@ int main(int argc, char *argv[]) {
   model.add(&VIS_cf);
   model.add(&HD);
   model.add(&HD_VIS_INH);
+#ifdef ENABLE_COMB
   model.add(&AHVxHD);
   model.add(&AHV);
+#endif
 
   model.add(&VIS_elecs);
   model.add(&VIS_cf_elecs);
   model.add(&HD_elecs);
+#ifdef ENABLE_COMB
   model.add(&AHVxHD_elecs);
   model.add(&AHV_elecs);
+#endif
 
   // Set simulation time parameters:
-  model.set_simulation_time(VIS.t_stop_after + 6, timestep);
+  model.set_simulation_time(VIS.t_stop_after + 20, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
   model.set_weights_buffer_interval(ceil(2.0/timestep));
 
