@@ -3,20 +3,24 @@
 
 // TODO: Add signal handlers
 
+#define ENABLE_COMB
+
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   bool read_weights = false;
   std::string weights_path;
 
-  /*
   if (argc == 2) {
     read_weights = true;
     weights_path = argv[1];
   }
-  */
 
   FloatT timestep = 5e-4; // seconds (TODO units)
+  FloatT train_time = 800;
+  if (read_weights) train_time = 0;
+  FloatT test_on_time = 10;
+  FloatT test_off_time = 20;
   
   // Create Model
   RateModel model;
@@ -43,7 +47,7 @@ int main(int argc, char *argv[]) {
 
   int N_HD = 400;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.5;
+  FloatT beta_HD = 0.6;
   FloatT tau_HD = 1e-2;
 
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
@@ -51,19 +55,19 @@ int main(int argc, char *argv[]) {
 
   int N_AHVxHD = 800;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.5;
+  FloatT beta_AHVxHD = 0.8;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 2000.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 780.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
 
-  FloatT VIS_INH_scaling = -3.0 / (N_VIS*0.05); // -160 / N_HD;
+  FloatT VIS_INH_scaling = -1.0 / (N_VIS*0.05); // -160 / N_HD;
   FloatT HD_inhibition = -300.0 / N_HD; // 300
 
-  FloatT AHVxHD_HD_scaling = 5500.0 / N_AHVxHD; // 5000
+  FloatT AHVxHD_HD_scaling = 6000.0 / (N_AHVxHD*1.0); // 5000
 
-  FloatT HD_AHVxHD_scaling = 550.0 / (N_HD*0.05); // 8000
-  FloatT AHV_AHVxHD_scaling = 220.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -900.0 / N_AHVxHD; // 20000
+  FloatT HD_AHVxHD_scaling = 500.0 / (N_HD*0.05); // 8000
+  FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 500
+  FloatT AHVxHD_inhibition = -250.0 / N_AHVxHD; // 20000
 
   if (argc == 3) {
     /*
@@ -75,7 +79,7 @@ int main(int argc, char *argv[]) {
     HD_inhibition = -atof(argv[2]) / N_HD;
 
     std::cout << argv[1] << ", " << argv[2] /*<< ", " << argv[3] /*<< ", " << argv[4]*/ << "\n";
-  } else if (argc > 1 && argc != 3) {
+  } else if (argc > 2 && argc != 3) {
     printf("ERROR COUNTING ARGV\n");
     return 64;
   }
@@ -83,7 +87,7 @@ int main(int argc, char *argv[]) {
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
   FloatT eps_VIS_HD = 0.2;
-  FloatT eps = 0.03;
+  FloatT eps = 0.12;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
@@ -133,11 +137,13 @@ int main(int argc, char *argv[]) {
 
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
+  // EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD, 1.0, true, 0.4, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_AHVxHD_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_AHVxHD_HD, N_HD, N_AHVxHD);
   }
   AHVxHD_HD.weights(W_AHVxHD_HD);
+  // AHVxHD_HD.make_sparse();
 
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true, 0.95, 0, false);
@@ -180,13 +186,15 @@ int main(int argc, char *argv[]) {
   VIS.add_schedule(0.37, revs_per_sec);
   VIS_cf.add_schedule(0.37, revs_per_sec);
 
+  /*
 #ifdef ENABLE_COMB
   AHV.add_schedule(0.37, ROT_off);
   VIS.add_schedule(0.37, 0);
   VIS_cf.add_schedule(0.37, 0);
 #endif
+  */
 
-  VIS.t_stop_after = 410;
+  VIS.t_stop_after = train_time + test_on_time;
 
   HD_VIS_INH.add_schedule(VIS.t_stop_after, HD_VIS_INH_on);
   /*
@@ -203,12 +211,12 @@ int main(int argc, char *argv[]) {
   plast_VIS_HD.add_schedule(VIS.t_stop_after-500, eps_VIS_HD*0.6);
   plast_VIS_HD.add_schedule(2, 0);
   */
-  plast_VIS_HD.add_schedule(VIS.t_stop_after-10, eps_VIS_HD);
+  plast_VIS_HD.add_schedule(train_time, eps_VIS_HD);
 #ifdef ENABLE_COMB
-  plast_AHVxHD_HD.add_schedule(VIS.t_stop_after-10, eps);
-  plast_HD_AHVxHD.add_schedule(VIS.t_stop_after-10, eps);
+  plast_AHVxHD_HD.add_schedule(train_time, eps);
+  plast_HD_AHVxHD.add_schedule(train_time, eps*1.25);
 
-  plast_AHV_AHVxHD.add_schedule(VIS.t_stop_after-10, eps);
+  plast_AHV_AHVxHD.add_schedule(train_time, eps*0.8);
 
   HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
 #endif
@@ -246,7 +254,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Set simulation time parameters:
-  model.set_simulation_time(VIS.t_stop_after + 20, timestep);
+  model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
   model.set_weights_buffer_interval(ceil(2.0/timestep));
 
