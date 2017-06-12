@@ -53,6 +53,7 @@ typedef Eigen::Matrix<FloatT, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> E
 typedef Eigen::SparseMatrix<FloatT, Eigen::RowMajor> EigenSpMatrix;
 
 inline void normalize_matrix_rows(EigenMatrix& R, FloatT scale=1) {
+  #pragma omp parallel for
   for (int i = 0; i < R.rows(); ++i) {
     FloatT row_norm = R.row(i).norm();
     if (row_norm > 0)
@@ -62,6 +63,7 @@ inline void normalize_matrix_rows(EigenMatrix& R, FloatT scale=1) {
 
 inline void normalize_matrix_rows(EigenSpMatrix& R, FloatT scale=1) {
   assert(R.rows() == R.outerSize());
+  #pragma omp parallel for
   for (int i = 0; i < R.rows(); ++i) {
     FloatT row_norm = 0;
     for (EigenSpMatrix::InnerIterator it(R, i); it; ++it) {

@@ -417,7 +417,7 @@ namespace Backend {
     }
 
     void BCMPlasticity::reset_state() {
-      _thresh = EigenVector::Zero(synapses->frontend()->neurons_post->size);
+      _thresh = 0.1 * EigenVector::Ones(synapses->frontend()->neurons_post->size);
     }
 
     void BCMPlasticity::apply_plasticity(FloatT dt) {
@@ -442,18 +442,18 @@ namespace Backend {
       auto y = synapses->neurons_post->rate();
       auto x = synapses->neurons_pre->rate(delay);
 
-      _thresh += dt * epsilon * (y.cwiseProduct(y) - _thresh);
+      _thresh += dt * (epsilon/10) * (y.cwiseProduct(y) - _thresh);
 
       auto y_ = y.cwiseProduct(y - _thresh).cwiseQuotient(_thresh);
 
-      auto dW = dt * (y_ * x.transpose());
+      auto dW = dt * epsilon * (y_ * x.transpose());
 
       if (synapses->is_sparse) {
         synapses->_sp_weights += synapses->_sparsity.cwiseProduct(dW);
-        // normalize_matrix_rows(synapses->_sp_weights);
+        normalize_matrix_rows(synapses->_sp_weights);
       } else {
         synapses->_weights.noalias() += dW;
-        // normalize_matrix_rows(synapses->_weights);
+        normalize_matrix_rows(synapses->_weights);
       }
     }
   }
