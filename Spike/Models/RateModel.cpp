@@ -330,6 +330,7 @@ void RateSynapses::delay(unsigned int d) {
 
 RatePlasticity::RatePlasticity(Context* ctx, RateSynapses* syns)
   : synapses(syns) {
+
   init_backend(ctx);
   // reset_state();
 
@@ -364,7 +365,8 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
 }
 
 BCMPlasticity::BCMPlasticity(Context* ctx, RateSynapses* syns)
-  : RatePlasticity(nullptr, syns) {
+  : RatePlasticity(ctx, syns) {
+
   init_backend(ctx);
   // reset_state();
 

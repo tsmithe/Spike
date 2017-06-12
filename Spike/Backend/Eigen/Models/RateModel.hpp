@@ -70,7 +70,7 @@ namespace Backend {
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(BCMPlasticity);
       ~BCMPlasticity() override = default;
 
-      // void prepare() override;
+      void prepare() override;
       void reset_state() override;
 
       void apply_plasticity(FloatT dt) override;

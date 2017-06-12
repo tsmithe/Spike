@@ -194,8 +194,8 @@ namespace Backend {
   public:
     ~BCMPlasticity() override = default;
     SPIKE_ADD_BACKEND_FACTORY(BCMPlasticity);
-    // void prepare() override = 0;
-    // void reset_state() override = 0;
+    void prepare() override = 0;
+    void reset_state() override = 0;
 
     void apply_plasticity(FloatT dt) override = 0;
   };

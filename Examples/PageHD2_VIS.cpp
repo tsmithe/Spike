@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   Context* ctx = model.context;
 
   // Tell Spike to talk
-  //ctx->verbose = true;
+  ctx->verbose = true;
   ctx->backend = "Eigen";
 
   // Set parameters
@@ -172,15 +172,15 @@ int main(int argc, char *argv[]) {
   AHV_AHVxHD.weights(W_AHV_AHVxHD);
 
   // Construct plasticity
-  RatePlasticity plast_HD_HD_INH(ctx, &HD_HD_INH);
-  RatePlasticity plast_AHVxHD_HD_INH(ctx, &AHVxHD_HD_INH);
-  RatePlasticity plast_VIS_HD(ctx, &VIS_HD);
-  RatePlasticity plast_VIS_HD_INH(ctx, &VIS_HD_INH);
-  RatePlasticity plast_AHVxHD_AHVxHD_INH(ctx, &AHVxHD_AHVxHD_INH);
-  RatePlasticity plast_HD_AHVxHD_INH(ctx, &HD_AHVxHD_INH);
-  RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
-  RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD);
-  RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
+  BCMPlasticity plast_HD_HD_INH(ctx, &HD_HD_INH);
+  BCMPlasticity plast_AHVxHD_HD_INH(ctx, &AHVxHD_HD_INH);
+  BCMPlasticity plast_VIS_HD(ctx, &VIS_HD);
+  BCMPlasticity plast_VIS_HD_INH(ctx, &VIS_HD_INH);
+  BCMPlasticity plast_AHVxHD_AHVxHD_INH(ctx, &AHVxHD_AHVxHD_INH);
+  BCMPlasticity plast_HD_AHVxHD_INH(ctx, &HD_AHVxHD_INH);
+  BCMPlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
+  BCMPlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD);
+  BCMPlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
   HD.connect_input(&HD_HD_INH, &plast_HD_HD_INH);

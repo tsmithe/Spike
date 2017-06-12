@@ -410,6 +410,12 @@ namespace Backend {
       }
     }
 
+    void BCMPlasticity::prepare() {
+      synapses = dynamic_cast<::Backend::Eigen::RateSynapses*>
+        (frontend()->synapses->backend());
+      reset_state();
+    }
+
     void BCMPlasticity::reset_state() {
       _thresh = EigenVector::Zero(synapses->frontend()->neurons_post->size);
     }
