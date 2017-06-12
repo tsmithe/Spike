@@ -153,6 +153,7 @@ class RandomDummyRateNeurons;
 class AgentSenseRateNeurons;
 class RateSynapses;
 class RatePlasticity;
+class BCMPlasticity;
 class RateElectrodes;
 class RateModel;
 // ---|
@@ -187,6 +188,16 @@ namespace Backend {
     void reset_state() override = 0;
 
     virtual void apply_plasticity(FloatT dt) = 0;
+  };
+
+  class BCMPlasticity : public virtual RatePlasticity {
+  public:
+    ~BCMPlasticity() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(BCMPlasticity);
+    // void prepare() override = 0;
+    // void reset_state() override = 0;
+
+    void apply_plasticity(FloatT dt) override = 0;
   };
 
   class RateNeurons : public virtual SpikeBackendBase {
@@ -480,7 +491,7 @@ public:
   std::vector<std::pair<FloatT, FloatT> > plasticity_schedule;
   void add_schedule(FloatT duration, FloatT eps);
 
-  void apply_plasticity(FloatT dt);
+  virtual void apply_plasticity(FloatT dt);
 
   RateSynapses* synapses = nullptr;
 
@@ -491,6 +502,20 @@ public:
 
 private:
   std::shared_ptr<::Backend::RatePlasticity> _backend;
+};
+
+class BCMPlasticity : public virtual RatePlasticity {
+public:
+  BCMPlasticity(Context* ctx, RateSynapses* syns);
+  ~BCMPlasticity() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(BCMPlasticity, RatePlasticity);
+
+  // void apply_plasticity(FloatT dt) override;
+
+private:
+  std::shared_ptr<::Backend::BCMPlasticity> _backend;
 };
 
 class RateElectrodes {

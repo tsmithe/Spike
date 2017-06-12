@@ -9,6 +9,7 @@ namespace Backend {
     class RateSynapses : public virtual ::Backend::RateSynapses {
       friend class RateNeurons;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       RateSynapses() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateSynapses);
@@ -43,6 +44,7 @@ namespace Backend {
 
     class RatePlasticity : public virtual ::Backend::RatePlasticity {
     public:
+      RatePlasticity() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RatePlasticity);
       ~RatePlasticity() override = default;
 
@@ -51,8 +53,8 @@ namespace Backend {
 
       void apply_plasticity(FloatT dt) override;
 
-    private:
-      ::Backend::Eigen::RateSynapses/*Base*/* synapses = nullptr;
+      //private:
+      ::Backend::Eigen::RateSynapses* synapses = nullptr;
       FloatT epsilon = 0;
 
       int _schedule_idx = 0;
@@ -62,9 +64,25 @@ namespace Backend {
       bool _using_multipliers = false;
     };
 
+    class BCMPlasticity : public virtual ::Backend::BCMPlasticity,
+                          public virtual ::Backend::Eigen::RatePlasticity {
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(BCMPlasticity);
+      ~BCMPlasticity() override = default;
+
+      // void prepare() override;
+      void reset_state() override;
+
+      void apply_plasticity(FloatT dt) override;
+
+    private:
+      EigenVector _thresh;
+    };
+
     class RateNeurons : public virtual ::Backend::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       RateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
@@ -104,6 +122,7 @@ namespace Backend {
                              public virtual ::Backend::Eigen::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       DummyRateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(DummyRateNeurons);
@@ -133,6 +152,7 @@ namespace Backend {
         protected virtual ::Backend::Eigen::DummyRateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(InputDummyRateNeurons);
       ~InputDummyRateNeurons() override = default;
@@ -160,6 +180,7 @@ namespace Backend {
         protected virtual ::Backend::Eigen::DummyRateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RandomDummyRateNeurons);
       ~RandomDummyRateNeurons() override = default;
@@ -180,6 +201,7 @@ namespace Backend {
         public virtual ::Backend::Eigen::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
+      friend class BCMPlasticity;
     public:
       // AgentSenseRateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(AgentSenseRateNeurons);
