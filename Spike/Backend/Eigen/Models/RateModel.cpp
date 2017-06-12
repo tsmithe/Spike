@@ -7,6 +7,7 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, RandomDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentSenseRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, BCMPlasticity);
 
 namespace Backend {
   namespace Eigen {
@@ -406,6 +407,47 @@ namespace Backend {
       } else {
         synapses->_weights.noalias() += dW;
         normalize_matrix_rows(synapses->_weights);
+      }
+    }
+
+    void BCMPlasticity::reset_state() {
+      _thresh = EigenVector::Zero(synapses->frontend()->neurons_post->size);
+    }
+
+    void BCMPlasticity::apply_plasticity(FloatT dt) {
+      if (!(frontend()->plasticity_schedule.size()))
+        return;
+
+      _curr_rate_t += dt;
+      if (_curr_rate_t > frontend()->plasticity_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - frontend()->plasticity_schedule[_schedule_idx].first;
+        ++_schedule_idx;
+        if (_schedule_idx >= frontend()->plasticity_schedule.size())
+          _schedule_idx = 0;
+      }
+
+      epsilon = frontend()->plasticity_schedule[_schedule_idx].second;
+
+      if (epsilon == 0)
+        return;
+
+      unsigned int delay = synapses->delay();
+
+      auto y = synapses->neurons_post->rate();
+      auto x = synapses->neurons_pre->rate(delay);
+
+      _thresh += dt * epsilon * (y.cwiseProduct(y) - _thresh);
+
+      auto y_ = y.cwiseProduct(y - _thresh).cwiseQuotient(_thresh);
+
+      auto dW = dt * (y_ * x.transpose());
+
+      if (synapses->is_sparse) {
+        synapses->_sp_weights += synapses->_sparsity.cwiseProduct(dW);
+        // normalize_matrix_rows(synapses->_sp_weights);
+      } else {
+        synapses->_weights.noalias() += dW;
+        // normalize_matrix_rows(synapses->_weights);
       }
     }
   }

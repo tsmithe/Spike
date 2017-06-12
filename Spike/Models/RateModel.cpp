@@ -363,6 +363,41 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   }
 }
 
+BCMPlasticity::BCMPlasticity(Context* ctx, RateSynapses* syns)
+  : RatePlasticity(nullptr, syns) {
+  init_backend(ctx);
+  // reset_state();
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created BCM plasticity for " << syns->label << ".\n";
+  }
+}
+
+BCMPlasticity::~BCMPlasticity() {
+}
+
+/*
+void BCMPlasticity::reset_state() {
+  timesteps = 0;
+  weights_history.clear();
+  backend()->reset_state();
+}
+*/
+
+/*
+void BCMPlasticity::apply_plasticity(FloatT dt) {
+  backend()->apply_plasticity(dt);
+  timesteps += 1;
+  synapses->timesteps += 1; // TODO: Tidy this up
+  // TODO: Is this the best place for the buffering?
+  if (weights_buffer_interval && !(timesteps % weights_buffer_interval)) {
+    EigenMatrix tmp_buffer;
+    synapses->get_weights(tmp_buffer);
+    weights_history.push_back(timesteps, tmp_buffer);
+  }
+}
+*/
+
 RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
   : output_prefix(prefix), neurons(neurons_) {
 
@@ -738,3 +773,4 @@ SPIKE_MAKE_INIT_BACKEND(RandomDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(AgentSenseRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
+SPIKE_MAKE_INIT_BACKEND(BCMPlasticity);
