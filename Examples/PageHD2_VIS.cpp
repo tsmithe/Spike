@@ -58,16 +58,22 @@ int main(int argc, char *argv[]) {
   FloatT beta_AHVxHD = 0.8;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 780.0 / (N_VIS*0.05); // 1200 / (N_VIS*0.05);
+  FloatT VIS_HD_scaling = 725.0 / (N_VIS*0.05); // 780
 
-  FloatT VIS_INH_scaling = -1.0 / (N_VIS*0.05); // -160 / N_HD;
-  FloatT HD_inhibition = -300.0 / N_HD; // 300
+  FloatT VIS_INH_scaling = -2.2 / (N_VIS*0.05); // -1.0
+  FloatT HD_inhibition = -90.0 / N_HD; // 300
 
-  FloatT AHVxHD_HD_scaling = 6000.0 / (N_AHVxHD*1.0); // 5000
+  FloatT AHVxHD_HD_scaling = 4000.0 / (N_AHVxHD*1.0); // 6000
 
-  FloatT HD_AHVxHD_scaling = 500.0 / (N_HD*0.05); // 8000
-  FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 500
-  FloatT AHVxHD_inhibition = -250.0 / N_AHVxHD; // 20000
+  FloatT HD_AHVxHD_scaling = 280.0 / (N_HD*0.05); // 500
+  FloatT AHV_AHVxHD_scaling = 200.0 / N_AHV; // 240
+  FloatT AHVxHD_inhibition = -60.0 / N_AHVxHD; // -250
+
+  /*
+  FloatT global_inhibition = -0.1;
+  FloatT HD_inhibition = global_inhibition / N_HD;
+  FloatT AHVxHD_inhibition = global_inhibition / N_AHVxHD;
+  */
 
   if (argc == 3) {
     /*
@@ -103,28 +109,32 @@ int main(int argc, char *argv[]) {
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
   // Construct synapses
-  RateSynapses HD_HD(ctx, &HD, &HD, HD_inhibition, "HD_HD");
+  RateSynapses HD_HD_INH(ctx, &HD, &HD, HD_inhibition, "HD_HD_INH");
+  RateSynapses AHVxHD_HD_INH(ctx, &AHVxHD, &HD, AHVxHD_inhibition, "AHVxHD_HD_INH");
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
 
-  RateSynapses VIS_INH_HD(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_INH_HD");
+  RateSynapses VIS_HD_INH(ctx, &HD_VIS_INH, &HD, VIS_INH_scaling, "VIS_HD_INH");
   // RateSynapses VIS_INH_HD(ctx, &HD, &HD, VIS_INH_scaling, "VIS_INH_HD");
  
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
 
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
-  RateSynapses AHVxHD_AHVxHD(ctx, &AHVxHD, &AHVxHD,
-                             AHVxHD_inhibition, "AHVxHD_AHVxHD");
+  RateSynapses AHVxHD_AHVxHD_INH(ctx, &AHVxHD, &AHVxHD,
+                                 AHVxHD_inhibition, "AHVxHD_AHVxHD_INH");
+  RateSynapses HD_AHVxHD_INH(ctx, &HD, &AHVxHD,
+                             HD_inhibition, "HD_AHVxHD_INH");
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
 
   // Set initial weights
 
   // -- Fixed weights:
-  HD_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
+  HD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_HD));
+  AHVxHD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_AHVxHD));
+  VIS_HD_INH.weights(EigenMatrix::Ones(N_HD, N_VIS));
 
-  VIS_INH_HD.weights(EigenMatrix::Ones(N_HD, N_HD));
-
-  AHVxHD_AHVxHD.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
+  AHVxHD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
+  HD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
   EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
@@ -162,20 +172,25 @@ int main(int argc, char *argv[]) {
   AHV_AHVxHD.weights(W_AHV_AHVxHD);
 
   // Construct plasticity
-  RatePlasticity plast_HD_HD(ctx, &HD_HD);
+  RatePlasticity plast_HD_HD_INH(ctx, &HD_HD_INH);
+  RatePlasticity plast_AHVxHD_HD_INH(ctx, &AHVxHD_HD_INH);
   RatePlasticity plast_VIS_HD(ctx, &VIS_HD);
-  RatePlasticity plast_VIS_INH_HD(ctx, &VIS_INH_HD);
-  RatePlasticity plast_AHVxHD_AHVxHD(ctx, &AHVxHD_AHVxHD);
+  RatePlasticity plast_VIS_HD_INH(ctx, &VIS_HD_INH);
+  RatePlasticity plast_AHVxHD_AHVxHD_INH(ctx, &AHVxHD_AHVxHD_INH);
+  RatePlasticity plast_HD_AHVxHD_INH(ctx, &HD_AHVxHD_INH);
   RatePlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
   RatePlasticity plast_HD_AHVxHD(ctx, &HD_AHVxHD);
   RatePlasticity plast_AHV_AHVxHD(ctx, &AHV_AHVxHD);
 
   // Connect synapses and plasticity to neurons
-  HD.connect_input(&HD_HD, &plast_HD_HD);
+  HD.connect_input(&HD_HD_INH, &plast_HD_HD_INH);
+  //HD.connect_input(&AHVxHD_HD_INH, &plast_AHVxHD_HD_INH);
+  HD.connect_input(&VIS_HD_INH, &plast_VIS_HD_INH);
   HD.connect_input(&VIS_HD, &plast_VIS_HD);
-  HD.connect_input(&VIS_INH_HD, &plast_VIS_INH_HD);
   HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
-  AHVxHD.connect_input(&AHVxHD_AHVxHD, &plast_AHVxHD_AHVxHD);
+
+  AHVxHD.connect_input(&AHVxHD_AHVxHD_INH, &plast_AHVxHD_AHVxHD_INH);
+  //AHVxHD.connect_input(&HD_AHVxHD_INH, &plast_HD_AHVxHD_INH);
   AHVxHD.connect_input(&HD_AHVxHD, &plast_HD_AHVxHD);
   AHVxHD.connect_input(&AHV_AHVxHD, &plast_AHV_AHVxHD);
 
@@ -221,9 +236,12 @@ int main(int argc, char *argv[]) {
   HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
 #endif
 
+  plast_HD_HD_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_AHVxHD_HD_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_AHVxHD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_HD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
+
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
-  plast_HD_HD.add_schedule(infinity<FloatT>(), 0);
-  plast_AHVxHD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);

@@ -6,12 +6,16 @@ def read_rates(root, net, size, fname='rate.bin', dtype=np.float32):
     r = r[:int(r.size/size) * size]
     return r.reshape(int(r.size/size), size).T
 
-def read_activations(root, net_post, net_pre, size, dtype=np.float32):
-    return read_rates(root, net_post, size,
-                      'activation_' + net_pre + '_' + net_post + '.bin', dtype)
+def read_activations(root, net_post, net_pre, size, dtype=np.float32, INH=False):
+    if INH:
+        fname = 'activation_' + net_pre + '_' + net_post + '_INH.bin'
+    else:
+        fname = 'activation_' + net_pre + '_' + net_post + '.bin'
+    return read_rates(root, net_post, size, fname, dtype)
 
-def accumulate_activation(root, net_post, nets_pre, size, sl=None, dtype=np.float32):
-    activs = [read_activations(root, net_post, net_pre, size, dtype)
+def accumulate_activation(root, net_post, nets_pre, size,
+                          sl=None, dtype=np.float32, INH=False):
+    activs = [read_activations(root, net_post, net_pre, size, dtype, INH)
               for net_pre in nets_pre]
     min_len = min([a.shape[1] for a in activs])
     activs = [a[:, :min_len] for a in activs]
