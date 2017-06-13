@@ -366,6 +366,7 @@ public:
 
   const EigenVector& rate() const;
   int rate_buffer_interval = 0;
+  int rate_buffer_start = 0;
   EigenBuffer rate_history;
 
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
@@ -474,6 +475,7 @@ public:
   int timesteps = 0;
 
   int activation_buffer_interval = 0;
+  int activation_buffer_start = 0;
   EigenBuffer activation_history;
 
 private:
@@ -500,6 +502,7 @@ public:
   int timesteps = 0;
 
   int weights_buffer_interval = 0;
+  int weights_buffer_start = 0;
   EigenBuffer weights_history;
 
 private:
@@ -570,6 +573,10 @@ public:
   int activation_buffer_interval = 0;
   int weights_buffer_interval = 0;
 
+  int rate_buffer_start = 0;
+  int activation_buffer_start = 0;
+  int weights_buffer_start = 0;
+
   void set_rate_buffer_interval(int n_timesteps);
   void set_activation_buffer_interval(int n_timesteps);
   void set_weights_buffer_interval(int n_timesteps);
@@ -577,6 +584,11 @@ public:
                             int weights_timesteps);
   void set_buffer_intervals(int n_timesteps);
   void set_buffer_intervals(FloatT intval_s);
+
+  void set_rate_buffer_start(int n_timesteps);
+  void set_activation_buffer_start(int n_timesteps);
+  void set_weights_buffer_start(int n_timesteps);
+  void set_buffer_start(FloatT start_t);
 
   bool* dump_trigger = nullptr; // used for signal handling
   bool* stop_trigger = nullptr; // used for signal handling

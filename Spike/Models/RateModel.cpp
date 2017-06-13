@@ -179,12 +179,15 @@ bool RateNeurons::staged_integrate_timestep(FloatT dt) {
   // TODO: Is this the best place for the buffering?
   if (res) {
     timesteps += 1;
-    if (rate_buffer_interval && !(timesteps % rate_buffer_interval))
+    if (rate_buffer_interval
+        && (timesteps > rate_buffer_start) && !(timesteps % rate_buffer_interval))
       rate_history.push_back(timesteps, rate());
     // TODO: Best place for synapse activation buffering?
     for (auto& dendrite_pair : dendrites) {
       auto& syns = dendrite_pair.first;
-      if (syns->activation_buffer_interval && !(timesteps % syns->activation_buffer_interval)) {
+      if (syns->activation_buffer_interval
+          && (timesteps > syns->activation_buffer_start)
+          && !(timesteps % syns->activation_buffer_interval)) {
         syns->activation_history.push_back(timesteps, syns->activation());
       }
     }
@@ -357,7 +360,8 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   timesteps += 1;
   synapses->timesteps += 1; // TODO: Tidy this up
   // TODO: Is this the best place for the buffering?
-  if (weights_buffer_interval && !(timesteps % weights_buffer_interval)) {
+  if (weights_buffer_interval
+      && (timesteps > weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
     EigenMatrix tmp_buffer;
     synapses->get_weights(tmp_buffer);
     weights_history.push_back(timesteps, tmp_buffer);
@@ -392,7 +396,8 @@ void BCMPlasticity::apply_plasticity(FloatT dt) {
   timesteps += 1;
   synapses->timesteps += 1; // TODO: Tidy this up
   // TODO: Is this the best place for the buffering?
-  if (weights_buffer_interval && !(timesteps % weights_buffer_interval)) {
+  if (weights_buffer_interval
+      && (timesteps > weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
     EigenMatrix tmp_buffer;
     synapses->get_weights(tmp_buffer);
     weights_history.push_back(timesteps, tmp_buffer);
@@ -468,6 +473,8 @@ void RateElectrodes::write_output_info() const {
   output_info_file << "size = " << neurons->size << "\n"
                    << "rate_buffer_interval = "
                    << neurons->rate_buffer_interval << "\n";
+                   << "rate_buffer_start = "
+                   << neurons->rate_buffer_start << "\n";
 
   for (auto& d : neurons->dendrites) {
     auto& synapses = d.first;
@@ -477,8 +484,12 @@ void RateElectrodes::write_output_info() const {
                      << synapses->neurons_pre->size << "\n"
                      << "activation_buffer_interval = "
                      << synapses->activation_buffer_interval << "\n"
+                     << "activation_buffer_start = "
+                     << synapses->activation_buffer_start << "\n"
                      << "weights_buffer_interval = "
                      << plasticity->weights_buffer_interval << "\n";
+                     << "weights_buffer_start = "
+                     << plasticity->weights_buffer_start << "\n";
   }
 
   output_info_file.close();
@@ -518,21 +529,19 @@ RateModel::~RateModel() {
 
 void RateModel::add(RateNeurons* neurons) {
   // Ensure buffer intervals match those set here:
-  if (rate_buffer_interval != 0)
-    neurons->rate_buffer_interval = rate_buffer_interval;
+  neurons->rate_buffer_interval = rate_buffer_interval;
+  neurons->rate_buffer_start = rate_buffer_start;
   
-  if (activation_buffer_interval != 0) {
-    for (auto& d : neurons->dendrites) {
-      auto& synapses = d.first;
-      synapses->activation_buffer_interval = activation_buffer_interval;
-    }
+  for (auto& d : neurons->dendrites) {
+    auto& synapses = d.first;
+    synapses->activation_buffer_interval = activation_buffer_interval;
+    synapses->activation_buffer_start = activation_buffer_start;
   }
 
-  if (weights_buffer_interval != 0) {
-    for (auto& d : neurons->dendrites) {
-      auto& plasticity = d.second;
-      plasticity->weights_buffer_interval = weights_buffer_interval;
-    }
+  for (auto& d : neurons->dendrites) {
+    auto& plasticity = d.second;
+    plasticity->weights_buffer_interval = weights_buffer_interval;
+    plasticity->weights_buffer_start = weights_buffer_start;
   }
 
   // Add neurons to model:
@@ -575,6 +584,16 @@ void RateModel::set_rate_buffer_interval(int n_timesteps) {
   }
 }
 
+void RateModel::set_rate_buffer_start(int n_timesteps) {
+  rate_buffer_start = n_timesteps;
+  for (auto& n : neuron_groups)
+    n->rate_buffer_start = n_timesteps;
+
+  if (context->verbose) {
+    std::cout << "Spike: Rate buffer starts after "
+              << n_timesteps << " timesteps.\n";
+  }
+}
 
 void RateModel::set_activation_buffer_interval(int n_timesteps) {
   activation_buffer_interval = n_timesteps;
@@ -591,6 +610,21 @@ void RateModel::set_activation_buffer_interval(int n_timesteps) {
   }
 }
 
+void RateModel::set_activation_buffer_start(int n_timesteps) {
+  activation_buffer_start = n_timesteps;
+  for (auto& n : neuron_groups) {
+    for (auto& d : n->dendrites) {
+      auto& synapses = d.first;
+      synapses->activation_buffer_start = n_timesteps;
+    }
+  }
+
+  if (context->verbose) {
+    std::cout << "Spike: Activation buffer starts after "
+              << n_timesteps << " timesteps.\n";
+  }
+}
+
 void RateModel::set_weights_buffer_interval(int n_timesteps) {
   weights_buffer_interval = n_timesteps;
   for (auto& n : neuron_groups) {
@@ -602,6 +636,21 @@ void RateModel::set_weights_buffer_interval(int n_timesteps) {
 
   if (context->verbose) {
     std::cout << "Spike: Weights buffer interval is "
+              << n_timesteps << " timesteps.\n";
+  }
+}
+
+void RateModel::set_weights_buffer_start(int n_timesteps) {
+  weights_buffer_start = n_timesteps;
+  for (auto& n : neuron_groups) {
+    for (auto& d : n->dendrites) {
+      auto& plasticity = d.second;
+      plasticity->weights_buffer_start = n_timesteps;
+    }
+  }
+
+  if (context->verbose) {
+    std::cout << "Spike: Weights buffer starts after "
               << n_timesteps << " timesteps.\n";
   }
 }
@@ -624,6 +673,16 @@ void RateModel::set_buffer_intervals(FloatT intval_s) {
 
   int n_timesteps = round(intval_s / dt);
   set_buffer_intervals(n_timesteps, n_timesteps, n_timesteps);
+}
+
+void RateModel::set_buffer_start(FloatT start_t) {
+  if (dt == 0)
+    throw SpikeException("Must set simulation dt first!");
+
+  int n_timesteps = round(start_t / dt);
+  set_rate_buffer_start(n_timesteps);
+  set_activation_buffer_start(n_timesteps);
+  set_weights_buffer_start(n_timesteps);
 }
 
 void RateModel::set_dump_trigger(bool* trigger) {
