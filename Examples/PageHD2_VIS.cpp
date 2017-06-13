@@ -4,6 +4,7 @@
 // TODO: Add signal handlers
 
 #define ENABLE_COMB
+//#define TRAIN_VIS_HD
 
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]) {
   if (read_weights) train_time = 0;
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
+  FloatT start_recording_time = 0;
   
   // Create Model
   RateModel model;
@@ -92,7 +94,11 @@ int main(int argc, char *argv[]) {
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT eps_VIS_HD = 0; // 0.1;
+#ifdef TRAIN_VIS_HD
+  FloatT eps_VIS_HD = 0.1;
+#else
+  FloatT eps_VIS_HD = 0;
+#endif
   FloatT eps = 0.02;
 
    // Construct neurons
@@ -137,14 +143,15 @@ int main(int argc, char *argv[]) {
   HD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
+#ifdef TRAIN_VIS_HD
   EigenMatrix W_VIS_HD = EigenMatrix::Identity(N_HD, N_VIS);
-  /*
+#else
   EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
   }
-  */
+#endif
   VIS_HD.weights(W_VIS_HD);
   VIS_HD.make_sparse();
 
@@ -278,6 +285,7 @@ int main(int argc, char *argv[]) {
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
   model.set_weights_buffer_interval(ceil(2.0/timestep));
+  model.set_buffer_start(start_recording_time);
 
   // Run!
   model.start();
