@@ -4,6 +4,7 @@
 // TODO: Add signal handlers
 
 #define ENABLE_COMB
+#define TRAIN_VIS_HD
 
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
@@ -17,17 +18,19 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 800;
+  FloatT train_time = 12000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
+  FloatT start_recording_time = 5000;
+  if (read_weights) start_recording_time = 0;
   
   // Create Model
   RateModel model;
   Context* ctx = model.context;
 
   // Tell Spike to talk
-  ctx->verbose = true;
+  //ctx->verbose = true;
   ctx->backend = "Eigen";
 
   // Set parameters
@@ -40,14 +43,14 @@ int main(int argc, char *argv[]) {
   EigenVector ROT_on = EigenVector::Ones(N_AHV);
   ROT_on.head(N_NOROT) = EigenVector::Zero(N_NOROT);
 
-  int N_VIS = 200;
+  int N_VIS = 400;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
   FloatT revs_per_sec = 1;
 
   int N_HD = 400;
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.6;
+  FloatT beta_HD = 1.0;
   FloatT tau_HD = 1e-2;
 
   EigenVector HD_VIS_INH_on = EigenVector::Ones(N_HD);
@@ -55,19 +58,19 @@ int main(int argc, char *argv[]) {
 
   int N_AHVxHD = 800;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.8;
+  FloatT beta_AHVxHD = 1.2;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 725.0 / (N_VIS*0.05); // 780
+  FloatT VIS_HD_scaling = 1100.0 / (N_VIS*0.05); // 1600
 
-  FloatT VIS_INH_scaling = -2.2 / (N_VIS*0.05); // -1.0
-  FloatT HD_inhibition = -90.0 / N_HD; // 300
+  FloatT VIS_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
+  FloatT HD_inhibition = -32.0 / N_HD; // 300
 
-  FloatT AHVxHD_HD_scaling = 4000.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
 
-  FloatT HD_AHVxHD_scaling = 280.0 / (N_HD*0.05); // 500
-  FloatT AHV_AHVxHD_scaling = 200.0 / N_AHV; // 240
-  FloatT AHVxHD_inhibition = -60.0 / N_AHVxHD; // -250
+  FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*0.05); // 500
+  FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 240
+  FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
 
   /*
   FloatT global_inhibition = -0.1;
@@ -92,8 +95,12 @@ int main(int argc, char *argv[]) {
 
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
-  FloatT eps_VIS_HD = 0.2;
-  FloatT eps = 0.12;
+#ifdef TRAIN_VIS_HD
+  FloatT eps_VIS_HD = 0.05;
+#else
+  FloatT eps_VIS_HD = 0;
+#endif
+  FloatT eps = 0.01;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
@@ -137,11 +144,15 @@ int main(int argc, char *argv[]) {
   HD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
 
   // -- Variable weights:
+#ifdef TRAIN_VIS_HD
   EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
   }
+#else
+  EigenMatrix W_VIS_HD = EigenMatrix::Identity(N_HD, N_VIS);
+#endif
   VIS_HD.weights(W_VIS_HD);
   VIS_HD.make_sparse();
 
@@ -228,10 +239,10 @@ int main(int argc, char *argv[]) {
   */
   plast_VIS_HD.add_schedule(train_time, eps_VIS_HD);
 #ifdef ENABLE_COMB
-  plast_AHVxHD_HD.add_schedule(train_time, eps);
-  plast_HD_AHVxHD.add_schedule(train_time, eps*1.25);
+  plast_AHVxHD_HD.add_schedule(train_time, eps*0.8);
+  plast_HD_AHVxHD.add_schedule(train_time, eps*1.2);
 
-  plast_AHV_AHVxHD.add_schedule(train_time, eps*0.8);
+  plast_AHV_AHVxHD.add_schedule(train_time, eps);
 
   HD_VIS_INH.add_schedule(infinity<FloatT>(), HD_VIS_INH_off);
 #endif
@@ -275,6 +286,7 @@ int main(int argc, char *argv[]) {
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
   model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
   model.set_weights_buffer_interval(ceil(2.0/timestep));
+  model.set_buffer_start(start_recording_time);
 
   // Run!
   model.start();
