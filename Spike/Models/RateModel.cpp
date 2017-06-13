@@ -472,7 +472,7 @@ void RateElectrodes::write_output_info() const {
   std::ofstream output_info_file(output_dir + "/output.info");
   output_info_file << "size = " << neurons->size << "\n"
                    << "rate_buffer_interval = "
-                   << neurons->rate_buffer_interval << "\n";
+                   << neurons->rate_buffer_interval << "\n"
                    << "rate_buffer_start = "
                    << neurons->rate_buffer_start << "\n";
 
@@ -487,7 +487,7 @@ void RateElectrodes::write_output_info() const {
                      << "activation_buffer_start = "
                      << synapses->activation_buffer_start << "\n"
                      << "weights_buffer_interval = "
-                     << plasticity->weights_buffer_interval << "\n";
+                     << plasticity->weights_buffer_interval << "\n"
                      << "weights_buffer_start = "
                      << plasticity->weights_buffer_start << "\n";
   }
