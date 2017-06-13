@@ -4,7 +4,7 @@
 // TODO: Add signal handlers
 
 #define ENABLE_COMB
-//#define TRAIN_VIS_HD
+#define TRAIN_VIS_HD
 
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
@@ -18,11 +18,11 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 6000;
+  FloatT train_time = 12000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
-  FloatT start_recording_time = 0;
+  FloatT start_recording_time = 5000;
   
   // Create Model
   RateModel model;
@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
   FloatT beta_AHVxHD = 1.2;
   FloatT tau_AHVxHD = 1e-2;
 
-  FloatT VIS_HD_scaling = 1600.0 / (N_VIS*0.05); // 780
+  FloatT VIS_HD_scaling = 1100.0 / (N_VIS*0.05); // 1600
 
   FloatT VIS_INH_scaling = -2.2 / (N_VIS*0.05); // -1.0
-  FloatT HD_inhibition = -32.0 / N_HD; // 300
+  FloatT HD_inhibition = -50.0 / N_HD; // 300
 
   FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
 
@@ -95,11 +95,11 @@ int main(int argc, char *argv[]) {
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
 
 #ifdef TRAIN_VIS_HD
-  FloatT eps_VIS_HD = 0.1;
+  FloatT eps_VIS_HD = 0.05;
 #else
   FloatT eps_VIS_HD = 0;
 #endif
-  FloatT eps = 0.02;
+  FloatT eps = 0.01;
 
    // Construct neurons
   DummyRateNeurons AHV(ctx, N_AHV, "AHV");
