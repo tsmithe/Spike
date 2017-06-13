@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
   FloatT start_recording_time = 5000;
+  if (read_weights) start_recording_time = 0;
   
   // Create Model
   RateModel model;
@@ -62,8 +63,8 @@ int main(int argc, char *argv[]) {
 
   FloatT VIS_HD_scaling = 1100.0 / (N_VIS*0.05); // 1600
 
-  FloatT VIS_INH_scaling = -2.2 / (N_VIS*0.05); // -1.0
-  FloatT HD_inhibition = -50.0 / N_HD; // 300
+  FloatT VIS_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
+  FloatT HD_inhibition = -32.0 / N_HD; // 300
 
   FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
 
