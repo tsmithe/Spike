@@ -79,6 +79,11 @@ Agent::Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_)
   position = Eigen::Matrix<FloatT, 2, 1>::Zero(); // TODO: is this line needed?
 }
 
+void Agent::update_per_dt(FloatT dt) {
+  // TODO
+}
+
+/*
 void Agent::connect_actor(RateNeurons* actor_) {
   actor = actor_;
 
@@ -94,7 +99,9 @@ void Agent::connect_actor(RateNeurons* actor_) {
     angle += 2 * M_PI / actor->size;
   }
 }
+*/
 
+/*
 void Agent::update_per_dt(FloatT dt) {
   /*
      + Turn actor into a velocity (assume a continuous state space)
@@ -105,7 +112,7 @@ void Agent::update_per_dt(FloatT dt) {
        - each element of the state vector measures `inverse distance' ??
 
      % NB: eventually, want to be able to represent self-embeddedness
-   */
+   * /
   position.noalias() += (dt * velocity_scaling) * (actor_tuning * actor->rate());
   if (position(0) > bound_x)
     position(0) = bound_x;
@@ -117,6 +124,7 @@ void Agent::update_per_dt(FloatT dt) {
   else if (position(1) < 0)
     position(1) = 0;
 }
+*/
 
 RateNeurons::RateNeurons(Context* ctx, int size_,
                          std::string label_,
@@ -259,6 +267,7 @@ void RandomDummyRateNeurons::add_schedule(FloatT duration, FloatT revs_per_secon
 }
 */
 
+/*
 AgentSenseRateNeurons::AgentSenseRateNeurons(Context* ctx,
                                              Agent* agent_, std::string label_)
   : RateNeurons(nullptr, ceil(agent_->bound_x * agent_->bound_y),
@@ -271,6 +280,49 @@ AgentSenseRateNeurons::AgentSenseRateNeurons(Context* ctx,
 
 AgentSenseRateNeurons::~AgentSenseRateNeurons() {
 }
+*/
+
+AgentVISRateNeurons::AgentVISRateNeurons(Context* ctx,
+                                         Agent* agent_, std::string label_)
+  : RateNeurons(nullptr, agent->N_VIS, label_, 0, 1, 1),
+    agent(agent_) {
+
+  if (ctx)
+    init_backend(ctx);
+}
+
+AgentVISRateNeurons::~AgentVISRateNeurons() {
+}
+
+
+
+AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
+                                         Agent* agent_, std::string label_)
+  : RateNeurons(nullptr, agent->N_AHV, label_, 0, 1, 1),
+    agent(agent_) {
+
+  if (ctx)
+    init_backend(ctx);
+}
+
+AgentAHVRateNeurons::~AgentAHVRateNeurons() {
+}
+
+
+
+AgentFVRateNeurons::AgentFVRateNeurons(Context* ctx,
+                                       Agent* agent_, std::string label_)
+  : RateNeurons(nullptr, agent->N_FV, label_, 0, 1, 1),
+    agent(agent_) {
+
+  if (ctx)
+    init_backend(ctx);
+}
+
+AgentFVRateNeurons::~AgentFVRateNeurons() {
+}
+
+
 
 RateSynapses::RateSynapses(Context* ctx,
                            RateNeurons* neurons_pre_,
@@ -772,7 +824,9 @@ SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RandomDummyRateNeurons);
-SPIKE_MAKE_INIT_BACKEND(AgentSenseRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(AgentVISRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(AgentAHVRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(AgentFVRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
 SPIKE_MAKE_INIT_BACKEND(BCMPlasticity);

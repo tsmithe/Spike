@@ -4,7 +4,9 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, DummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, InputDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RandomDummyRateNeurons);
-SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentSenseRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentVISRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentAHVRateNeurons);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentFVRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, BCMPlasticity);
@@ -235,6 +237,8 @@ namespace Backend {
       return rate(0);
     }
 
+    /********************************************** AGENT **************/
+    /*
     void AgentSenseRateNeurons::prepare() {
       _rate.resize(frontend()->size);
     }
@@ -274,6 +278,101 @@ namespace Backend {
 
       return _rate;
     }
+    */
+
+
+
+    void AgentVISRateNeurons::prepare() {
+      _rate.resize(frontend()->size);
+    }
+
+    void AgentVISRateNeurons::reset_state() {
+    }
+
+    void AgentVISRateNeurons::connect_input(::Backend::RateSynapses*,
+                                              ::Backend::RatePlasticity*) {
+      assert("You shouldn't be doing this" && false);
+    }
+
+    bool AgentVISRateNeurons::staged_integrate_timestep(FloatT dt) {
+      Agent* agent = frontend()->agent;
+
+      return true;
+    }
+
+    EigenVector const& AgentVISRateNeurons::rate() {
+      return rate(0);
+    }
+
+    EigenVector const& AgentVISRateNeurons::rate(unsigned int n_back) {
+      if (n_back)
+        assert("Delays not yet supported here" && false);
+
+      return _rate;
+    }
+
+
+
+    void AgentAHVRateNeurons::prepare() {
+      _rate.resize(frontend()->size);
+    }
+
+    void AgentAHVRateNeurons::reset_state() {
+    }
+
+    void AgentAHVRateNeurons::connect_input(::Backend::RateSynapses*,
+                                              ::Backend::RatePlasticity*) {
+      assert("You shouldn't be doing this" && false);
+    }
+
+    bool AgentAHVRateNeurons::staged_integrate_timestep(FloatT dt) {
+      Agent* agent = frontend()->agent;
+
+      return true;
+    }
+
+    EigenVector const& AgentAHVRateNeurons::rate() {
+      return rate(0);
+    }
+
+    EigenVector const& AgentAHVRateNeurons::rate(unsigned int n_back) {
+      if (n_back)
+        assert("Delays not yet supported here" && false);
+
+      return _rate;
+    }
+
+
+
+    void AgentFVRateNeurons::prepare() {
+      _rate.resize(frontend()->size);
+    }
+
+    void AgentFVRateNeurons::reset_state() {
+    }
+
+    void AgentFVRateNeurons::connect_input(::Backend::RateSynapses*,
+                                              ::Backend::RatePlasticity*) {
+      assert("You shouldn't be doing this" && false);
+    }
+
+    bool AgentFVRateNeurons::staged_integrate_timestep(FloatT dt) {
+      Agent* agent = frontend()->agent;
+
+      return true;
+    }
+
+    EigenVector const& AgentFVRateNeurons::rate() {
+      return rate(0);
+    }
+
+    EigenVector const& AgentFVRateNeurons::rate(unsigned int n_back) {
+      if (n_back)
+        assert("Delays not yet supported here" && false);
+
+      return _rate;
+    }
+    /*********************************************** AGENT **************/
 
     void RateSynapses::prepare() {
       neurons_pre = dynamic_cast<::Backend::Eigen::RateNeurons*>

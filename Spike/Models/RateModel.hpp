@@ -150,7 +150,9 @@ class RateNeurons;
 class DummyRateNeurons;
 class InputDummyRateNeurons;
 class RandomDummyRateNeurons;
-class AgentSenseRateNeurons;
+class AgentVISRateNeurons;
+class AgentAHVRateNeurons;
+class AgentFVRateNeurons;
 class RateSynapses;
 class RatePlasticity;
 class BCMPlasticity;
@@ -245,10 +247,34 @@ namespace Backend {
     const EigenVector& rate() override = 0;
   };
 
-  class AgentSenseRateNeurons : public virtual RateNeurons {
+  class AgentVISRateNeurons : public virtual RateNeurons {
   public:
-    ~AgentSenseRateNeurons() override = default;
-    SPIKE_ADD_BACKEND_FACTORY(AgentSenseRateNeurons);
+    ~AgentVISRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(AgentVISRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    void connect_input(RateSynapses* synapses,
+                       RatePlasticity* plasticity) override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
+    const EigenVector& rate() override = 0;
+  };
+
+  class AgentAHVRateNeurons : public virtual RateNeurons {
+  public:
+    ~AgentAHVRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(AgentAHVRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    void connect_input(RateSynapses* synapses,
+                       RatePlasticity* plasticity) override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
+    const EigenVector& rate() override = 0;
+  };
+
+  class AgentFVRateNeurons : public virtual RateNeurons {
+  public:
+    ~AgentFVRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(AgentFVRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
     void connect_input(RateSynapses* synapses,
@@ -315,6 +341,7 @@ private:
   bool running = false;
 };
 
+/*
 class Agent {
 public:
   Agent();
@@ -329,6 +356,28 @@ public:
 
 private:
   RateNeurons* actor;
+  Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
+};
+*/
+
+class Agent {
+public:
+  Agent();
+  Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_);
+
+  // void connect_actor(RateNeurons* actor_);
+  void update_per_dt(FloatT dt);
+
+  Eigen::Matrix<FloatT, 2, 1> position;
+  FloatT bound_x = 10, bound_y = 10;
+  FloatT velocity_scaling = 1;
+
+  int N_VIS = 0;
+  int N_AHV = 0;
+  int N_FV = 0;
+
+private:
+  // RateNeurons* actor;
   Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
 };
 
@@ -427,6 +476,7 @@ private:
   std::shared_ptr<::Backend::RandomDummyRateNeurons> _backend;
 };
 
+/*
 class AgentSenseRateNeurons : public virtual RateNeurons {
 public:
   AgentSenseRateNeurons(Context* ctx, Agent* agent_, std::string label_);
@@ -439,6 +489,49 @@ public:
 
 private:
   std::shared_ptr<::Backend::AgentSenseRateNeurons> _backend;
+};
+*/
+
+class AgentVISRateNeurons : public virtual RateNeurons {
+public:
+  AgentVISRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  ~AgentVISRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(AgentVISRateNeurons, RateNeurons);
+
+  Agent* agent;
+
+private:
+  std::shared_ptr<::Backend::AgentVISRateNeurons> _backend;
+};
+
+class AgentAHVRateNeurons : public virtual RateNeurons {
+public:
+  AgentAHVRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  ~AgentAHVRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(AgentAHVRateNeurons, RateNeurons);
+
+  Agent* agent;
+
+private:
+  std::shared_ptr<::Backend::AgentAHVRateNeurons> _backend;
+};
+
+class AgentFVRateNeurons : public virtual RateNeurons {
+public:
+  AgentFVRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  ~AgentFVRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(AgentFVRateNeurons, RateNeurons);
+
+  Agent* agent;
+
+private:
+  std::shared_ptr<::Backend::AgentFVRateNeurons> _backend;
 };
 
 class RateSynapses : public virtual SpikeBase {
