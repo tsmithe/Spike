@@ -376,9 +376,15 @@ public:
   int N_AHV = 0;
   int N_FV = 0;
 
+  void add_FV(FloatT FV, FloatT duration);
+  void add_AHV(FloatT AHV, FloatT duration);
+
 private:
   // RateNeurons* actor;
-  Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
+  // Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
+
+  std::vector<std::pair<FloatT, FloatT> > FVs;  //  FV, duration
+  std::vector<std::pair<FloatT, FloatT> > AHVs; // AHV, duration
 };
 
 class RateNeurons : public virtual SpikeBase {

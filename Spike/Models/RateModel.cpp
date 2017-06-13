@@ -79,8 +79,36 @@ Agent::Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_)
   position = Eigen::Matrix<FloatT, 2, 1>::Zero(); // TODO: is this line needed?
 }
 
+void Agent::add_FV(FloatT FV, FloatT duration) {
+  // TODO
+}
+
+void Agent::add_AHV(FloatT AHV, FloatT duration) {
+  // TODO
+}
+
 void Agent::update_per_dt(FloatT dt) {
   // TODO
+  //
+  // Either: continue current action,
+  //     or  choose new action and execute.
+  //
+  // An action can only be chosen if it is legal.
+  // An action is legal (for now) if it does not cross the
+  //  boundary of the environment.
+  //
+  // Action can either be: move forward, or rotate.
+  // Action choice is (initially) random, with uniform distribution.
+  //
+  // Executing an action involves:
+  //  - updating FV/AHV state
+  //  - updating position
+  //
+  // Also: buffering position, if necessary
+  //
+  // For each object in the environment, compute the vector to that object.
+  // (Or, the angle to that object with respect to some reference direction.)
+  //  -- NB: how is the reference direction maintained?...
 }
 
 /*
