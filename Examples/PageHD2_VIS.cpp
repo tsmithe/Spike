@@ -144,13 +144,13 @@ int main(int argc, char *argv[]) {
 
   // -- Variable weights:
 #ifdef TRAIN_VIS_HD
-  EigenMatrix W_VIS_HD = EigenMatrix::Identity(N_HD, N_VIS);
-#else
   EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
   }
+#else
+  EigenMatrix W_VIS_HD = EigenMatrix::Identity(N_HD, N_VIS);
 #endif
   VIS_HD.weights(W_VIS_HD);
   VIS_HD.make_sparse();
