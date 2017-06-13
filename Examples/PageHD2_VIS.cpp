@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 800;
+  FloatT train_time = 6000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
@@ -61,13 +61,13 @@ int main(int argc, char *argv[]) {
   FloatT VIS_HD_scaling = 1600.0 / (N_VIS*0.05); // 780
 
   FloatT VIS_INH_scaling = -2.2 / (N_VIS*0.05); // -1.0
-  FloatT HD_inhibition = -40.0 / N_HD; // 300
+  FloatT HD_inhibition = -32.0 / N_HD; // 300
 
   FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
 
   FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*0.05); // 500
   FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 240
-  FloatT AHVxHD_inhibition = -110.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
 
   /*
   FloatT global_inhibition = -0.1;
