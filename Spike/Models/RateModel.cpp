@@ -415,14 +415,23 @@ AgentSenseRateNeurons::~AgentSenseRateNeurons() {
 
 AgentVISRateNeurons::AgentVISRateNeurons(Context* ctx,
                                          Agent* agent_,
-                                         int neurons_per_object,
+                                         int neurons_per_object_,
+                                         FloatT sigma_IN_,
+                                         FloatT lambda_,
                                          std::string label_)
-  : RateNeurons(nullptr, agent->num_objects * neurons_per_object,
+  : RateNeurons(nullptr, agent->num_objects * neurons_per_object_,
                 label_, 0, 1, 1),
-    agent(agent_) {
+    agent(agent_),
+    neurons_per_object(neurons_per_object_),
+    sigma_IN(sigma_IN_), lambda(lambda_) {
 
   if (ctx)
     init_backend(ctx);
+
+  theta_pref = EigenVector::Zero(neurons_per_object);
+  for (int j = 0; j < neurons_per_object; ++j) {
+    theta_pref(j) = 2 * M_PI * j/neurons_per_object;
+  }
 }
 
 AgentVISRateNeurons::~AgentVISRateNeurons() {
@@ -432,11 +441,12 @@ AgentVISRateNeurons::~AgentVISRateNeurons() {
 
 AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
                                          Agent* agent_,
-                                         int neurons_per_state,
+                                         int neurons_per_state_,
                                          std::string label_)
-  : RateNeurons(nullptr, agent->num_AHV_states * neurons_per_state,
+  : RateNeurons(nullptr, agent->num_AHV_states * neurons_per_state_,
                 label_, 0, 1, 1),
-    agent(agent_) {
+    agent(agent_),
+    neurons_per_state(neurons_per_state_) {
 
   if (ctx)
     init_backend(ctx);
@@ -449,11 +459,12 @@ AgentAHVRateNeurons::~AgentAHVRateNeurons() {
 
 AgentFVRateNeurons::AgentFVRateNeurons(Context* ctx,
                                        Agent* agent_,
-                                       int neurons_per_state,
+                                       int neurons_per_state_,
                                        std::string label_)
-  : RateNeurons(nullptr, agent->num_FV_states * neurons_per_state,
+  : RateNeurons(nullptr, agent->num_FV_states * neurons_per_state_,
                 label_, 0, 1, 1),
-    agent(agent_) {
+    agent(agent_),
+    neurons_per_state(neurons_per_state_) {
 
   if (ctx)
     init_backend(ctx);

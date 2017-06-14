@@ -543,13 +543,21 @@ private:
 class AgentVISRateNeurons : public virtual RateNeurons {
 public:
   AgentVISRateNeurons(Context* ctx, Agent* agent_,
-                      int neurons_per_object, std::string label_);
+                      int neurons_per_object_,
+                      FloatT sigma_IN_, FloatT lambda_,
+                      std::string label_);
   ~AgentVISRateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentVISRateNeurons, RateNeurons);
 
   Agent* agent;
+  int neurons_per_object;
+  FloatT sigma_IN, lambda;
+
+  EigenVector theta_pref;
+
+  FloatT t_stop_after = infinity<FloatT>();
 
 private:
   std::shared_ptr<::Backend::AgentVISRateNeurons> _backend;
@@ -558,13 +566,14 @@ private:
 class AgentAHVRateNeurons : public virtual RateNeurons {
 public:
   AgentAHVRateNeurons(Context* ctx, Agent* agent_,
-                      int neurons_per_state, std::string label_);
+                      int neurons_per_state_, std::string label_);
   ~AgentAHVRateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentAHVRateNeurons, RateNeurons);
 
   Agent* agent;
+  int neurons_per_state;
 
 private:
   std::shared_ptr<::Backend::AgentAHVRateNeurons> _backend;
@@ -573,13 +582,14 @@ private:
 class AgentFVRateNeurons : public virtual RateNeurons {
 public:
   AgentFVRateNeurons(Context* ctx, Agent* agent_,
-                     int neurons_per_state, std::string label_);
+                     int neurons_per_state_, std::string label_);
   ~AgentFVRateNeurons() override;
 
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentFVRateNeurons, RateNeurons);
 
   Agent* agent;
+  int neurons_per_state;
 
 private:
   std::shared_ptr<::Backend::AgentFVRateNeurons> _backend;
