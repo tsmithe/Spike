@@ -218,8 +218,14 @@ namespace Backend {
       EigenVector const& rate(unsigned int n_back=0) override;
 
     protected:
+      FloatT t, dt_;
+
       EigenVector _rate;
-      //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
+
+      EigenVector sigma_IN_sqr;
+
+      EigenVector theta_pref;
+      EigenVector d;
     };
 
     class AgentAHVRateNeurons
@@ -245,6 +251,8 @@ namespace Backend {
 
     protected:
       EigenVector _rate;
+      int curr_AHV = -2;
+
       //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
     };
 
@@ -271,6 +279,7 @@ namespace Backend {
 
     protected:
       EigenVector _rate;
+      int curr_FV = -2;
       //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
     };
   } // namespace Eigen

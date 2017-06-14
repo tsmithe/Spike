@@ -283,20 +283,41 @@ namespace Backend {
 
 
     void AgentVISRateNeurons::prepare() {
+      theta_pref.resize(frontend()->size);
+      d.resize(frontend()->size);
       _rate.resize(frontend()->size);
+
+      theta_pref = frontend()->theta_pref;
+
+      sigma_IN_sqr = EigenVector::Constant(frontend()->size,
+                                           frontend()->sigma_IN);
+      sigma_IN_sqr = sigma_IN_sqr.cwiseProduct(sigma_IN_sqr);
     }
 
     void AgentVISRateNeurons::reset_state() {
     }
 
     void AgentVISRateNeurons::connect_input(::Backend::RateSynapses*,
-                                              ::Backend::RatePlasticity*) {
+                                            ::Backend::RatePlasticity*) {
       assert("You shouldn't be doing this" && false);
     }
 
     bool AgentVISRateNeurons::staged_integrate_timestep(FloatT dt) {
       Agent* agent = frontend()->agent;
 
+      t += dt;
+      dt_ = dt;
+
+      if (t > frontend()->t_stop_after)
+        return true;
+
+      for (int i = 0; i < agent->num_objects; ++i) {
+        FloatT theta = agent->object_bearings(i);
+        auto d_i = d.segment(frontend()->neurons_per_object * i,
+                             frontend()->neurons_per_object);
+        d_i = (theta_pref.array() - theta).abs().matrix();
+        d_i = d_i.array().min(2*M_PI - d_i.array());
+      }
       return true;
     }
 
@@ -308,6 +329,13 @@ namespace Backend {
       if (n_back)
         assert("Delays not yet supported here" && false);
 
+      if (t > frontend()->t_stop_after) {
+        _rate = EigenVector::Zero(frontend()->size); 
+        return _rate;
+      }
+
+      _rate = frontend()->lambda *
+        (-d.cwiseProduct(d).cwiseQuotient(2*sigma_IN_sqr)).array().exp().matrix();
       return _rate;
     }
 
@@ -321,12 +349,20 @@ namespace Backend {
     }
 
     void AgentAHVRateNeurons::connect_input(::Backend::RateSynapses*,
-                                              ::Backend::RatePlasticity*) {
+                                            ::Backend::RatePlasticity*) {
       assert("You shouldn't be doing this" && false);
     }
 
     bool AgentAHVRateNeurons::staged_integrate_timestep(FloatT dt) {
       Agent* agent = frontend()->agent;
+
+      if (curr_AHV != agent->curr_AHV) {
+        _rate = EigenVector::Zero(frontend()->size);
+        _rate.segment(frontend()->neurons_per_state * agent->curr_AHV,
+                      frontend()->neurons_per_state)
+          = EigenVector::Ones(frontend()->neurons_per_state);
+        curr_AHV = agent->curr_AHV;
+      }
 
       return true;
     }
@@ -352,12 +388,20 @@ namespace Backend {
     }
 
     void AgentFVRateNeurons::connect_input(::Backend::RateSynapses*,
-                                              ::Backend::RatePlasticity*) {
+                                           ::Backend::RatePlasticity*) {
       assert("You shouldn't be doing this" && false);
     }
 
     bool AgentFVRateNeurons::staged_integrate_timestep(FloatT dt) {
       Agent* agent = frontend()->agent;
+
+      if (curr_FV != agent->curr_FV) {
+        _rate = EigenVector::Zero(frontend()->size);
+        _rate.segment(frontend()->neurons_per_state * agent->curr_FV,
+                      frontend()->neurons_per_state)
+          = EigenVector::Ones(frontend()->neurons_per_state);
+        curr_FV = agent->curr_FV;
+      }
 
       return true;
     }
