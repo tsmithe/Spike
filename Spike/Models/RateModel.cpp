@@ -70,45 +70,108 @@ void BufferWriter::stop() {
 }
 
 Agent::Agent() {
-  position = Eigen::Matrix<FloatT, 2, 1>::Zero();
+  position = EigenVector::Zero(2);
+
+  add_FV(0, 0);
+  add_AHV(0, 0);
+
+  action_die = std::uniform_int_distribution<>(0, 1);
 }
 
+/*
 Agent::Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_)
   : bound_x(bound_x_), bound_y(bound_y_), velocity_scaling(velocity_scaling_)
 {
   position = Eigen::Matrix<FloatT, 2, 1>::Zero(); // TODO: is this line needed?
 }
+*/
 
-void Agent::add_FV(FloatT FV, FloatT duration) {
+void Agent::set_boundary(FloatT bound_x_, FloatT bound_y_) {
+  bound_x = bound_x_;
+  bound_y = bound_y_;
+}
+
+void Agent::add_proximal_object(FloatT x, FloatT y) {
   // TODO
 }
 
-void Agent::add_AHV(FloatT AHV, FloatT duration) {
+void Agent::add_distal_object(FloatT angle) {
   // TODO
+}
+
+void Agent::add_FV(FloatT FV, FloatT duration) {
+  FVs.push_back({FV, duration});
+  num_FV_states += 1;
+  FV_die = std::uniform_int_distribution<>(0, num_FV_states-1);
+}
+
+void Agent::add_AHV(FloatT AHV, FloatT duration) {
+  AHVs.push_back({AHV, duration});
+  num_AHV_states += 1;
+  AHV_die = std::uniform_int_distribution<>(0, num_AHV_states-1);
 }
 
 void Agent::update_per_dt(FloatT dt) {
   // TODO
-  //
-  // Either: continue current action,
-  //     or  choose new action and execute.
-  //
-  // An action can only be chosen if it is legal.
-  // An action is legal (for now) if it does not cross the
-  //  boundary of the environment.
-  //
-  // Action can either be: move forward, or rotate.
-  // Action choice is (initially) random, with uniform distribution.
-  //
-  // Executing an action involves:
-  //  - updating FV/AHV state
-  //  - updating position
-  //
-  // Also: buffering position, if necessary
-  //
-  // For each object in the environment, compute the vector to that object.
-  // (Or, the angle to that object with respect to some reference direction.)
-  //  -- NB: how is the reference direction maintained?...
+  FloatT old_t = t;
+  t += dt;
+
+  if (t > next_action_t) {
+    // choose new action, ensuring legality
+    // choice random with uniform distribution (for now)
+
+    bool is_legal = false;
+    while (!is_legal) {
+      curr_action = action_die(rand_engine);
+      if (curr_action == AHV) {
+        curr_FV = 0;
+        curr_AHV = AHV_die(rand_engine);
+
+        is_legal = true;
+
+        FloatT duration = AHVs[curr_AHV].second;
+        next_action_t = old_t + duration;
+      } else {
+        curr_AHV = 0;
+        curr_FV = FV_die(rand_engine);
+
+        FloatT FV = FVs[curr_FV].first;
+        FloatT duration = FVs[curr_FV].second;
+        FloatT r = FV * duration;
+
+        EigenVector final_position = position;
+        final_position(0) += r * cos(head_direction);
+        final_position(1) += r * sin(head_direction);
+
+        if ((fabs(final_position(0)) > bound_x)
+            || (fabs(final_position(1)) > bound_y)) {
+          is_legal = false;
+        } else {
+          is_legal = true;          
+          next_action_t = old_t + duration;
+        }
+      }
+    }
+  }
+
+  // make sure only one of AHV and FV is active currently:
+  assert(!(curr_AHV && curr_FV));
+
+  // perform action: update FV/AHV state, position, head_direction
+  if (curr_action == AHV) {
+    FloatT AHV = AHVs[curr_AHV].first;
+    head_direction += AHV * dt;
+  } else {
+    FloatT FV = FVs[curr_FV].first;
+    FloatT r = FV * dt;
+    position(0) += r * cos(head_direction);
+    position(1) += r * sin(head_direction);
+  }
+
+  // buffer position & head_direction if necessary
+
+  // update object bearings
+  
 }
 
 /*
@@ -314,8 +377,11 @@ AgentSenseRateNeurons::~AgentSenseRateNeurons() {
 */
 
 AgentVISRateNeurons::AgentVISRateNeurons(Context* ctx,
-                                         Agent* agent_, std::string label_)
-  : RateNeurons(nullptr, agent->N_VIS, label_, 0, 1, 1),
+                                         Agent* agent_,
+                                         int neurons_per_object,
+                                         std::string label_)
+  : RateNeurons(nullptr, agent->num_objects * neurons_per_object,
+                label_, 0, 1, 1),
     agent(agent_) {
 
   if (ctx)
@@ -328,8 +394,11 @@ AgentVISRateNeurons::~AgentVISRateNeurons() {
 
 
 AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
-                                         Agent* agent_, std::string label_)
-  : RateNeurons(nullptr, agent->N_AHV, label_, 0, 1, 1),
+                                         Agent* agent_,
+                                         int neurons_per_state,
+                                         std::string label_)
+  : RateNeurons(nullptr, agent->num_AHV_states * neurons_per_state,
+                label_, 0, 1, 1),
     agent(agent_) {
 
   if (ctx)
@@ -342,8 +411,11 @@ AgentAHVRateNeurons::~AgentAHVRateNeurons() {
 
 
 AgentFVRateNeurons::AgentFVRateNeurons(Context* ctx,
-                                       Agent* agent_, std::string label_)
-  : RateNeurons(nullptr, agent->N_FV, label_, 0, 1, 1),
+                                       Agent* agent_,
+                                       int neurons_per_state,
+                                       std::string label_)
+  : RateNeurons(nullptr, agent->num_FV_states * neurons_per_state,
+                label_, 0, 1, 1),
     agent(agent_) {
 
   if (ctx)

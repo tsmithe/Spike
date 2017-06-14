@@ -365,21 +365,44 @@ private:
 class Agent {
 public:
   Agent();
-  Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_);
+  //Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_);
+
+  void set_boundary(FloatT bound_x, FloatT bound_y);
+
+  void add_proximal_object(FloatT x, FloatT y);
+  void add_distal_object(FloatT angle);
+
+  void add_FV(FloatT FV, FloatT duration);
+  void add_AHV(FloatT AHV, FloatT duration);
 
   // void connect_actor(RateNeurons* actor_);
   void update_per_dt(FloatT dt);
 
-  Eigen::Matrix<FloatT, 2, 1> position;
+  // Eigen::Matrix<FloatT, 2, 1> position;
+  // FloatT velocity_scaling = 1;
+
   FloatT bound_x = 10, bound_y = 10;
-  FloatT velocity_scaling = 1;
 
-  int N_VIS = 0;
-  int N_AHV = 0;
-  int N_FV = 0;
+  EigenVector position;
+  FloatT head_direction;
 
-  void add_FV(FloatT FV, FloatT duration);
-  void add_AHV(FloatT AHV, FloatT duration);
+  int num_objects = 0;
+  int num_proximal_objects = 0;
+  int num_distal_objects = 0;
+
+  EigenVector object_bearings;
+
+  int num_AHV_states = 0;
+  int num_FV_states = 0;
+
+  int curr_AHV = 0;
+  int curr_FV = 0;
+
+  enum actions { AHV, FV };
+  int curr_action = FV;
+  FloatT next_action_t = 0;
+
+  FloatT t = 0;
 
 private:
   // RateNeurons* actor;
@@ -387,6 +410,12 @@ private:
 
   std::vector<std::pair<FloatT, FloatT> > FVs;  //  FV, duration
   std::vector<std::pair<FloatT, FloatT> > AHVs; // AHV, duration
+
+  std::default_random_engine rand_engine;
+
+  std::uniform_int_distribution<> action_die;
+  std::uniform_int_distribution<> AHV_die;
+  std::uniform_int_distribution<> FV_die;
 };
 
 class RateNeurons : public virtual SpikeBase {
@@ -503,7 +532,8 @@ private:
 
 class AgentVISRateNeurons : public virtual RateNeurons {
 public:
-  AgentVISRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  AgentVISRateNeurons(Context* ctx, Agent* agent_,
+                      int neurons_per_object, std::string label_);
   ~AgentVISRateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -517,7 +547,8 @@ private:
 
 class AgentAHVRateNeurons : public virtual RateNeurons {
 public:
-  AgentAHVRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  AgentAHVRateNeurons(Context* ctx, Agent* agent_,
+                      int neurons_per_state, std::string label_);
   ~AgentAHVRateNeurons() override;
 
   void init_backend(Context* ctx) override;
@@ -531,7 +562,8 @@ private:
 
 class AgentFVRateNeurons : public virtual RateNeurons {
 public:
-  AgentFVRateNeurons(Context* ctx, Agent* agent_, std::string label_);
+  AgentFVRateNeurons(Context* ctx, Agent* agent_,
+                     int neurons_per_state, std::string label_);
   ~AgentFVRateNeurons() override;
 
   void init_backend(Context* ctx) override;
