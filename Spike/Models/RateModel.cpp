@@ -92,11 +92,25 @@ void Agent::set_boundary(FloatT bound_x_, FloatT bound_y_) {
 }
 
 void Agent::add_proximal_object(FloatT x, FloatT y) {
-  // TODO
+  num_objects += 1;
+  num_proximal_objects += 1;
+  if (num_proximal_objects == 1) {
+    proximal_objects.resize(Eigen::NoChange, 1);
+  } else {
+    proximal_objects.conservativeResize(Eigen::NoChange, num_proximal_objects);
+  }
+  proximal_objects(0, num_proximal_objects-1) = x;
+  proximal_objects(1, num_proximal_objects-1) = y;
 }
 
 void Agent::add_distal_object(FloatT angle) {
-  // TODO
+  // ensure angle is in range [0, 2pi)
+  if (angle < 0) angle += 2*M_PI;
+  if (angle > 2*M_PI) angle -= 2*M_PI;
+
+  distal_objects.push_back(angle);
+  num_distal_objects += 1;
+  num_objects += 1;
 }
 
 void Agent::add_FV(FloatT FV, FloatT duration) {
@@ -112,9 +126,20 @@ void Agent::add_AHV(FloatT AHV, FloatT duration) {
 }
 
 void Agent::update_per_dt(FloatT dt) {
-  // TODO
+  // buffer position & head_direction if necessary
+  if (agent_buffer_interval
+      && (timesteps > agent_buffer_start)
+      && !(timesteps & agent_buffer_interval)) {
+    EigenVector agent_buf = EigenVector::Zero(3);
+    agent_buf(0) = position(0);
+    agent_buf(1) = position(1);
+    agent_buf(2) = head_direction;
+    agent_history.push_back(timesteps, agent_buf);
+  }
+  
   FloatT old_t = t;
   t += dt;
+  timesteps += 1;
 
   if (t > next_action_t) {
     // choose new action, ensuring legality
@@ -139,7 +164,7 @@ void Agent::update_per_dt(FloatT dt) {
         FloatT duration = FVs[curr_FV].second;
         FloatT r = FV * duration;
 
-        EigenVector final_position = position;
+        EigenVector2D final_position = position;
         final_position(0) += r * cos(head_direction);
         final_position(1) += r * sin(head_direction);
 
@@ -161,6 +186,8 @@ void Agent::update_per_dt(FloatT dt) {
   if (curr_action == AHV) {
     FloatT AHV = AHVs[curr_AHV].first;
     head_direction += AHV * dt;
+    if (head_direction > 2*M_PI)
+      head_direction -= 2*M_PI;
   } else {
     FloatT FV = FVs[curr_FV].first;
     FloatT r = FV * dt;
@@ -168,10 +195,20 @@ void Agent::update_per_dt(FloatT dt) {
     position(1) += r * sin(head_direction);
   }
 
-  // buffer position & head_direction if necessary
-
   // update object bearings
-  
+  int i = 0;
+  for (; i < num_distal_objects; ++i) {
+    FloatT angle = distal_objects[i] - head_direction;
+    if (angle < 0) angle += 2*M_PI;
+    object_bearings(i) = angle;
+  }
+  for (int j = 0; j < num_proximal_objects; ++i, ++j) {
+    // There is possibly a neater way to do this, using the updates above...
+    EigenVector2D obj_vector = proximal_objects.col(j) - position;
+    FloatT angle = tan(obj_vector(1) / obj_vector(0)) - head_direction;
+    if (angle < 0) angle += 2*M_PI;
+    object_bearings(i) = angle;
+  }
 }
 
 /*

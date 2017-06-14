@@ -378,12 +378,14 @@ public:
   // void connect_actor(RateNeurons* actor_);
   void update_per_dt(FloatT dt);
 
-  // Eigen::Matrix<FloatT, 2, 1> position;
   // FloatT velocity_scaling = 1;
 
   FloatT bound_x = 10, bound_y = 10;
 
-  EigenVector position;
+  typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
+  typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
+
+  EigenVector2D position;
   FloatT head_direction;
 
   int num_objects = 0;
@@ -403,10 +405,18 @@ public:
   FloatT next_action_t = 0;
 
   FloatT t = 0;
+  int timesteps = 0;
+
+  int agent_buffer_interval = 0;
+  int agent_buffer_start = 0;
+  EigenBuffer agent_history;
 
 private:
   // RateNeurons* actor;
-  // Eigen::Matrix<FloatT, 2, Eigen::Dynamic> actor_tuning;
+  // EigenMatrix2D actor_tuning;
+
+  EigenMatrix2D proximal_objects;
+  std::vector<FloatT> distal_objects;
 
   std::vector<std::pair<FloatT, FloatT> > FVs;  //  FV, duration
   std::vector<std::pair<FloatT, FloatT> > AHVs; // AHV, duration
