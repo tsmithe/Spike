@@ -70,7 +70,7 @@ void BufferWriter::stop() {
 }
 
 Agent::Agent() {
-  position = EigenVector::Zero(2);
+  position = EigenVector2D::Zero();
 
   add_FV(0, 0);
   add_AHV(0, 0);
@@ -142,6 +142,9 @@ void Agent::add_proximal_object(FloatT x, FloatT y) {
   }
   proximal_objects(0, num_proximal_objects-1) = x;
   proximal_objects(1, num_proximal_objects-1) = y;
+
+  object_bearings.resize(num_objects);
+  object_bearings = EigenVector::Zero(num_objects);
 }
 
 void Agent::add_distal_object(FloatT angle) {
@@ -152,6 +155,9 @@ void Agent::add_distal_object(FloatT angle) {
   distal_objects.push_back(angle);
   num_distal_objects += 1;
   num_objects += 1;
+
+  object_bearings.resize(num_objects);
+  object_bearings = EigenVector::Zero(num_objects);
 }
 
 void Agent::add_FV(FloatT FV, FloatT duration) {
@@ -460,19 +466,19 @@ AgentVISRateNeurons::AgentVISRateNeurons(Context* ctx,
                                          FloatT sigma_IN_,
                                          FloatT lambda_,
                                          std::string label_)
-  : RateNeurons(nullptr, agent->num_objects * neurons_per_object_,
+  : RateNeurons(nullptr, (int)(agent_->num_objects) * neurons_per_object_,
                 label_, 0, 1, 1),
     agent(agent_),
     neurons_per_object(neurons_per_object_),
     sigma_IN(sigma_IN_), lambda(lambda_) {
 
-  if (ctx)
-    init_backend(ctx);
-
   theta_pref = EigenVector::Zero(neurons_per_object);
   for (int j = 0; j < neurons_per_object; ++j) {
     theta_pref(j) = 2 * M_PI * j/neurons_per_object;
   }
+
+  if (ctx)
+    init_backend(ctx);
 }
 
 AgentVISRateNeurons::~AgentVISRateNeurons() {
@@ -484,7 +490,7 @@ AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
                                          Agent* agent_,
                                          int neurons_per_state_,
                                          std::string label_)
-  : RateNeurons(nullptr, agent->num_AHV_states * neurons_per_state_,
+  : RateNeurons(nullptr, (int)(agent_->num_AHV_states) * neurons_per_state_,
                 label_, 0, 1, 1),
     agent(agent_),
     neurons_per_state(neurons_per_state_) {
@@ -502,7 +508,7 @@ AgentFVRateNeurons::AgentFVRateNeurons(Context* ctx,
                                        Agent* agent_,
                                        int neurons_per_state_,
                                        std::string label_)
-  : RateNeurons(nullptr, agent->num_FV_states * neurons_per_state_,
+  : RateNeurons(nullptr, (int)(agent_->num_FV_states) * neurons_per_state_,
                 label_, 0, 1, 1),
     agent(agent_),
     neurons_per_state(neurons_per_state_) {
@@ -947,7 +953,7 @@ void RateModel::simulation_loop() {
     // Print simulation time every 0.05s:
     if (!((timesteps * 20) % timesteps_per_second)) {
       if (agent)
-        printf("\r%.2f: %.2f, %.2f", t, agent->position(0), agent->position(1));
+        printf("\r%.2f: %.2f, %.2f, %.2f", t, agent->position(0), agent->position(1), (180/M_PI)*(agent->head_direction));
       else
         printf("\r%.2f", t);
       std::cout.flush();

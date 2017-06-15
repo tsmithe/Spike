@@ -313,6 +313,12 @@ namespace Backend {
 
       for (int i = 0; i < agent->num_objects; ++i) {
         FloatT theta = agent->object_bearings(i);
+
+        // EigenVector d_i_tmp = (theta_pref.array() - theta).abs().matrix();
+        // d_i_tmp = d_i_tmp.array().min(2*M_PI - d_i_tmp.array());
+        // d.segment(frontend()->neurons_per_object * i,
+        //           frontend()->neurons_per_object) = d_i_tmp;
+
         auto d_i = d.segment(frontend()->neurons_per_object * i,
                              frontend()->neurons_per_object);
         d_i = (theta_pref.array() - theta).abs().matrix();
