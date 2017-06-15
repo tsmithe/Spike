@@ -989,25 +989,37 @@ void RateModel::update_model_per_dt() {
   if (agent)
     agent->update_per_dt(dt);
 
-  std::vector<RateNeurons*> grps(neuron_groups);
+  int num_groups = neuron_groups.size();
+  bool all_done = false;
+  bool groups_done[num_groups];
+  for (int i = 0; i < num_groups; ++i) {
+    groups_done[i] = false;
+  }
 
   // Loop through the neuron groups, computing the rate update in stages.
   // Stop when the update has been computed for each group.
   // This allows us to implement an arbitrary-order forwards integration
   // scheme, without the neuron groups becoming unsynchronized.
-  while (grps.size() > 0) {
-    std::list<int> grps_done;
-    for (int i = 0; i < grps.size(); ++i) {
-      auto& n = grps[i];
-      bool res = n->staged_integrate_timestep(dt);
-      if (res)
-        grps_done.push_front(i);
+  while (!all_done) {
+    #pragma omp parallel for
+    for (int i = 0; i < num_groups; ++i) {
+      if (groups_done[i]) continue;
+      auto& n = neuron_groups[i];
+      groups_done[i] = n->staged_integrate_timestep(dt);
     }
-    for (auto j : grps_done)
-      grps.erase(grps.begin()+j);
+
+    all_done = true;
+    for (int i = 0; i < num_groups; ++i) {
+      if (!groups_done[i]) {
+        all_done = false;
+        break;
+      }
+    }
   }
 
-  for (auto& n : neuron_groups) {
+  #pragma omp parallel for
+  for (int i = 0; i < num_groups; ++i) {
+    auto& n = neuron_groups[i];
     n->apply_plasticity(dt);
   }
 
