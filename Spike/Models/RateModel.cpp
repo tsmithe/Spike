@@ -257,7 +257,7 @@ void Agent::update_per_dt(FloatT dt) {
   for (int j = 0; j < num_proximal_objects; ++i, ++j) {
     // There is possibly a neater way to do this, using the updates above...
     EigenVector2D obj_vector = proximal_objects.col(j) - position;
-    FloatT angle = tan(obj_vector(1) / obj_vector(0)) - head_direction;
+    FloatT angle = atan2(obj_vector(1), obj_vector(0)) - head_direction;
     if (angle < 0) angle += 2*M_PI;
     object_bearings(i) = angle;
   }
