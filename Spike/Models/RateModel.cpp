@@ -175,7 +175,7 @@ void Agent::add_AHV(FloatT AHV, FloatT duration) {
 void Agent::update_per_dt(FloatT dt) {
   // buffer position & head_direction if necessary
   if (agent_buffer_interval
-      && (timesteps > agent_buffer_start)
+      && (timesteps >= agent_buffer_start)
       && !(timesteps % agent_buffer_interval)) {
     EigenVector agent_buf = EigenVector::Zero(3);
     agent_buf(0) = position(0);
@@ -183,7 +183,7 @@ void Agent::update_per_dt(FloatT dt) {
     agent_buf(2) = head_direction;
     agent_history.push_back(timesteps, agent_buf);
   }
-  
+
   FloatT old_t = t;
   t += dt;
   timesteps += 1;
@@ -363,7 +363,7 @@ bool RateNeurons::staged_integrate_timestep(FloatT dt) {
   if (res) {
     timesteps += 1;
     if (rate_buffer_interval
-        && (timesteps > rate_buffer_start)
+        && (timesteps >= rate_buffer_start)
         && !(timesteps % rate_buffer_interval)) {
       rate_history.push_back(timesteps, rate());
     }
@@ -371,7 +371,7 @@ bool RateNeurons::staged_integrate_timestep(FloatT dt) {
     for (auto& dendrite_pair : dendrites) {
       auto& syns = dendrite_pair.first;
       if (syns->activation_buffer_interval
-          && (timesteps > syns->activation_buffer_start)
+          && (timesteps >= syns->activation_buffer_start)
           && !(timesteps % syns->activation_buffer_interval)) {
         syns->activation_history.push_back(timesteps, syns->activation());
       }
@@ -610,7 +610,7 @@ void RatePlasticity::apply_plasticity(FloatT dt) {
   synapses->timesteps += 1; // TODO: Tidy this up
   // TODO: Is this the best place for the buffering?
   if (weights_buffer_interval
-      && (timesteps > weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
+      && (timesteps >= weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
     EigenMatrix tmp_buffer;
     synapses->get_weights(tmp_buffer);
     weights_history.push_back(timesteps, tmp_buffer);
@@ -646,7 +646,7 @@ void BCMPlasticity::apply_plasticity(FloatT dt) {
   synapses->timesteps += 1; // TODO: Tidy this up
   // TODO: Is this the best place for the buffering?
   if (weights_buffer_interval
-      && (timesteps > weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
+      && (timesteps >= weights_buffer_start) && !(timesteps % weights_buffer_interval)) {
     EigenMatrix tmp_buffer;
     synapses->get_weights(tmp_buffer);
     weights_history.push_back(timesteps, tmp_buffer);
