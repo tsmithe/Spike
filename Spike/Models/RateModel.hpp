@@ -378,6 +378,9 @@ public:
   // void connect_actor(RateNeurons* actor_);
   void update_per_dt(FloatT dt);
 
+  void record_history(std::string output_prefix,
+                      int buffer_interval, int buffer_start);
+
   // FloatT velocity_scaling = 1;
 
   FloatT bound_x = 10, bound_y = 10;
@@ -410,6 +413,7 @@ public:
   int agent_buffer_interval = 0;
   int agent_buffer_start = 0;
   EigenBuffer agent_history;
+  std::unique_ptr<BufferWriter> history_writer;
 
 private:
   // RateNeurons* actor;

@@ -86,6 +86,47 @@ Agent::Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_)
 }
 */
 
+void Agent::record_history(std::string output_prefix,
+                           int buffer_interval, int buffer_start) {
+
+  agent_buffer_interval = buffer_interval;
+  agent_buffer_start = buffer_start;
+
+  // TODO: Consolidate this by generalising RateElectrodes
+
+  {
+    const int err = mkdir(output_prefix.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
+                << output_prefix << "\n";
+  }
+
+  std::string output_dir = output_prefix + "/Agent";
+
+  {
+    const int err = mkdir(output_dir.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
+                << output_dir << "\n";
+  }
+
+  std::string lock_fname = output_dir + "/simulation.lock";
+  if (file_exists(lock_fname))
+    throw SpikeException("Lock file exists at " + lock_fname
+                         + " -- do you already have a simulation running?");
+  std::ofstream lock_file(lock_fname);
+  if (!lock_file.good())
+    throw SpikeException("Couldn't create lock file at " + lock_fname);
+  lock_file << "Electrodes active!\n";
+
+  std::string history_fname = output_dir + "/history.bin";
+  history_writer = std::make_unique<BufferWriter>(history_fname, agent_history);
+
+  history_writer->start();
+}
+
 void Agent::set_boundary(FloatT bound_x_, FloatT bound_y_) {
   bound_x = bound_x_;
   bound_y = bound_y_;
