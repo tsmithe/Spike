@@ -461,7 +461,8 @@ int main(int argc, char *argv[]) {
   model.set_weights_buffer_interval(ceil(2.0/timestep));
   model.set_buffer_start(start_recording_time);
 
-  agent.record_history("HD_VIS_out", 1e-2, start_recording_time);
+  agent.record_history("HD_VIS_out", round(1e-2/timestep),
+                       round(start_recording_time/timestep));
 
 
   // Run!
