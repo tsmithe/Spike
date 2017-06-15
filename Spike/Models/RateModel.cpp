@@ -48,6 +48,11 @@ void BufferWriter::write_loop() {
     // TODO: why 200ms?
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     write_output();
+    time_since_last_flush += 0.2;
+    if (time_since_last_flush > 10) {
+      file.flush();
+      time_since_last_flush = 0;
+    }
   }
 }
 

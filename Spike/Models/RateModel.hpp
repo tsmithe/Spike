@@ -334,6 +334,7 @@ public:
   EigenBuffer& buffer;
   std::string filename;
   std::ofstream file;
+  FloatT time_since_last_flush = 0;
   std::thread othread; // TODO: Perhaps having too many
                        //       output threads will cause too much
                        //       seeking on disk, thus slowing things down?
