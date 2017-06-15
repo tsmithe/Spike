@@ -176,7 +176,7 @@ void Agent::update_per_dt(FloatT dt) {
   // buffer position & head_direction if necessary
   if (agent_buffer_interval
       && (timesteps > agent_buffer_start)
-      && !(timesteps & agent_buffer_interval)) {
+      && !(timesteps % agent_buffer_interval)) {
     EigenVector agent_buf = EigenVector::Zero(3);
     agent_buf(0) = position(0);
     agent_buf(1) = position(1);
@@ -363,8 +363,10 @@ bool RateNeurons::staged_integrate_timestep(FloatT dt) {
   if (res) {
     timesteps += 1;
     if (rate_buffer_interval
-        && (timesteps > rate_buffer_start) && !(timesteps % rate_buffer_interval))
+        && (timesteps > rate_buffer_start)
+        && !(timesteps % rate_buffer_interval)) {
       rate_history.push_back(timesteps, rate());
+    }
     // TODO: Best place for synapse activation buffering?
     for (auto& dendrite_pair : dendrites) {
       auto& syns = dendrite_pair.first;
