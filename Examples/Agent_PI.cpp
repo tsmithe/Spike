@@ -1,9 +1,14 @@
 #include "Spike/Models/RateModel.hpp"
 #include <fenv.h>
+#include <omp.h>
 
 // TODO: Add signal handlers
 
 int main(int argc, char *argv[]) {
+  Eigen::initParallel();
+  omp_set_num_threads(32);
+  Eigen::setNbThreads(24);
+  std::cout << Eigen::nbThreads() << std::endl;
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   bool read_weights = false;
@@ -15,10 +20,10 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 12000;
+  FloatT train_time = 4000;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 10;
-  FloatT test_off_time = 20;
+  FloatT test_on_time = 100;
+  FloatT test_off_time = 10;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -27,7 +32,7 @@ int main(int argc, char *argv[]) {
   Context* ctx = model.context;
 
   // Tell Spike to talk
-  //ctx->verbose = true;
+  ctx->verbose = true;
   ctx->backend = "Eigen";
 
   // Create Agent
