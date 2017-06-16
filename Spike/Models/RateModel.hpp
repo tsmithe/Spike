@@ -391,7 +391,7 @@ public:
   typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
   EigenVector2D position;
-  FloatT head_direction;
+  FloatT head_direction = 0;
 
   int num_objects = 0;
   int num_proximal_objects = 0;
@@ -409,7 +409,7 @@ public:
   int curr_action = FV;
   int choose_next_action_ts = 0;
   EigenVector2D target_position;
-  FloatT target_head_direction;
+  FloatT target_head_direction = 0;
 
   FloatT t = 0;
   int timesteps = 0;

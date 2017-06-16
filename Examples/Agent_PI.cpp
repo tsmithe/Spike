@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 4000;
+  FloatT train_time = 5000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 25;
   FloatT test_off_time = 25;
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 
 
   // VIS -> HD connectivity:
-  FloatT VIS_HD_scaling = 3000.0 / (N_VIS*0.05); // 1600
+  FloatT VIS_HD_scaling = 2600.0 / (N_VIS*0.05); // 1600
   FloatT VIS_HD_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
   FloatT eps_VIS_HD = 0.03;
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
 
   // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 2100.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 3200.0 / (N_AHVxHD*1.0); // 6000
 
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 
 
   // HD -> HD connectivity
-  FloatT HD_inhibition = -32.0 / N_HD; // 300
+  FloatT HD_inhibition = -36.0 / N_HD; // 300
 
   RateSynapses HD_HD_INH(ctx, &HD, &HD, HD_inhibition, "HD_HD_INH");
   HD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_HD));
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 
 
   // HD -> AHVxHD connectivity:
-  FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*0.05); // 500
+  FloatT HD_AHVxHD_scaling = 250.0 / (N_HD*0.05); // 500
 
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 
 
   // AHV -> AHVxHD connectivity:
-  FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 240
+  FloatT AHV_AHVxHD_scaling = 420.0 / N_AHV; // 240
 
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
   EigenMatrix W_AHV_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_AHV);
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -100.0 / N_AHVxHD; // -250
   RateSynapses AHVxHD_AHVxHD_INH(ctx, &AHVxHD, &AHVxHD,
                                  AHVxHD_inhibition, "AHVxHD_AHVxHD_INH");
   AHVxHD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
