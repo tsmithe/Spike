@@ -219,8 +219,8 @@ void Agent::update_per_dt(FloatT dt) {
         FloatT r = FV * duration;
 
         target_position = position;
-        position(0) += r * cos(head_direction);
-        position(1) += r * sin(head_direction);
+        target_position(0) += r * cos(head_direction);
+        target_position(1) += r * sin(head_direction);
 
         if ((fabs(target_position(0)) > bound_x)
             || (fabs(target_position(1)) > bound_y)) {
