@@ -241,6 +241,11 @@ void Agent::update_per_dt(FloatT dt) {
       // if last timestep of action, just set angle / position to target
       if (curr_action == AHV) {
         head_direction = target_head_direction;
+        if (head_direction > 2*M_PI) {
+          head_direction -= 2*M_PI;
+        } else if (head_direction < 0) {
+          head_direction += 2*M_PI;
+        }
       } else {
         position = target_position;
       }
