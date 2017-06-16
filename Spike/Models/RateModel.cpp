@@ -132,6 +132,42 @@ void Agent::record_history(std::string output_prefix,
   history_writer->start();
 }
 
+void Agent::save_map(std::string output_prefix) {
+  {
+    const int err = mkdir(output_prefix.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
+                << output_prefix << "\n";
+  }
+
+  std::string output_dir = output_prefix + "/Agent";
+
+  {
+    const int err = mkdir(output_dir.c_str(),
+                          S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (-1 == err && EEXIST != errno)
+      std::cout << "\nTrouble making output directory "
+                << output_dir << "\n";
+  }
+
+  std::ofstream map_file(output_dir + "/map.info");
+  map_file << bound_x << "," << bound_y << "\n";
+  for (int i = 0; i < num_distal_objects; ++i) {
+    map_file << distal_objects[i];
+    if (i == num_distal_objects-1) {
+      map_file << "\n";
+    } else {
+      map_file << ",";
+    }
+  }
+  for (int i = 0; i < num_proximal_objects; ++i) {
+    EigenVector2D obj_pos = proximal_objects.col(i);
+    map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
+  }
+  map_file.flush();
+}
+
 void Agent::set_boundary(FloatT bound_x_, FloatT bound_y_) {
   bound_x = bound_x_;
   bound_y = bound_y_;

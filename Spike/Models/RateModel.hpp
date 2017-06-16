@@ -381,6 +381,7 @@ public:
 
   void record_history(std::string output_prefix,
                       int buffer_interval, int buffer_start);
+  void save_map(std::string output_prefix);
 
   // FloatT velocity_scaling = 1;
 
