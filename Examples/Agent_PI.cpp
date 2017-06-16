@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
   FloatT timestep = 5e-4; // seconds (TODO units)
   FloatT train_time = 4000;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 100;
-  FloatT test_off_time = 10;
+  FloatT test_on_time = 25;
+  FloatT test_off_time = 25;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
   // Create Agent
   Agent agent;
 
-  FloatT radius = 5;
-  FloatT bound_x = sqrt(2) * radius;
+  FloatT radius = 2;
+  FloatT bound_x = 2;
   FloatT bound_y = bound_x;
 
   agent.set_boundary(bound_x, bound_y);
@@ -49,25 +49,25 @@ int main(int argc, char *argv[]) {
   agent.add_distal_object(M_PI);
   agent.add_distal_object(1.5 * M_PI);
 
-  agent.add_proximal_object(bound_x, bound_y);
-  agent.add_proximal_object(bound_x, -bound_y);
-  agent.add_proximal_object(-bound_x, bound_y);
-  agent.add_proximal_object(-bound_x, -bound_y);
+  agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
+  agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
+  agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
+  agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
-  agent.add_proximal_object(0.5*bound_x, 0.5*bound_y);
-  agent.add_proximal_object(0.5*bound_x, -0.5*bound_y);
-  agent.add_proximal_object(-0.5*bound_x, 0.5*bound_y);
-  agent.add_proximal_object(-0.5*bound_x, -0.5*bound_y);
+  agent.add_proximal_object(0.8*bound_x, 0.8*bound_y);
+  agent.add_proximal_object(0.8*bound_x, -0.8*bound_y);
+  agent.add_proximal_object(-0.8*bound_x, 0.8*bound_y);
+  agent.add_proximal_object(-0.8*bound_x, -0.8*bound_y);
 
-  FloatT fwd_move_dist = (2.0/3.0) * radius;
+  FloatT fwd_move_dist = (1.0/3.0) * radius;
   FloatT rot_angle = M_PI / 2;
 
-  FloatT move_time = 1; // second per forward or angular move
+  FloatT move_time = 0.5; // seconds per forward or angular move
 
-  agent.add_AHV(rot_angle, move_time);
-  agent.add_AHV(-rot_angle, move_time);
+  agent.add_AHV(rot_angle / move_time, move_time);
+  agent.add_AHV(-rot_angle / move_time, move_time);
 
-  agent.add_FV(fwd_move_dist, move_time);
+  agent.add_FV(fwd_move_dist / move_time, move_time);
  
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   int N_FV = FV.size;
 
   // HD neurons:
-  int N_HD = N_VIS;
+  int N_HD = 300; // N_VIS
   FloatT alpha_HD = 20.0;
   FloatT beta_HD = 1.0;
   FloatT tau_HD = 1e-2;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
   // PLACE neurons:
-  int N_PLACE = N_VIS;
+  int N_PLACE = N_HD; // N_VIS;
   FloatT alpha_PLACE = 20.0;
   FloatT beta_PLACE = 1.0;
   FloatT tau_PLACE = 1e-2;
@@ -135,9 +135,9 @@ int main(int argc, char *argv[]) {
 
 
   // VIS -> HD connectivity:
-  FloatT VIS_HD_scaling = 1100.0 / (N_VIS*0.05); // 1600
+  FloatT VIS_HD_scaling = 3000.0 / (N_VIS*0.05); // 1600
   FloatT VIS_HD_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
-  FloatT eps_VIS_HD = 0.05;
+  FloatT eps_VIS_HD = 0.03;
 
   RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
 //#ifdef TRAIN_VIS_HD
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 
 
   // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 2100.0 / (N_AHVxHD*1.0); // 6000
 
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
@@ -441,13 +441,13 @@ int main(int argc, char *argv[]) {
   model.add(&VIS_INH);
 
   model.add(&AHV);
-  model.add(&FV);
+  //model.add(&FV);
 
   model.add(&HD);
   model.add(&AHVxHD);
 
-  model.add(&PLACE);
-  model.add(&PLACExFVxHD);
+  //model.add(&PLACE);
+  //model.add(&PLACExFVxHD);
 
   model.add(&VIS_elecs);
   model.add(&AHV_elecs);
