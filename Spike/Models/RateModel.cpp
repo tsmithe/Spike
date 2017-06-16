@@ -193,11 +193,12 @@ void Agent::update_per_dt(FloatT dt) {
   t += dt;
   timesteps += 1;
 
-  if (t > next_action_t) {
+  if (timesteps >= choose_next_action_ts) {
     // choose new action, ensuring legality
     // choice random with uniform distribution (for now)
 
     bool is_legal = false;
+    FloatT duration;
     while (!is_legal) {
       curr_action = action_die(rand_engine);
       if (curr_action == AHV) {
@@ -206,48 +207,60 @@ void Agent::update_per_dt(FloatT dt) {
 
         is_legal = true;
 
-        FloatT duration = AHVs[curr_AHV].second;
-        next_action_t = old_t + duration;
+        duration = AHVs[curr_AHV].second;
+        FloatT angle_change = AHVs[curr_AHV].first * AHVs[curr_AHV].second;
+        target_head_direction = head_direction + angle_change;
       } else {
         curr_AHV = 0;
         curr_FV = FV_die(rand_engine);
 
+        duration = FVs[curr_FV].second;
         FloatT FV = FVs[curr_FV].first;
-        FloatT duration = FVs[curr_FV].second;
         FloatT r = FV * duration;
 
-        EigenVector2D final_position = position;
-        final_position(0) += r * cos(head_direction);
-        final_position(1) += r * sin(head_direction);
+        target_position = position;
+        position(0) += r * cos(head_direction);
+        position(1) += r * sin(head_direction);
 
-        if ((fabs(final_position(0)) > bound_x)
-            || (fabs(final_position(1)) > bound_y)) {
+        if ((fabs(target_position(0)) > bound_x)
+            || (fabs(target_position(1)) > bound_y)) {
           is_legal = false;
         } else {
           is_legal = true;          
-          next_action_t = old_t + duration;
         }
       }
     }
-  }
-
-  // make sure only one of AHV and FV is active currently:
-  assert(!(curr_AHV && curr_FV));
-
-  // perform action: update FV/AHV state, position, head_direction
-  if (curr_action == AHV) {
-    FloatT AHV = AHVs[curr_AHV].first;
-    head_direction += AHV * dt;
-    if (head_direction > 2*M_PI) {
-      head_direction -= 2*M_PI;
-    } else if (head_direction < 0) {
-      head_direction += 2*M_PI;
-    }
+    int timesteps_per_action = round(duration / dt);
+    choose_next_action_ts = timesteps + timesteps_per_action;
   } else {
-    FloatT FV = FVs[curr_FV].first;
-    FloatT r = FV * dt;
-    position(0) += r * cos(head_direction);
-    position(1) += r * sin(head_direction);
+    // make sure only one of AHV and FV is active currently:
+    assert(!(curr_AHV && curr_FV));
+
+    // then perform action: update FV/AHV state, position, head_direction
+    if (timesteps == choose_next_action_ts - 1) {
+      // if last timestep of action, just set angle / position to target
+      if (curr_action == AHV) {
+        head_direction = target_head_direction;
+      } else {
+        position = target_position;
+      }
+    } else {
+      // otherwise, compute update
+      if (curr_action == AHV) {
+        FloatT AHV = AHVs[curr_AHV].first;
+        head_direction += AHV * dt;
+        if (head_direction > 2*M_PI) {
+          head_direction -= 2*M_PI;
+        } else if (head_direction < 0) {
+          head_direction += 2*M_PI;
+        }
+      } else {
+        FloatT FV = FVs[curr_FV].first;
+        FloatT r = FV * dt;
+        position(0) += r * cos(head_direction);
+        position(1) += r * sin(head_direction);
+      }
+    }
   }
 
   // update object bearings

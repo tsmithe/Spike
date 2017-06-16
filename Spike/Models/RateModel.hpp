@@ -406,7 +406,9 @@ public:
 
   enum actions { AHV, FV };
   int curr_action = FV;
-  FloatT next_action_t = 0;
+  int choose_next_action_ts = 0;
+  EigenVector2D target_position;
+  FloatT target_head_direction;
 
   FloatT t = 0;
   int timesteps = 0;
