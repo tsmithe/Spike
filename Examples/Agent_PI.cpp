@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
   agent.add_distal_object(M_PI);
   agent.add_distal_object(1.5 * M_PI);
 
+  /*
   agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
@@ -58,6 +59,12 @@ int main(int argc, char *argv[]) {
   agent.add_proximal_object(0.8*bound_x, -0.8*bound_y);
   agent.add_proximal_object(-0.8*bound_x, 0.8*bound_y);
   agent.add_proximal_object(-0.8*bound_x, -0.8*bound_y);
+  */
+  std::default_random_engine engine;
+  std::uniform_real_distribution<FloatT> scale(-1, 1);
+  for (int i = 0; i < 8; ++i) {
+    agent.add_proximal_object(scale(engine)*bound_x, scale(engine)*bound_y);
+  }
 
   FloatT fwd_move_dist = (1.0/3.0) * radius;
   FloatT rot_angle = M_PI / 2;
