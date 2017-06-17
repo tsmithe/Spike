@@ -8,8 +8,8 @@
 
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
-  omp_set_num_threads(32);
-  Eigen::setNbThreads(1);
+  //omp_set_num_threads(32);
+  //Eigen::setNbThreads(1);
   std::cout << Eigen::nbThreads() << std::endl;
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 8000;
+  FloatT train_time = 4000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 25;
   FloatT test_off_time = 0;
@@ -504,20 +504,20 @@ int main(int argc, char *argv[]) {
   model.add(&VIS);
   model.add(&VIS_INH);
 
-  model.add(&AHV);
   model.add(&HD);
-  model.add(&AHVxHD);
+  model.add(&AHV);
+  //model.add(&AHVxHD);
 
 #ifdef ENABLE_PLACE
-  //model.add(&FV);
   //model.add(&PLACE);
+  //model.add(&FV);
   //model.add(&PLACExFVxHD);
 #endif
 
   model.add(&VIS_elecs);
-  model.add(&AHV_elecs);
 
   model.add(&HD_elecs);
+  model.add(&AHV_elecs);
   model.add(&AHVxHD_elecs);
 
 #ifdef ENABLE_PLACE
