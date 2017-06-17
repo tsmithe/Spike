@@ -1076,7 +1076,7 @@ void RateModel::update_model_per_dt() {
   // This allows us to implement an arbitrary-order forwards integration
   // scheme, without the neuron groups becoming unsynchronized.
   while (!all_done) {
-    #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
+    // #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
     for (int i = 0; i < num_groups; ++i) {
       if (groups_done[i]) continue;
       auto& n = neuron_groups[i];
@@ -1092,7 +1092,7 @@ void RateModel::update_model_per_dt() {
     }
   }
 
-  #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
+  // #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
   for (int i = 0; i < num_groups; ++i) {
     auto& n = neuron_groups[i];
     n->apply_plasticity(dt);
