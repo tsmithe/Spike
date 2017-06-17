@@ -383,6 +383,8 @@ public:
                       int buffer_interval, int buffer_start);
   void save_map(std::string output_prefix);
 
+  void seed(unsigned s);
+
   // FloatT velocity_scaling = 1;
 
   FloatT bound_x = 10, bound_y = 10;
@@ -406,6 +408,7 @@ public:
   int curr_FV = 0;
 
   enum actions { AHV, FV };
+  FloatT p_fwd = 0.5;
   int curr_action = FV;
   int choose_next_action_ts = 0;
   EigenVector2D target_position;
@@ -431,7 +434,7 @@ private:
 
   std::default_random_engine rand_engine;
 
-  std::uniform_int_distribution<> action_die;
+  std::uniform_real_distribution<FloatT> action_die;
   std::uniform_int_distribution<> AHV_die;
   std::uniform_int_distribution<> FV_die;
 };

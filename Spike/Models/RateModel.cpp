@@ -80,7 +80,11 @@ Agent::Agent() {
   add_FV(0, 0);
   add_AHV(0, 0);
 
-  action_die = std::uniform_int_distribution<>(0, 1);
+  action_die = std::uniform_real_distribution<FloatT>(0, 1);
+}
+
+void Agent::seed(unsigned s) {
+  rand_engine.seed(s);
 }
 
 /*
@@ -236,8 +240,8 @@ void Agent::update_per_dt(FloatT dt) {
     bool is_legal = false;
     FloatT duration;
     while (!is_legal) {
-      curr_action = action_die(rand_engine);
-      if (curr_action == AHV) {
+      if (action_die(rand_engine) > p_fwd) {
+        curr_action = AHV;
         curr_FV = 0;
         curr_AHV = AHV_die(rand_engine);
 
@@ -247,6 +251,7 @@ void Agent::update_per_dt(FloatT dt) {
         FloatT angle_change = AHVs[curr_AHV].first * AHVs[curr_AHV].second;
         target_head_direction = head_direction + angle_change;
       } else {
+        curr_action = FV;
         curr_AHV = 0;
         curr_FV = FV_die(rand_engine);
 
@@ -307,15 +312,23 @@ void Agent::update_per_dt(FloatT dt) {
   // update object bearings
   int i = 0;
   for (; i < num_distal_objects; ++i) {
-    FloatT angle = distal_objects[i] - head_direction;
-    if (angle < 0) angle += 2*M_PI;
-    object_bearings(i) = angle;
+    object_bearings(i) = distal_objects[i] - head_direction;
   }
   for (int j = 0; j < num_proximal_objects; ++i, ++j) {
     // There is possibly a neater way to do this, using the updates above...
     EigenVector2D obj_vector = proximal_objects.col(j) - position;
-    FloatT angle = atan2(obj_vector(1), obj_vector(0)) - head_direction;
-    if (angle < 0) angle += 2*M_PI;
+    object_bearings(i) = atan2(obj_vector(1), obj_vector(0)) - head_direction;
+  }
+  for (i = 0; i < num_objects; ++i) {
+    FloatT angle = object_bearings(i);
+    /* // For 270deg restricted visual field:
+    if ((angle > 0.75*M_PI && angle < M_PI)
+        || (angle > -M_PI && angle < -0.75*M_PI)) {
+      angle = infinity<float>();
+    } else*/
+    if (angle < 0) {
+      angle += 2*M_PI;
+    }
     object_bearings(i) = angle;
   }
 }
@@ -1063,7 +1076,7 @@ void RateModel::update_model_per_dt() {
   // This allows us to implement an arbitrary-order forwards integration
   // scheme, without the neuron groups becoming unsynchronized.
   while (!all_done) {
-    // #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
+    #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
     for (int i = 0; i < num_groups; ++i) {
       if (groups_done[i]) continue;
       auto& n = neuron_groups[i];
@@ -1079,7 +1092,7 @@ void RateModel::update_model_per_dt() {
     }
   }
 
-  // #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
+  #pragma omp parallel for schedule(nonmonotonic:dynamic,1)
   for (int i = 0; i < num_groups; ++i) {
     auto& n = neuron_groups[i];
     n->apply_plasticity(dt);
