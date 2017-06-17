@@ -2,12 +2,14 @@
 #include <fenv.h>
 #include <omp.h>
 
+//#define ENABLE_PLACE
+
 // TODO: Add signal handlers
 
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
   omp_set_num_threads(32);
-  Eigen::setNbThreads(24);
+  Eigen::setNbThreads(1);
   std::cout << Eigen::nbThreads() << std::endl;
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
@@ -20,10 +22,10 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 5000;
+  FloatT train_time = 8000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 25;
-  FloatT test_off_time = 25;
+  FloatT test_off_time = 0;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -37,6 +39,7 @@ int main(int argc, char *argv[]) {
 
   // Create Agent
   Agent agent;
+  agent.seed(123);
 
   FloatT radius = 2;
   FloatT bound_x = 2;
@@ -45,36 +48,50 @@ int main(int argc, char *argv[]) {
   agent.set_boundary(bound_x, bound_y);
 
   agent.add_distal_object(0);
+  agent.add_distal_object(0.25 * M_PI);
   agent.add_distal_object(0.5 * M_PI);
+  agent.add_distal_object(0.75 * M_PI);
   agent.add_distal_object(M_PI);
+  agent.add_distal_object(1.25 * M_PI);
   agent.add_distal_object(1.5 * M_PI);
+  agent.add_distal_object(1.75 * M_PI);
 
-  /*
+  ///*
   agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
+  agent.add_proximal_object(0, 0.6*bound_y);
+  agent.add_proximal_object(0, -0.6*bound_y);
+  agent.add_proximal_object(0.6*bound_x, 0);
+  agent.add_proximal_object(-0.6*bound_x, 0);
+
+  /*
   agent.add_proximal_object(0.8*bound_x, 0.8*bound_y);
   agent.add_proximal_object(0.8*bound_x, -0.8*bound_y);
   agent.add_proximal_object(-0.8*bound_x, 0.8*bound_y);
   agent.add_proximal_object(-0.8*bound_x, -0.8*bound_y);
-  */
+  /**//*
   std::default_random_engine engine;
   std::uniform_real_distribution<FloatT> scale(-1, 1);
   for (int i = 0; i < 8; ++i) {
     agent.add_proximal_object(scale(engine)*bound_x, scale(engine)*bound_y);
   }
+  */
 
-  FloatT fwd_move_dist = (1.0/3.0) * radius;
+  FloatT fwd_move_dist = 0.4 * radius;
   FloatT rot_angle = M_PI / 2;
 
-  FloatT move_time = 0.5; // seconds per forward or angular move
+  FloatT fwd_move_time = 0.5; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.5; ///6.0; // seconds per angular move
 
-  agent.add_AHV(rot_angle / move_time, move_time);
-  agent.add_AHV(-rot_angle / move_time, move_time);
+  agent.p_fwd = 1.0/3.0;
 
-  agent.add_FV(fwd_move_dist / move_time, move_time);
+  agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
+  agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
+
+  agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
  
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
@@ -85,16 +102,20 @@ int main(int argc, char *argv[]) {
   // Input neurons:
   AgentVISRateNeurons VIS(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");
   AgentAHVRateNeurons AHV(ctx, &agent, N_per_state, "AHV");
+#ifdef ENABLE_PLACE
   AgentFVRateNeurons FV(ctx, &agent, N_per_state, "FV");
+#endif
 
   int N_VIS = VIS.size;
   int N_AHV = AHV.size;
+#ifdef ENABLE_PLACE
   int N_FV = FV.size;
+#endif
 
   // HD neurons:
   int N_HD = 300; // N_VIS
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 1.0;
+  FloatT beta_HD = 0.8;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
@@ -105,11 +126,12 @@ int main(int argc, char *argv[]) {
   // AHVxHD neurons:
   int N_AHVxHD = N_HD * agent.num_AHV_states;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 1.2;
+  FloatT beta_AHVxHD = 0.6;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
+#ifdef ENABLE_PLACE
   // PLACE neurons:
   int N_PLACE = N_HD; // N_VIS;
   FloatT alpha_PLACE = 20.0;
@@ -134,21 +156,67 @@ int main(int argc, char *argv[]) {
   RateNeurons PLACExFVxHD(ctx, N_PLACExFVxHD, "PLACExFVxHD",
                           alpha_PLACExFVxHD, beta_PLACExFVxHD,
                           tau_PLACExFVxHD);
-
+#endif
 
   // General parameters:
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
-  FloatT eps = 0.01;
+  FloatT eps = 0.02;
 
 
   // VIS -> HD connectivity:
-  FloatT VIS_HD_scaling = 2600.0 / (N_VIS*0.05); // 1600
-  FloatT VIS_HD_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
-  FloatT eps_VIS_HD = 0.03;
+  FloatT VIS_HD_sparsity = 0.05;
+  FloatT VIS_HD_scaling = 3200.0 / (N_VIS*VIS_HD_sparsity); // 1600
+  FloatT VIS_HD_INH_scaling = -2.4 / (N_VIS*VIS_HD_sparsity); // -1.0
+  FloatT eps_VIS_HD = 0.06;
 
+  // AHVxHD -> HD connectivity:
+  FloatT AHVxHD_HD_scaling = 4000.0 / (N_AHVxHD*1.0); // 6000
+
+  // HD -> HD connectivity
+  FloatT HD_inhibition = -20.0 / N_HD; // 300
+
+  // HD -> AHVxHD connectivity:
+  FloatT HD_AHVxHD_sparsity = 0.05;
+  FloatT HD_AHVxHD_scaling = 345.0 / (N_HD*HD_AHVxHD_sparsity); // 500
+
+  // AHV -> AHVxHD connectivity:
+  FloatT AHV_AHVxHD_scaling = 300.0 / N_AHV; // 240
+
+  // AHVxHD -> AHVxHD connectivity:
+  FloatT AHVxHD_inhibition = -30.0 / N_AHVxHD; // -250
+
+#ifdef ENABLE_PLACE
+  // FV -> PLACExFVxHD connectivity:
+  FloatT FV_PLACExFVxHD_scaling = 240.0 / N_FV;
+
+  // HD -> PLACExFVxHD connectivity:
+  FloatT HD_PLACExFVxHD_scaling = 240.0 / N_HD;
+
+  // PLACE -> PLACExFVxHD connectivity:
+  FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
+  FloatT PLACE_PLACExFVxHD_scaling = 360.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+
+  // PLACExFVxHD -> PLACExFVxHD connectivity:
+  FloatT PLACExFVxHD_inhibition = -120.0 / N_PLACExFVxHD;
+
+  // VIS -> PLACE connectivity:
+  FloatT VIS_PLACE_sparsity = VIS_HD_sparsity;
+  FloatT VIS_PLACE_scaling = VIS_HD_scaling; // 1100.0 / (N_VIS*0.05);
+  FloatT VIS_PLACE_INH_scaling = VIS_HD_INH_scaling; // -2.3 / (N_VIS*0.05);
+  FloatT eps_VIS_PLACE = eps_VIS_HD;
+
+  // PLACExFVxHD -> PLACE connectivity:
+  FloatT PLACExFVxHD_PLACE_scaling = 4500.0 / N_PLACExFVxHD;
+
+  // PLACE -> PLACE connectivity:
+  FloatT PLACE_inhibition = -32.0 / N_PLACE;
+#endif
+
+  // VIS -> HD connectivity
   RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
 //#ifdef TRAIN_VIS_HD
-  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true, 0.95, 0, false);
+  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true,
+                                                   1.0-VIS_HD_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_HD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
@@ -173,8 +241,6 @@ int main(int argc, char *argv[]) {
 
 
   // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 3200.0 / (N_AHVxHD*1.0); // 6000
-
   RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
   AHVxHD_HD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
@@ -194,8 +260,6 @@ int main(int argc, char *argv[]) {
 
 
   // HD -> HD connectivity
-  FloatT HD_inhibition = -36.0 / N_HD; // 300
-
   RateSynapses HD_HD_INH(ctx, &HD, &HD, HD_inhibition, "HD_HD_INH");
   HD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_HD));
 
@@ -205,11 +269,10 @@ int main(int argc, char *argv[]) {
 
 
   // HD -> AHVxHD connectivity:
-  FloatT HD_AHVxHD_scaling = 250.0 / (N_HD*0.05); // 500
-
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
   HD_AHVxHD.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true, 0.95, 0, false);
+  EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
+                                                      1.0-HD_AHVxHD_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_HD_AHVxHD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_HD_AHVxHD, N_AHVxHD, N_HD);
@@ -228,8 +291,6 @@ int main(int argc, char *argv[]) {
 
 
   // AHV -> AHVxHD connectivity:
-  FloatT AHV_AHVxHD_scaling = 420.0 / N_AHV; // 240
-
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
   EigenMatrix W_AHV_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_AHV);
   if (read_weights) {
@@ -244,7 +305,6 @@ int main(int argc, char *argv[]) {
 
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -100.0 / N_AHVxHD; // -250
   RateSynapses AHVxHD_AHVxHD_INH(ctx, &AHVxHD, &AHVxHD,
                                  AHVxHD_inhibition, "AHVxHD_AHVxHD_INH");
   AHVxHD_AHVxHD_INH.weights(EigenMatrix::Ones(N_AHVxHD, N_AHVxHD));
@@ -254,9 +314,8 @@ int main(int argc, char *argv[]) {
   AHVxHD.connect_input(&AHVxHD_AHVxHD_INH, &plast_AHVxHD_AHVxHD_INH);
 
 
+#ifdef ENABLE_PLACE
   // FV -> PLACExFVxHD connectivity:
-  FloatT FV_PLACExFVxHD_scaling = 240.0 / N_FV;
-
   RateSynapses FV_PLACExFVxHD(ctx, &FV, &PLACExFVxHD,
                               FV_PLACExFVxHD_scaling, "FV_PLACExFVxHD");
   EigenMatrix W_FV_PLACExFVxHD
@@ -274,8 +333,6 @@ int main(int argc, char *argv[]) {
 
 
   // HD -> PLACExFVxHD connectivity:
-  FloatT HD_PLACExFVxHD_scaling = 240.0 / N_HD;
-
   RateSynapses HD_PLACExFVxHD(ctx, &HD, &PLACExFVxHD,
                               HD_PLACExFVxHD_scaling, "HD_PLACExFVxHD");
   EigenMatrix W_HD_PLACExFVxHD
@@ -293,15 +350,13 @@ int main(int argc, char *argv[]) {
 
 
   // PLACE -> PLACExFVxHD connectivity:
-  FloatT PLACE_PLACExFVxHD_scaling = 360.0 / (N_PLACE*0.05);
-
   RateSynapses PLACE_PLACExFVxHD(ctx, &PLACE, &PLACExFVxHD,
                                  PLACE_PLACExFVxHD_scaling,
                                  "PLACE_PLACExFVxHD");
   PLACE_PLACExFVxHD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_PLACE_PLACExFVxHD
     = Eigen::make_random_matrix(N_PLACExFVxHD, N_PLACE,
-                                1.0, true, 0.95, 0, false);
+                                1.0, true, 1.0-PLACE_PLACExFVxHD_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_PLACE_PLACExFVxHD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_PLACE_PLACExFVxHD,
@@ -316,7 +371,6 @@ int main(int argc, char *argv[]) {
 
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -120.0 / N_PLACExFVxHD;
   RateSynapses PLACExFVxHD_PLACExFVxHD_INH(ctx, &PLACExFVxHD, &PLACExFVxHD,
                                            PLACExFVxHD_inhibition,
                                            "PLACExFVxHD_PLACExFVxHD_INH");
@@ -331,13 +385,10 @@ int main(int argc, char *argv[]) {
 
 
   // VIS -> PLACE connectivity:
-  FloatT VIS_PLACE_scaling = VIS_HD_scaling; // 1100.0 / (N_VIS*0.05);
-  FloatT VIS_PLACE_INH_scaling = VIS_HD_INH_scaling; // -2.3 / (N_VIS*0.05);
-  FloatT eps_VIS_PLACE = eps_VIS_HD;
-
   RateSynapses VIS_PLACE(ctx, &VIS, &PLACE, VIS_PLACE_scaling, "VIS_PLACE");
   EigenMatrix W_VIS_PLACE
-    = Eigen::make_random_matrix(N_PLACE, N_VIS, 1.0, true, 0.95, 0, false);
+    = Eigen::make_random_matrix(N_PLACE, N_VIS, 1.0, true,
+                                1.0-VIS_PLACE_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_VIS_PLACE.bin";
     Eigen::read_binary(tmp_path.c_str(), W_VIS_PLACE, N_PLACE, N_VIS);
@@ -359,8 +410,6 @@ int main(int argc, char *argv[]) {
 
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 4500.0 / N_PLACExFVxHD;
-
   RateSynapses PLACExFVxHD_PLACE(ctx, &PLACExFVxHD, &PLACE,
                                  PLACExFVxHD_PLACE_scaling,
                                  "PLACExFVxHD_PLACE");
@@ -380,8 +429,6 @@ int main(int argc, char *argv[]) {
 
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -32.0 / N_PLACE;
-
   RateSynapses PLACE_PLACE_INH(ctx, &PLACE, &PLACE,
                                PLACE_inhibition, "PLACE_PLACE_INH");
   PLACE_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_PLACE));
@@ -389,7 +436,7 @@ int main(int argc, char *argv[]) {
   BCMPlasticity plast_PLACE_PLACE_INH(ctx, &PLACE_PLACE_INH);
 
   PLACE.connect_input(&PLACE_PLACE_INH, &plast_PLACE_PLACE_INH);
-  
+#endif
 
 
   // Set simulation schedule:
@@ -400,8 +447,10 @@ int main(int argc, char *argv[]) {
   // No inhibitory plasticity:
   plast_HD_HD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
+#ifdef ENABLE_PLACE
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACExFVxHD_PLACExFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
+#endif
   // plast_AHVxHD_HD_INH.add_schedule(infinity<FloatT>(), 0);
   // plast_HD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
 
@@ -411,34 +460,42 @@ int main(int argc, char *argv[]) {
   plast_HD_AHVxHD.add_schedule(train_time, eps*1.2);
   plast_AHV_AHVxHD.add_schedule(train_time, eps);
 
+#ifdef ENABLE_PLACE
   plast_VIS_PLACE.add_schedule(train_time, eps_VIS_PLACE);
   plast_PLACExFVxHD_PLACE.add_schedule(train_time, eps*0.8);
   plast_PLACE_PLACExFVxHD.add_schedule(train_time, eps*1.2);
   plast_FV_PLACExFVxHD.add_schedule(train_time, eps);
   plast_HD_PLACExFVxHD.add_schedule(train_time, eps);
+#endif
 
   plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
+#ifdef ENABLE_PLACE
   plast_VIS_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_PLACExFVxHD_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_FV_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
+#endif
 
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs("HD_VIS_out", &VIS);
   RateElectrodes AHV_elecs("HD_VIS_out", &AHV);
+#ifdef ENABLE_PLACE
   RateElectrodes FV_elecs("HD_VIS_out", &FV);
+#endif
 
   RateElectrodes HD_elecs("HD_VIS_out", &HD);
   RateElectrodes AHVxHD_elecs("HD_VIS_out", &AHVxHD);
 
+#ifdef ENABLE_PLACE
   RateElectrodes PLACE_elecs("HD_VIS_out", &PLACE);
   RateElectrodes PLACExFVxHD_elecs("HD_VIS_out", &PLACExFVxHD);
+#endif
 
 
   // Add Agent, Neurons and Electrodes to Model
@@ -448,23 +505,26 @@ int main(int argc, char *argv[]) {
   model.add(&VIS_INH);
 
   model.add(&AHV);
-  //model.add(&FV);
-
   model.add(&HD);
   model.add(&AHVxHD);
 
+#ifdef ENABLE_PLACE
+  //model.add(&FV);
   //model.add(&PLACE);
   //model.add(&PLACExFVxHD);
+#endif
 
   model.add(&VIS_elecs);
   model.add(&AHV_elecs);
-  model.add(&FV_elecs);
 
   model.add(&HD_elecs);
   model.add(&AHVxHD_elecs);
 
-  model.add(&PLACE_elecs);
-  model.add(&PLACExFVxHD_elecs);
+#ifdef ENABLE_PLACE
+  //model.add(&FV_elecs);
+  //model.add(&PLACE_elecs);
+  //model.add(&PLACExFVxHD_elecs);
+#endif
 
 
   // Set simulation time parameters:
