@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   if (read_weights) train_time = 0;
   FloatT test_on_time = 10;
   FloatT test_off_time = 20;
-  FloatT start_recording_time = 5000;
+  FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
   // Create Model

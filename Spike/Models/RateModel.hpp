@@ -417,6 +417,8 @@ public:
                       int buffer_interval, int buffer_start);
   void save_map(std::string output_prefix);
 
+  void seed(unsigned s);
+
   // FloatT velocity_scaling = 1;
 
   FloatT bound_x = 10, bound_y = 10;
@@ -425,7 +427,7 @@ public:
   typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
   EigenVector2D position;
-  FloatT head_direction;
+  FloatT head_direction = 0;
 
   int num_objects = 0;
   int num_proximal_objects = 0;
@@ -440,10 +442,11 @@ public:
   int curr_FV = 0;
 
   enum actions { AHV, FV };
+  FloatT p_fwd = 0.5;
   int curr_action = FV;
   int choose_next_action_ts = 0;
   EigenVector2D target_position;
-  FloatT target_head_direction;
+  FloatT target_head_direction = 0;
 
   FloatT t = 0;
   int timesteps = 0;
@@ -465,7 +468,7 @@ private:
 
   std::default_random_engine rand_engine;
 
-  std::uniform_int_distribution<> action_die;
+  std::uniform_real_distribution<FloatT> action_die;
   std::uniform_int_distribution<> AHV_die;
   std::uniform_int_distribution<> FV_die;
 };
