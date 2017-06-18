@@ -1,5 +1,7 @@
 #include "RateModel.hpp"
 
+BufferWriter global_writer;
+
 namespace Eigen {
 std::mt19937 global_random_generator;
 }
@@ -9,38 +11,39 @@ const char* SpikeException::what() const noexcept {
   return _msg.c_str();
 }
 
-BufferWriter::BufferWriter(const std::string& filename_, EigenBuffer& buf_)
-  : buffer(buf_), filename(filename_) {
-  file.open(filename, std::ofstream::out | std::ofstream::binary);
-}
-
 BufferWriter::~BufferWriter() {
   if (running)
     stop();
   if (othread.joinable())
     othread.join();
-  file.close();
+  // file.close();
+}
+
+void BufferWriter::add_buffer(EigenBuffer* buf) {
+  buffers.push_back(buf);
 }
 
 void BufferWriter::write_output() {
-  while (buffer.size() > 0) {
-    auto& front = buffer.buf.front();
-    // int timestep = front.first; // TODO: perhaps write this out, too?
+  for (auto buffer : buffers) {
+    while (buffer->size() > 0) {
+      auto& front = buffer->front();
+      // int timestep = front.first; // TODO: perhaps write this out, too?
 
-    auto data = front.second.data();
-    int n_bytes = front.second.size() * sizeof(decltype(front.second)::Scalar);
+      auto data = front.second.data();
+      int n_bytes = front.second.size() * sizeof(decltype(front.second)::Scalar);
 
-    file.write((char*) data, n_bytes);
+      buffer->file.write((char*) data, n_bytes);
 
-    buffer.lock.lock();
-    buffer.buf.pop_front();
-    buffer.lock.unlock();
+      buffer->pop_front();
+    }
   }
 }
 
 void BufferWriter::block_until_empty() const {
-  while (buffer.size() > 0)
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  for (auto buffer : buffers) {
+    while (buffer->size() > 0)
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 }
 
 void BufferWriter::write_loop() {
@@ -50,7 +53,9 @@ void BufferWriter::write_loop() {
     write_output();
     time_since_last_flush += 0.2;
     if (time_since_last_flush > 10) {
-      file.flush();
+      for (auto buffer : buffers) {
+        buffer->file.flush();
+      }
       time_since_last_flush = 0;
     }
   }
@@ -71,7 +76,10 @@ void BufferWriter::stop() {
   running = false;
   if (othread.joinable())
     othread.join();
-  file.flush();
+
+  for (auto buffer : buffers) {
+    buffer->file.flush();
+  }
 }
 
 Agent::Agent() {
@@ -127,9 +135,8 @@ void Agent::record_history(std::string output_prefix,
   lock_file << "Electrodes active!\n";
 
   std::string history_fname = output_dir + "/history.bin";
-  history_writer = std::make_unique<BufferWriter>(history_fname, agent_history);
-
-  history_writer->start();
+  agent_history.open(history_fname);
+  global_writer.add_buffer(&agent_history);
 }
 
 void Agent::save_map(std::string output_prefix) {
@@ -747,8 +754,8 @@ RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
   lock_file << "Electrodes active!\n";
 
   std::string rate_fname = output_dir + "/rate.bin";
-  writers.push_back
-    (std::make_unique<BufferWriter>(rate_fname, neurons->rate_history));
+  neurons->rate_history.open(rate_fname);
+  global_writer.add_buffer(&(neurons->rate_history));
 
   for (auto& d : neurons->dendrites) {
     auto& synapses = d.first;
@@ -756,15 +763,13 @@ RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
     
     std::string activation_fname
       = output_dir + "/activation_" + synapses->label + ".bin";
-    writers.push_back
-      (std::make_unique<BufferWriter>
-       (activation_fname, synapses->activation_history));
+    synapses->activation_history.open(activation_fname);
+    global_writer.add_buffer(&(synapses->activation_history));
 
     std::string weights_fname
       = output_dir + "/weights_" + synapses->label + ".bin";
-    writers.push_back
-      (std::make_unique<BufferWriter>
-       (weights_fname, plasticity->weights_history));
+    plasticity->weights_history.open(weights_fname);
+    global_writer.add_buffer(&(plasticity->weights_history));
   }
 
   if (neurons->backend()->context->verbose) {
@@ -774,7 +779,7 @@ RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
 }
 
 RateElectrodes::~RateElectrodes() {
-  stop();
+  // stop();
   std::string lock_fname = output_dir + "/simulation.lock";
   remove(lock_fname.c_str());
 }
@@ -806,6 +811,7 @@ void RateElectrodes::write_output_info() const {
   output_info_file.close();
 }
 
+/*
 void RateElectrodes::start() const {
   for (auto& writer : writers) {
     writer->start();
@@ -822,6 +828,7 @@ void RateElectrodes::block_until_empty() const {
   for (auto& writer : writers)
     writer->block_until_empty();
 }
+*/
 
 RateModel::RateModel(Context* ctx) {
   // Eigen::initParallel();
@@ -1024,28 +1031,34 @@ void RateModel::simulation_loop() {
     }
 
     if (stop_trigger) {
-      if (*stop_trigger)
+      if (*stop_trigger) {
         stop();
+      }
     }
 
     if (dump_trigger) {
-      if (*dump_trigger)
-        wait_for_electrodes();
+      if (*dump_trigger) {
+        // wait_for_electrodes();
+        global_writer.block_until_empty();
+      }
     }
   }
 
   // Stop electrodes before declaring simulation done
   // (so as to block the program from exiting prematurely):
-  stop_electrodes();
+  // stop_electrodes();
+  global_writer.block_until_empty();
 
   printf("\r%.1f\n", t);
   running = false;
 }
 
+/*
 void RateModel::wait_for_electrodes() const {
   for (auto& e : electrodes)
     e->block_until_empty();
 }
+*/
 
 void RateModel::update_model_per_dt() {
   if (agent)
@@ -1115,9 +1128,12 @@ void RateModel::start(bool block) {
       e->write_output_info();
   }
 
+  /*
   // Start `recording' before simulation starts:
   for (auto& e : electrodes)
     e->start();
+  */
+  global_writer.start();
 
   running = true;
   simulation_thread = std::thread(&RateModel::simulation_loop, this);
@@ -1141,14 +1157,19 @@ void RateModel::stop() {
   if (simulation_thread.joinable())
     simulation_thread.join();
 
+  /*
   // Stop recording only once simulation is stopped:
   stop_electrodes();
+  */
+  global_writer.stop();
 }
 
+/*
 void RateModel::stop_electrodes() const {
   for (auto& e : electrodes)
     e->stop();
 }
+*/
 
 SPIKE_MAKE_INIT_BACKEND(RateNeurons);
 SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);

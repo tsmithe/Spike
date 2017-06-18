@@ -294,34 +294,68 @@ static_assert(std::has_virtual_destructor<Backend::RatePlasticity>::value,
               "contract violated");
 
 struct EigenBuffer {
-  std::list<std::pair<int, EigenMatrix> > buf;
-  std::mutex lock;
+  std::ofstream file;
+
+  inline void open(std::string fname) {
+    assert(!is_open);
+    filename = fname;
+    file.open(filename, std::ofstream::out | std::ofstream::binary);
+    is_open = true;
+  }
+
+  inline void lock() {
+    buf_lock.lock();
+  }
+
+  inline void unlock() {
+    buf_lock.unlock();
+  }
 
   template<typename T>
   inline void push_back(int n, T const& b) {
-    lock.lock();
+    lock();
     buf.push_back(std::make_pair(n, b));
-    lock.unlock();
+    unlock();
+  }
+
+  inline void pop_front() {
+    lock();
+    buf.pop_front();
+    unlock();
+  }
+
+  inline auto& front() {
+    return buf.front();
   }
 
   inline void clear() {
-    lock.lock();
+    lock();
     buf.clear();
-    lock.unlock();
+    unlock();
   }
 
   inline int size() {
-    lock.lock();
+    lock();
     int size_ = buf.size();
-    lock.unlock();
+    unlock();
     return size_;
   }
+
+private:
+  bool is_open = false;
+
+  std::string filename;
+
+  std::list<std::pair<int, EigenMatrix> > buf;
+  std::mutex buf_lock;
 };
 
 class BufferWriter {
 public:
-  BufferWriter(const std::string& filename_, EigenBuffer& buf_);
+  BufferWriter() = default;
   ~BufferWriter();
+
+  void add_buffer(EigenBuffer* buf);
 
   void write_output();
   void write_loop();
@@ -331,9 +365,7 @@ public:
 
   void block_until_empty() const;
 
-  EigenBuffer& buffer;
-  std::string filename;
-  std::ofstream file;
+  std::vector<EigenBuffer*> buffers;
   FloatT time_since_last_flush = 0;
   std::thread othread; // TODO: Perhaps having too many
                        //       output threads will cause too much
@@ -343,6 +375,8 @@ public:
 private:
   bool running = false;
 };
+
+extern BufferWriter global_writer;
 
 /*
 class Agent {
@@ -697,11 +731,13 @@ public:
   RateNeurons* neurons;
   std::vector<std::unique_ptr<BufferWriter> > writers;
 
+/*
   void start() const;
   void stop() const;
 
 protected:
   void block_until_empty() const;
+*/
 };
 
 class RateModel {
@@ -768,6 +804,8 @@ private:
   int timesteps_per_second = 0;
   bool running = false;
 
+  /*
   void stop_electrodes() const;
   void wait_for_electrodes() const;
+  */
 };
