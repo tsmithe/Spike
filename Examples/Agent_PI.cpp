@@ -8,8 +8,8 @@
 
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
-  //omp_set_num_threads(32);
-  //Eigen::setNbThreads(1);
+  omp_set_num_threads(32);
+  Eigen::setNbThreads(8);
   std::cout << Eigen::nbThreads() << std::endl;
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
