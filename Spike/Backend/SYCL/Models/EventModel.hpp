@@ -37,16 +37,21 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      buffer<float, 1> V;
-      buffer<float, 1> last_input_t;
-      buffer<float, 1> last_input_V;
+      FloatT global_t;
 
-      buffer<float, 1> weights;
-      buffer<float, 1> delays;
-      buffer<float, 1> synapse_pre_idx;
-      buffer<float, 1> synapse_post_delim;
+      buffer<FloatT, 1> V;
+      buffer<FloatT, 1> last_input_t;
+      buffer<FloatT, 1> last_input_V;
 
-      // void project(::Backend::EventSynapses* synapses) override;
+      buffer<FloatT, 1> spike_history;
+
+      // CSR format for weights and delays
+      // Note that nonzero structure is the same for both,
+      //   so we only need one set of indices.
+      buffer<FloatT, 1> weights;
+      buffer<FloatT, 1> delays;
+      buffer<FloatT, 1> synapse_pre_idx;
+      buffer<FloatT, 1> synapse_post_delim;
 
     private:
       // ::Backend::SYCL::EventSynapses* _synapses = nullptr;
