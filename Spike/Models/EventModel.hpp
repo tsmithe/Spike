@@ -3,6 +3,8 @@
 // Forward definitions:
 class EventModel;
 class EventNeurons;
+class EventSynapses;
+class EventPlasticity;
 
 namespace Backend {
   class EventModel : public virtual SpikeBackendBase {
@@ -26,13 +28,33 @@ namespace Backend {
     virtual const EigenVector& rate() = 0;
     */
   };
+
+  class EventSynapses : public virtual SpikeBackendBase {
+  public:
+    ~EventSynapses() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(EventSynapses);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+  };
+
+  class EventPlasticity : public virtual SpikeBackendBase {
+  public:
+    ~EventPlasticity() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(EventPlasticity);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+  };
 }
 
-static_assert(std::has_virtual_destructor<Backend::EventNeurons>::value,
-              "contract violated");
+
 static_assert(std::has_virtual_destructor<Backend::EventModel>::value,
               "contract violated");
-
+static_assert(std::has_virtual_destructor<Backend::EventNeurons>::value,
+              "contract violated");
+static_assert(std::has_virtual_destructor<Backend::EventSynapses>::value,
+              "contract violated");
+static_assert(std::has_virtual_destructor<Backend::EventPlasticity>::value,
+              "contract violated");
 
 
 class EventModel : public virtual SpikeBase {
@@ -92,4 +114,34 @@ public:
 
 private:
   std::shared_ptr<::Backend::EventNeurons> _backend;
+};
+
+
+class EventSynapses : public virtual SpikeBase {
+public:
+  EventSynapses(Context* ctx);
+  ~EventSynapses() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(EventSynapses, SpikeBase);
+
+  void reset_state() override;
+
+private:
+  std::shared_ptr<::Backend::EventSynapses> _backend;
+};
+
+
+class EventPlasticity : public virtual SpikeBase {
+public:
+  EventPlasticity(Context* ctx);
+  ~EventPlasticity() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(EventPlasticity, SpikeBase);
+
+  void reset_state() override;
+
+private:
+  std::shared_ptr<::Backend::EventPlasticity> _backend;
 };

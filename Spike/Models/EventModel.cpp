@@ -28,3 +28,16 @@ EventNeurons::~EventNeurons() {
 void EventNeurons::reset_state() {
 }
 
+EventSynapses::EventSynapses(Context* ctx) {
+  init_backend(ctx);
+}
+
+void EventSynapses::reset_state() {
+}
+
+EventPlasticity::EventPlasticity(Context* ctx) {
+  init_backend(ctx);
+}
+
+void EventPlasticity::reset_state() {
+}

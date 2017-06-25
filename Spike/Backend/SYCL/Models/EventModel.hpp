@@ -47,6 +47,26 @@ namespace Backend {
                   ::Backend::Eigen::RatePlasticity*> > _eigen_dendrites;
       */
     };
+
+    class EventSynapses : public virtual ::Backend::EventSynapses {
+    public:
+      EventSynapses() = default;
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(EventSynapses);
+      ~EventSynapses() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+    };
+
+    class EventPlasticity : public virtual ::Backend::EventPlasticity {
+    public:
+      EventPlasticity() = default;
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(EventPlasticity);
+      ~EventPlasticity() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+    };
   } // namespace SYCL
 } // namespace Backend
 
