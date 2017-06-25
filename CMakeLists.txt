@@ -38,6 +38,10 @@ option(BUILD_WITH_EIGEN
   "Enable Eigen backend"
   ON)
 
+option(BUILD_WITH_SYCL
+  "Enable SYCL backend"
+  ON)
+
 option(BUILD_WITH_OPENCL
   "Enable OpenCL backend"
   ON)
@@ -87,6 +91,16 @@ if(BUILD_WITH_OPENCL)
   find_package(OpenCL REQUIRED)
   # target_link_libraries(SpikeOpenCL ${OPENCL_LIBRARIES})
 endif()
+
+if (BUILD_WITH_SYCL)
+  find_package(ComputeCpp)
+  if(NOT COMPUTECPP_PACKAGE_ROOT_DIR)
+    include_directories(SYSTEM "${PROJECT_SOURCE_DIR}/Submodules/triSYCL/include")
+  else()
+    include_directories(SYSTEM ${COMPUTECPP_INCLUDE_DIRECTORY})
+  endif()
+endif()
+    
 
 # find Eigen
 set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/Submodules/eigen")

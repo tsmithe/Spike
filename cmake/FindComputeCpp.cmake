@@ -72,7 +72,7 @@ include_directories(SYSTEM ${OpenCL_INCLUDE_DIR})
 
 # Find ComputeCpp package
 if(NOT COMPUTECPP_PACKAGE_ROOT_DIR)
-  message(FATAL_ERROR
+  message(WARNING
     "ComputeCpp package - Not found! (please set COMPUTECPP_PACKAGE_ROOT_DIR)")
 else()
   message(STATUS "ComputeCpp package - Found")
@@ -85,7 +85,7 @@ if (EXISTS ${COMPUTECPP_DEVICE_COMPILER})
   mark_as_advanced(COMPUTECPP_DEVICE_COMPILER)
   message(STATUS "compute++ - Found")
 else()
-  message(FATAL_ERROR "compute++ - Not found! (${COMPUTECPP_DEVICE_COMPILER})")
+  message(WARNING "compute++ - Not found! (${COMPUTECPP_DEVICE_COMPILER})")
 endif()
 
 # Obtain the path to computecpp_info
@@ -95,7 +95,7 @@ if (EXISTS ${COMPUTECPP_INFO_TOOL})
   mark_as_advanced(${COMPUTECPP_INFO_TOOL})
   message(STATUS "computecpp_info - Found")
 else()
-  message(FATAL_ERROR "computecpp_info - Not found! (${COMPUTECPP_INFO_TOOL})")
+  message(WARNING "computecpp_info - Not found! (${COMPUTECPP_INFO_TOOL})")
 endif()
 
 # Obtain the path to the ComputeCpp runtime library
@@ -107,13 +107,13 @@ if (EXISTS ${COMPUTECPP_RUNTIME_LIBRARY})
   mark_as_advanced(COMPUTECPP_RUNTIME_LIBRARY)
   message(STATUS "libComputeCpp.so - Found")
 else()
-  message(FATAL_ERROR "libComputeCpp.so - Not found!")
+  message(WARNING "libComputeCpp.so - Not found!")
 endif()
 
 # Obtain the ComputeCpp include directory
 set(COMPUTECPP_INCLUDE_DIRECTORY ${COMPUTECPP_PACKAGE_ROOT_DIR}/include/)
 if (NOT EXISTS ${COMPUTECPP_INCLUDE_DIRECTORY})
-  message(FATAL_ERROR "ComputeCpp includes - Not found!")
+  message(WARNING "ComputeCpp includes - Not found!")
 else()
   message(STATUS "ComputeCpp includes - Found")
 endif()
@@ -123,7 +123,7 @@ execute_process(COMMAND ${COMPUTECPP_INFO_TOOL} "--dump-version"
   OUTPUT_VARIABLE COMPUTECPP_PACKAGE_VERSION
   RESULT_VARIABLE COMPUTECPP_INFO_TOOL_RESULT OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT COMPUTECPP_INFO_TOOL_RESULT EQUAL "0")
-  message(FATAL_ERROR "Package version - Error obtaining version!")
+  message(WARNING "Package version - Error obtaining version!")
 else()
   mark_as_advanced(COMPUTECPP_PACKAGE_VERSION)
   message(STATUS "Package version - ${COMPUTECPP_PACKAGE_VERSION}")
@@ -134,7 +134,7 @@ execute_process(COMMAND ${COMPUTECPP_INFO_TOOL} "--dump-device-compiler-flags"
   OUTPUT_VARIABLE COMPUTECPP_DEVICE_COMPILER_FLAGS
   RESULT_VARIABLE COMPUTECPP_INFO_TOOL_RESULT OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT COMPUTECPP_INFO_TOOL_RESULT EQUAL "0")
-  message(FATAL_ERROR "compute++ flags - Error obtaining compute++ flags!")
+  message(WARNING "compute++ flags - Error obtaining compute++ flags!")
 else()
   mark_as_advanced(COMPUTECPP_COMPILER_FLAGS)
   message(STATUS "compute++ flags - ${COMPUTECPP_DEVICE_COMPILER_FLAGS}")
@@ -145,7 +145,7 @@ execute_process(COMMAND ${COMPUTECPP_INFO_TOOL} "--dump-is-supported"
   OUTPUT_VARIABLE COMPUTECPP_PLATFORM_IS_SUPPORTED
   RESULT_VARIABLE COMPUTECPP_INFO_TOOL_RESULT OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT COMPUTECPP_INFO_TOOL_RESULT EQUAL "0")
-  message(FATAL_ERROR "platform - Error checking platform support!")
+  message(WARNING "platform - Error checking platform support!")
 else()
   mark_as_advanced(COMPUTECPP_PLATFORM_IS_SUPPORTED)
   if (COMPUTECPP_PLATFORM_IS_SUPPORTED)

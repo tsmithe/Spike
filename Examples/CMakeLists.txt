@@ -6,8 +6,6 @@ foreach(example
     Agent_PI
     Jordan1
     SimpleRateModel
-    CPUTest
-    TSCSOptimiseFourLayerVisionSpikingModelFiringRates
     VogelsAbbotNet
     )
   add_executable(${example} ${example}.cpp)

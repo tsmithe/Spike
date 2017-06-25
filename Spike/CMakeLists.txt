@@ -81,6 +81,18 @@ if (BUILD_WITH_CUDA)
     ${NO_WHOLE_ARCHIVE_FLAG})
 endif()
 
+if (BUILD_WITH_SYCL)
+  target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
+    # SpikeSYCLHelpers 
+    SpikeSYCLModels
+    # SpikeSYCLNeurons
+    # SpikeSYCLRecordingElectrodes
+    # SpikeSYCLSpikeAnalyser
+    # SpikeSYCLSTDP
+    # SpikeSYCLSynapses
+    ${NO_WHOLE_ARCHIVE_FLAG})
+endif()
+
 if (BUILD_WITH_VIENNACL)
   target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
     SpikeViennaModels
