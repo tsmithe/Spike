@@ -1,0 +1,3 @@
+[submodule "Submodules/triSYCL"]
+	path = Submodules/triSYCL
+	url = https://github.com/Xilinx/triSYCL

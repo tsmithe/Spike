@@ -18,14 +18,14 @@
 #   limitations under the License.
 
 #########################
-#  FindComputeCpp.cmake  
+#  FindComputeCpp.cmake
 #########################
 #
 #  Tools for finding and building with ComputeCpp.
 #
-#  User must define COMPUTECPP_PACKAGE_ROOT_DIR pointing to the ComputeCpp 
+#  User must define COMPUTECPP_PACKAGE_ROOT_DIR pointing to the ComputeCpp
 #   installation.
-#  
+#
 #  Latest version of this file can be found at:
 #    https://github.com/codeplaysoftware/computecpp-sdk
 
@@ -67,11 +67,13 @@ mark_as_advanced(COMPUTECPP_USER_FLAGS)
 
 # Find OpenCL package
 find_package(OpenCL REQUIRED)
+# OpenCL headers are used by ComputeCpp and necessary
+include_directories(SYSTEM ${OpenCL_INCLUDE_DIR})
 
-# Find ComputeCpp packagee
+# Find ComputeCpp package
 if(NOT COMPUTECPP_PACKAGE_ROOT_DIR)
   message(FATAL_ERROR
-    "ComputeCpp package - Not found! (please set COMPUTECPP_PACKAGE_ROOT_DIR")
+    "ComputeCpp package - Not found! (please set COMPUTECPP_PACKAGE_ROOT_DIR)")
 else()
   message(STATUS "ComputeCpp package - Found")
 endif()
@@ -154,7 +156,7 @@ else()
 endif()
 
 ####################
-#   __build_sycl   
+#   __build_sycl
 ####################
 #
 #  Adds a custom target for running compute++ and adding a dependency for the
@@ -168,7 +170,7 @@ endif()
 #       but located in different directories, are used for the same target.
 #
 function(__build_spir targetName sourceFile binaryDir fileCounter)
-  
+
   # Retrieve source file name.
   get_filename_component(sourceFileName ${sourceFile} NAME)
 
@@ -214,8 +216,10 @@ function(__build_spir targetName sourceFile binaryDir fileCounter)
     WORKING_DIRECTORY ${binaryDir}
     COMMENT "Building ComputeCpp integration header file ${outputSyclFile}")
 
-  # Name: (user-defined name)_(source file)_(counter for same source file name)_integration_header
-  set(headerTargetName ${targetName}_${sourceFileName}_${fileCounter}_integration_header)
+  # Name:
+  # (user-defined name)_(source file)_(counter)_integration_header
+  set(headerTargetName
+    ${targetName}_${sourceFileName}_${fileCounter}_integration_header)
   
   # Add a custom target for the generated integration header
   add_custom_target(${headerTargetName} DEPENDS ${outputSyclFile})
@@ -261,4 +265,3 @@ function(add_sycl_to_target targetName binaryDir sourceFiles)
                         PUBLIC ${OpenCL_LIBRARIES})
 
 endfunction(add_sycl_to_target)
-
