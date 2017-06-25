@@ -3,8 +3,10 @@
 // Forward definitions:
 class EventModel;
 class EventNeurons;
+/*
 class EventSynapses;
 class EventPlasticity;
+*/
 
 namespace Backend {
   class EventModel : public virtual SpikeBackendBase {
@@ -21,20 +23,18 @@ namespace Backend {
     SPIKE_ADD_BACKEND_FACTORY(EventNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
-    /*
-    virtual void connect_input(RateSynapses* synapses,
-                               RatePlasticity* plasticity) = 0;
-    virtual bool staged_integrate_timestep(FloatT dt) = 0;
-    virtual const EigenVector& rate() = 0;
-    */
+    // virtual void project(::Backend::EventSynapses* synapses) = 0;
   };
 
+  /*
   class EventSynapses : public virtual SpikeBackendBase {
   public:
     ~EventSynapses() override = default;
     SPIKE_ADD_BACKEND_FACTORY(EventSynapses);
     void prepare() override = 0;
     void reset_state() override = 0;
+
+    virtual void add_plasticity(::Backend::EventPlasticity* plasticity) = 0;
   };
 
   class EventPlasticity : public virtual SpikeBackendBase {
@@ -44,6 +44,7 @@ namespace Backend {
     void prepare() override = 0;
     void reset_state() override = 0;
   };
+  */
 }
 
 
@@ -51,10 +52,12 @@ static_assert(std::has_virtual_destructor<Backend::EventModel>::value,
               "contract violated");
 static_assert(std::has_virtual_destructor<Backend::EventNeurons>::value,
               "contract violated");
+/*
 static_assert(std::has_virtual_destructor<Backend::EventSynapses>::value,
               "contract violated");
 static_assert(std::has_virtual_destructor<Backend::EventPlasticity>::value,
               "contract violated");
+*/
 
 
 class EventModel : public virtual SpikeBase {
@@ -117,6 +120,7 @@ private:
 };
 
 
+/*
 class EventSynapses : public virtual SpikeBase {
 public:
   EventSynapses(Context* ctx);
@@ -145,3 +149,4 @@ public:
 private:
   std::shared_ptr<::Backend::EventPlasticity> _backend;
 };
+*/

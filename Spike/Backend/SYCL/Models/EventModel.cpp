@@ -2,8 +2,10 @@
 
 SPIKE_EXPORT_BACKEND_TYPE(SYCL, EventModel);
 SPIKE_EXPORT_BACKEND_TYPE(SYCL, EventNeurons);
+/*
 SPIKE_EXPORT_BACKEND_TYPE(SYCL, EventSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(SYCL, EventPlasticity);
+*/
 
 namespace Backend {
   namespace SYCL {
@@ -19,6 +21,7 @@ namespace Backend {
     void EventNeurons::reset_state() {
     };
 
+    /*
     void EventSynapses::prepare() {
     };
 
@@ -30,5 +33,6 @@ namespace Backend {
 
     void EventPlasticity::reset_state() {
     };
+    */
   }
 }

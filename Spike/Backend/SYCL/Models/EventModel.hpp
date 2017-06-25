@@ -8,6 +8,14 @@ namespace Backend {
   namespace SYCL {
     using namespace cl::sycl;
 
+    // Forward definitions:
+    class EventModel;
+    class EventNeurons;
+    /*
+    class EventSynapses;
+    class EventPlasticity;
+    */
+
     class EventModel : public virtual ::Backend::EventModel {
     public:
       EventModel() = default;
@@ -16,6 +24,8 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
+
+      queue event_queue;
     };
 
     class EventNeurons : public virtual ::Backend::EventNeurons {
@@ -27,27 +37,22 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
 
-      /*
-      void connect_input(::Backend::RateSynapses* synapses,
-                         ::Backend::RatePlasticity* plasticity) override;
+      buffer<float, 1> V;
+      buffer<float, 1> last_input_t;
+      buffer<float, 1> last_input_V;
 
-      bool staged_integrate_timestep(FloatT dt) override;
+      buffer<float, 1> weights;
+      buffer<float, 1> delays;
+      buffer<float, 1> synapse_pre_idx;
+      buffer<float, 1> synapse_post_delim;
 
-      template<typename T>
-      inline T transfer(T const& total_activation);
-
-      virtual EigenVector const& rate(unsigned int n_back);
-      EigenVector const& rate() override;
-      */
+      // void project(::Backend::EventSynapses* synapses) override;
 
     private:
-      /*
-      std::vector<
-        std::pair<::Backend::Eigen::RateSynapses*,
-                  ::Backend::Eigen::RatePlasticity*> > _eigen_dendrites;
-      */
+      // ::Backend::SYCL::EventSynapses* _synapses = nullptr;
     };
 
+    /*
     class EventSynapses : public virtual ::Backend::EventSynapses {
     public:
       EventSynapses() = default;
@@ -56,6 +61,11 @@ namespace Backend {
 
       void prepare() override;
       void reset_state() override;
+
+      void add_plasticity(::Backend::EventPlasticity* plasticity) override;
+
+    private:
+      ::Backend::SYCL::EventPlasticity* _plasticity = nullptr;
     };
 
     class EventPlasticity : public virtual ::Backend::EventPlasticity {
@@ -67,6 +77,7 @@ namespace Backend {
       void prepare() override;
       void reset_state() override;
     };
+    */
   } // namespace SYCL
 } // namespace Backend
 

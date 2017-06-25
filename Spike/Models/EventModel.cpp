@@ -28,6 +28,7 @@ EventNeurons::~EventNeurons() {
 void EventNeurons::reset_state() {
 }
 
+/*
 EventSynapses::EventSynapses(Context* ctx) {
   init_backend(ctx);
 }
@@ -41,3 +42,4 @@ EventPlasticity::EventPlasticity(Context* ctx) {
 
 void EventPlasticity::reset_state() {
 }
+*/
