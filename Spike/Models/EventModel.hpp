@@ -1,9 +1,18 @@
 #include "RateModel.hpp"
 
 // Forward definitions:
+class EventModel;
 class EventNeurons;
 
 namespace Backend {
+  class EventModel : public virtual SpikeBackendBase {
+  public:
+    ~EventModel() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(EventModel);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+  };
+
   class EventNeurons : public virtual SpikeBackendBase {
   public:
     ~EventNeurons() override = default;
@@ -21,6 +30,25 @@ namespace Backend {
 
 static_assert(std::has_virtual_destructor<Backend::EventNeurons>::value,
               "contract violated");
+static_assert(std::has_virtual_destructor<Backend::EventModel>::value,
+              "contract violated");
+
+
+
+class EventModel : public virtual SpikeBase {
+public:
+  EventModel(Context* ctx);
+  ~EventModel() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(EventModel, SpikeBase);
+
+  void reset_state() override;
+
+private:
+  std::shared_ptr<::Backend::EventModel> _backend;
+};
+
 
 class EventNeurons : public virtual SpikeBase {
 public:
@@ -65,4 +93,3 @@ public:
 private:
   std::shared_ptr<::Backend::EventNeurons> _backend;
 };
-

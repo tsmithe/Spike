@@ -8,7 +8,15 @@ namespace Backend {
   namespace SYCL {
     using namespace cl::sycl;
 
-    class EventNeurons;    // forward
+    class EventModel : public virtual ::Backend::EventModel {
+    public:
+      EventModel() = default;
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(EventModel);
+      ~EventModel() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+    };
 
     class EventNeurons : public virtual ::Backend::EventNeurons {
     public:
