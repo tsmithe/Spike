@@ -43,6 +43,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(NO_WHOLE_ARCHIVE_FLAG "-Wl,-noall_load")
 endif()
 
+target_link_libraries(Spike PRIVATE pthread)
+
+if (MKL_FOUND)
+  target_link_libraries(Spike PRIVATE -Wl,--no-as-needed ${MKL_LIBRARIES} -Wl,--as-needed)
+endif()
+
 target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
   SpikeDummyHelpers 
   SpikeDummyNeurons
@@ -51,6 +57,18 @@ target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
   SpikeDummySTDP
   SpikeDummySynapses
   ${NO_WHOLE_ARCHIVE_FLAG})
+
+if (BUILD_WITH_EIGEN)
+  target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
+    # SpikeEigenHelpers 
+    SpikeEigenModels
+    # SpikeEigenNeurons
+    # SpikeEigenRecordingElectrodes
+    # SpikeEigenSpikeAnalyser
+    # SpikeEigenSTDP
+    # SpikeEigenSynapses
+    ${NO_WHOLE_ARCHIVE_FLAG})
+endif()
 
 if (BUILD_WITH_CUDA)
   target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
@@ -63,6 +81,16 @@ if (BUILD_WITH_CUDA)
     ${NO_WHOLE_ARCHIVE_FLAG})
 endif()
 
+if (BUILD_WITH_VIENNACL)
+  target_link_libraries(Spike PRIVATE ${WHOLE_ARCHIVE_FLAG}
+    SpikeViennaModels
+    ${NO_WHOLE_ARCHIVE_FLAG})
+endif()
+
+if (BUILD_WITH_OPENCL)
+  target_link_libraries(Spike PRIVATE OpenCL)
+endif()
+
 if (ENABLE_PLOTTING)
-  target_link_libraries(Spike SpikePlotting)
+  target_link_libraries(Spike PRIVATE SpikePlotting)
 endif()

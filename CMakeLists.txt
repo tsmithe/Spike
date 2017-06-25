@@ -9,9 +9,12 @@ endif(COMMAND cmake_policy)
 
 project(Spike)
 
-# set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 14)
+if (${CMAKE_C_COMPILER} MATCHES "icc.*$") 
+  list(APPEND CMAKE_CXX_FLAGS -std=c++14)
+endif()
+  
 # set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_CXX_FLAGS "-std=c++11 -DVERBOSE=1")
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
@@ -29,6 +32,18 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 option(BUILD_WITH_CUDA
   "Enable CUDA backend"
+  ON)
+
+option(BUILD_WITH_EIGEN
+  "Enable Eigen backend"
+  ON)
+
+option(BUILD_WITH_OPENCL
+  "Enable OpenCL backend"
+  ON)
+
+option(BUILD_WITH_VIENNACL
+  "Enable Vienna backend"
   ON)
 
 option(BUILD_EXAMPLES
@@ -68,6 +83,37 @@ if(BUILD_WITH_CUDA)
   include_directories(BEFORE SYSTEM "${CUDA_INCLUDE_DIRS}")
 endif()
 
+if(BUILD_WITH_OPENCL)
+  find_package(OpenCL REQUIRED)
+  # target_link_libraries(SpikeOpenCL ${OPENCL_LIBRARIES})
+endif()
+
+# find Eigen
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/Submodules/eigen")
+find_path(EIGEN_INCLUDE_DIR Eigen/Dense)
+if(NOT EIGEN_INCLUDE_DIR)
+  message(SEND_ERROR "Failed to find Eigen; make sure you got the submodules!")
+endif()
+mark_as_advanced(EIGEN_INCLUDE_DIR)
+include_directories(BEFORE SYSTEM "${EIGEN_INCLUDE_DIR}")
+
+# find MKL
+set(MKL_MULTI_THREADED ON)
+find_package(MKL)
+if(MKL_FOUND)
+  add_definitions(-DEIGEN_USE_MKL_ALL)
+endif()
+
+find_package(OpenMP)
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+if(BUILD_WITH_VIENNACL)
+  add_definitions(-DSPIKE_DEFAULT_BACKEND="Vienna")
+  include_directories(BEFORE SYSTEM "${PROJECT_SOURCE_DIR}/Submodules/viennacl-dev")
+endif()
 
 # Compile options
 #################
