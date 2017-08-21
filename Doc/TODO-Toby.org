@@ -471,12 +471,16 @@ CLOSED: [2017-03-22 Wed 13:40]
 - State "DONE"       from "PROGRESS"   [2017-03-22 Wed 13:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
 :END:
-*** PROGRESS Proper weight initialization
+*** DONE Proper weight initialization
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-06-15 Thu 16:10]
 - State "PROGRESS"   from "TODO"       [2017-01-24 Tue 10:55]
 :END:
-**** PROGRESS For prewired model
+**** DONE For prewired model
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-06-15 Thu 16:10]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 15:35]
 :END:
 ***** DONE Recurrent inhibition: HD
@@ -503,15 +507,26 @@ CLOSED: [2017-03-29 Wed 22:40]
 - State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:20]
 :END:
-***** PROGRESS Offset/non-offset: HD -> AHVxHD
+***** CANCELLED Offset/non-offset: HD -> AHVxHD
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "CANCELLED"  from "PROGRESS"   [2017-06-15 Thu 16:10] \\
+  Unnecessary
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 16:55]
 :END:
-***** PROGRESS Offset/non-offset: AHVxHD -> HD
+***** CANCELLED Offset/non-offset: AHVxHD -> HD
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "CANCELLED"  from "PROGRESS"   [2017-06-15 Thu 16:10] \\
+  Unnecessary
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 17:20]
 :END:
-****** TODO Check this!
+****** CANCELLED Check this!
+CLOSED: [2017-06-15 Thu 16:10]
+:LOGBOOK:
+- State "CANCELLED"  from "TODO"       [2017-06-15 Thu 16:10] \\
+  Unnecessary
+:END:
 **** DONE For self-organising model: just random!
 CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
@@ -589,8 +604,10 @@ CLOSED: [2017-03-29 Wed 22:40]
 :LOGBOOK:
 - State "PROGRESS"   from "TODO"       [2017-03-22 Wed 13:40]
 :END:
-**** PROGRESS Prewired model
+**** DONE Prewired model
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-06-15 Thu 16:10]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:50]
 :END:
 ***** DONE VIS -> HD initialisation
@@ -605,11 +622,17 @@ CLOSED: [2017-03-29 Wed 22:40]
 - State "DONE"       from "PROGRESS"   [2017-03-29 Wed 22:40]
 - State "PROGRESS"   from "TODO"       [2017-03-20 Mon 18:15]
 :END:
-**** PROGRESS Self-organising model
+**** DONE Self-organising model
+CLOSED: [2017-06-15 Thu 16:10]
 :LOGBOOK:
+- State "DONE"       from "PROGRESS"   [2017-06-15 Thu 16:10]
 - State "PROGRESS"   from "TODO"       [2017-03-29 Wed 22:40]
 :END:
-***** TODO Need to turn off plasticity at some point...
+***** DONE Need to turn off plasticity at some point...
+CLOSED: [2017-06-15 Thu 16:10]
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-06-15 Thu 16:10]
+:END:
 ** Software engineering
 *** TODO Generalise scheduling mechanism
 *** TODO Documentation
