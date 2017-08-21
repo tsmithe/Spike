@@ -506,7 +506,7 @@ int main(int argc, char *argv[]) {
 
   model.add(&HD);
   model.add(&AHV);
-  //model.add(&AHVxHD);
+  model.add(&AHVxHD);
 
 #ifdef ENABLE_PLACE
   //model.add(&PLACE);
