@@ -236,11 +236,82 @@ void Agent::update_per_dt(FloatT dt) {
     agent_history.push_back(timesteps, agent_buf);
   }
 
-  FloatT old_t = t;
   t += dt;
   timesteps += 1;
 
+  if (false) {
+    // Do testing ...
+    return;
+  }
+
   if (timesteps >= choose_next_action_ts) {
+    choose_new_action(dt);
+  } else {
+    // make sure only one of AHV and FV is active currently:
+    assert(!(curr_AHV && curr_FV));
+    perform_action(dt);
+  }
+
+  update_bearings();
+}
+
+void Agent::update_bearings() {
+  int i = 0;
+  for (; i < num_distal_objects; ++i) {
+    object_bearings(i) = distal_objects[i] - head_direction;
+  }
+  for (int j = 0; j < num_proximal_objects; ++i, ++j) {
+    // There is possibly a neater way to do this, using the updates above...
+    EigenVector2D obj_vector = proximal_objects.col(j) - position;
+    object_bearings(i) = atan2(obj_vector(1), obj_vector(0)) - head_direction;
+  }
+  for (i = 0; i < num_objects; ++i) {
+    FloatT angle = object_bearings(i);
+    /* // For 270deg restricted visual field:
+    if ((angle > 0.75*M_PI && angle < M_PI)
+        || (angle > -M_PI && angle < -0.75*M_PI)) {
+      angle = infinity<float>();
+    } else*/
+    if (angle < 0) {
+      angle += 2*M_PI;
+    }
+    object_bearings(i) = angle;
+  }
+}
+
+void Agent::perform_action(FloatT dt) {
+  if (timesteps == choose_next_action_ts - 1) {
+    // if last timestep of action, just set angle / position to target
+    if (curr_action == AHV) {
+      head_direction = target_head_direction;
+      if (head_direction > 2*M_PI) {
+        head_direction -= 2*M_PI;
+      } else if (head_direction < 0) {
+        head_direction += 2*M_PI;
+      }
+    } else {
+      position = target_position;
+    }
+  } else {
+    // otherwise, compute update
+    if (curr_action == AHV) {
+      FloatT AHV = AHVs[curr_AHV].first;
+      head_direction += AHV * dt;
+      if (head_direction > 2*M_PI) {
+        head_direction -= 2*M_PI;
+      } else if (head_direction < 0) {
+        head_direction += 2*M_PI;
+      }
+    } else {
+      FloatT FV = FVs[curr_FV].first;
+      FloatT r = FV * dt;
+      position(0) += r * cos(head_direction);
+      position(1) += r * sin(head_direction);
+    }
+  }
+}
+
+void Agent::choose_new_action(FloatT dt) {
     // choose new action, ensuring legality
     // choice random with uniform distribution (for now)
 
@@ -280,64 +351,6 @@ void Agent::update_per_dt(FloatT dt) {
     }
     int timesteps_per_action = round(duration / dt);
     choose_next_action_ts = timesteps + timesteps_per_action;
-  } else {
-    // make sure only one of AHV and FV is active currently:
-    assert(!(curr_AHV && curr_FV));
-
-    // then perform action: update FV/AHV state, position, head_direction
-    if (timesteps == choose_next_action_ts - 1) {
-      // if last timestep of action, just set angle / position to target
-      if (curr_action == AHV) {
-        head_direction = target_head_direction;
-        if (head_direction > 2*M_PI) {
-          head_direction -= 2*M_PI;
-        } else if (head_direction < 0) {
-          head_direction += 2*M_PI;
-        }
-      } else {
-        position = target_position;
-      }
-    } else {
-      // otherwise, compute update
-      if (curr_action == AHV) {
-        FloatT AHV = AHVs[curr_AHV].first;
-        head_direction += AHV * dt;
-        if (head_direction > 2*M_PI) {
-          head_direction -= 2*M_PI;
-        } else if (head_direction < 0) {
-          head_direction += 2*M_PI;
-        }
-      } else {
-        FloatT FV = FVs[curr_FV].first;
-        FloatT r = FV * dt;
-        position(0) += r * cos(head_direction);
-        position(1) += r * sin(head_direction);
-      }
-    }
-  }
-
-  // update object bearings
-  int i = 0;
-  for (; i < num_distal_objects; ++i) {
-    object_bearings(i) = distal_objects[i] - head_direction;
-  }
-  for (int j = 0; j < num_proximal_objects; ++i, ++j) {
-    // There is possibly a neater way to do this, using the updates above...
-    EigenVector2D obj_vector = proximal_objects.col(j) - position;
-    object_bearings(i) = atan2(obj_vector(1), obj_vector(0)) - head_direction;
-  }
-  for (i = 0; i < num_objects; ++i) {
-    FloatT angle = object_bearings(i);
-    /* // For 270deg restricted visual field:
-    if ((angle > 0.75*M_PI && angle < M_PI)
-        || (angle > -M_PI && angle < -0.75*M_PI)) {
-      angle = infinity<float>();
-    } else*/
-    if (angle < 0) {
-      angle += 2*M_PI;
-    }
-    object_bearings(i) = angle;
-  }
 }
 
 /*

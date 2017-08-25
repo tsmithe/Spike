@@ -411,7 +411,12 @@ public:
   void add_AHV(FloatT AHV, FloatT duration);
 
   // void connect_actor(RateNeurons* actor_);
+
+  void update_bearings();
+
   void update_per_dt(FloatT dt);
+  void perform_action(FloatT dt);
+  void choose_new_action(FloatT dt);
 
   void record_history(std::string output_prefix,
                       int buffer_interval, int buffer_start);
