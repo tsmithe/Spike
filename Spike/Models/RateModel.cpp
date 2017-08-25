@@ -224,6 +224,10 @@ void Agent::add_AHV(FloatT AHV, FloatT duration) {
   AHV_die = std::uniform_int_distribution<>(0, num_AHV_states-1);
 }
 
+void Agent::add_test_time(FloatT t_test) {
+  test_times.push(t_test);
+}
+
 void Agent::update_per_dt(FloatT dt) {
   // buffer position & head_direction if necessary
   if (agent_buffer_interval
@@ -239,19 +243,17 @@ void Agent::update_per_dt(FloatT dt) {
   t += dt;
   timesteps += 1;
 
-  if (false) {
-    // Do testing ...
-    return;
-  }
-
   if (timesteps >= choose_next_action_ts) {
-    choose_new_action(dt);
-  } else {
-    // make sure only one of AHV and FV is active currently:
-    assert(!(curr_AHV && curr_FV));
-    perform_action(dt);
+    if (test_times.empty() || t < test_times.top()) {
+      choose_new_action(dt);
+    } else {
+      choose_test_action(dt);
+    }
   }
 
+  // ensure only one of AHV and FV is active currently:
+  assert(!(curr_AHV && curr_FV));
+  perform_action(dt);
   update_bearings();
 }
 
@@ -280,21 +282,24 @@ void Agent::update_bearings() {
 }
 
 void Agent::perform_action(FloatT dt) {
+  if (curr_action == actions_t::STAY)
+    return;
+
   if (timesteps == choose_next_action_ts - 1) {
     // if last timestep of action, just set angle / position to target
-    if (curr_action == AHV) {
+    if (curr_action == actions_t::AHV) {
       head_direction = target_head_direction;
       if (head_direction > 2*M_PI) {
         head_direction -= 2*M_PI;
       } else if (head_direction < 0) {
         head_direction += 2*M_PI;
       }
-    } else {
+    } else if (curr_action == actions_t::FV) {
       position = target_position;
     }
   } else {
     // otherwise, compute update
-    if (curr_action == AHV) {
+    if (curr_action == actions_t::AHV) {
       FloatT AHV = AHVs[curr_AHV].first;
       head_direction += AHV * dt;
       if (head_direction > 2*M_PI) {
@@ -302,7 +307,7 @@ void Agent::perform_action(FloatT dt) {
       } else if (head_direction < 0) {
         head_direction += 2*M_PI;
       }
-    } else {
+    } else if (curr_action == actions_t::FV) {
       FloatT FV = FVs[curr_FV].first;
       FloatT r = FV * dt;
       position(0) += r * cos(head_direction);
@@ -319,7 +324,7 @@ void Agent::choose_new_action(FloatT dt) {
     FloatT duration;
     while (!is_legal) {
       if (action_die(rand_engine) > p_fwd) {
-        curr_action = AHV;
+        curr_action = actions_t::AHV;
         curr_FV = 0;
         curr_AHV = AHV_die(rand_engine);
 
@@ -329,7 +334,7 @@ void Agent::choose_new_action(FloatT dt) {
         FloatT angle_change = AHVs[curr_AHV].first * AHVs[curr_AHV].second;
         target_head_direction = head_direction + angle_change;
       } else {
-        curr_action = FV;
+        curr_action = actions_t::FV;
         curr_AHV = 0;
         curr_FV = FV_die(rand_engine);
 
@@ -351,6 +356,70 @@ void Agent::choose_new_action(FloatT dt) {
     }
     int timesteps_per_action = round(duration / dt);
     choose_next_action_ts = timesteps + timesteps_per_action;
+}
+
+void Agent::choose_test_action(FloatT dt) {
+  /* How does testing work?
+     - For each test position (AHV):
+       1. Select AHV
+       2. Equilibrate (hold stationary for given time)
+       3. Rotate through 4pi radians
+     - For each test position, given an approach radius:
+       - For each of a given number of equally spaced points
+         on the approach radius:
+         0. Equilibrate
+         1. Set head direction
+         2. Travel forward until reaching the opposite
+            point on the circumference (bisecting the target)
+            -- assert that first FV is positive for now
+         3. Rotate by pi radians, and travel back.
+
+     Once at last test stage, remove test_times.top(),
+     and set curr_test_position to -1. */
+
+  if (actions_t::STAY == curr_action) {
+    if (curr_test_position < test_positions.size()) {
+      // then we are on the AHV test
+      // rotate through 4pi radians
+    } else if (curr_test_position < 2*test_positions.size()) {
+      // then we are on the PLACE test, and have just finished
+      // an equilibration
+      //
+      // so compute the bearing and the duration, and set
+      // curr_action to FV
+    }
+  } else {
+    const bool finished_place_test =
+      (actions_t::FV == curr_action &&
+       curr_test_approach_angle == test_approach_angles);
+    if (actions_t::AHV == curr_action || finished_place_test) {
+      // then we have just finished an action (rather than an
+      // equilibration) and so should move to the next position.
+      curr_test_position++;
+      // update position
+      // set equilibration
+    } else if (actions_t::FV == curr_action && !finished_place_test) {
+      // then we are part-way through the PLACE test:
+      // we have finished moving through the target location once
+      // and are now either on the other side of the circumference
+      //   or just finished coming back
+      //
+      // if on the other side:
+      // + turn around (instantaneously...)
+      // + go back, returning to next approach point
+      // + set curr_test_approach_angle negative (as a marker)
+      // if just back (ie, curr_test_approach_angle < 0):
+      // + set curr_test_approach_angle +ve and increment
+      // + set equilibration: we are at the next position
+    }
+  }
+
+  if (3*test_positions.size() - 1 == curr_test_position
+      && actions_t::STAY != curr_action) {
+    // then we are on the last test position:
+    curr_test_position = -1;
+    test_times.pop();
+  }
 }
 
 /*

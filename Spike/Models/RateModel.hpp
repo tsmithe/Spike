@@ -19,6 +19,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <random>
 #include <thread>
 #include <utility>
@@ -399,6 +400,9 @@ private:
 
 class Agent {
 public:
+  typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
+  typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
+
   Agent();
   //Agent(FloatT bound_x_, FloatT bound_y_, FloatT velocity_scaling_);
 
@@ -406,6 +410,9 @@ public:
 
   void add_proximal_object(FloatT x, FloatT y);
   void add_distal_object(FloatT angle);
+
+  void add_test_time(FloatT t_test);
+  void add_test_position(EigenVector2D const& pos);
 
   void add_FV(FloatT FV, FloatT duration);
   void add_AHV(FloatT AHV, FloatT duration);
@@ -417,6 +424,7 @@ public:
   void update_per_dt(FloatT dt);
   void perform_action(FloatT dt);
   void choose_new_action(FloatT dt);
+  void choose_test_action(FloatT dt);
 
   void record_history(std::string output_prefix,
                       int buffer_interval, int buffer_start);
@@ -427,9 +435,6 @@ public:
   // FloatT velocity_scaling = 1;
 
   FloatT bound_x = 10, bound_y = 10;
-
-  typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
-  typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
   EigenVector2D position;
   FloatT head_direction = 0;
@@ -446,12 +451,20 @@ public:
   int curr_AHV = 0;
   int curr_FV = 0;
 
-  enum actions { AHV, FV };
+  enum struct actions_t { AHV, FV, STAY };
   FloatT p_fwd = 0.5;
-  int curr_action = FV;
+  actions_t curr_action = actions_t::FV;
   int choose_next_action_ts = 0;
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
+
+  std::priority_queue<FloatT> test_times;
+  std::vector<EigenVector2D> test_positions;
+  FloatT test_approach_radius = 1.0;
+  int test_approach_angles = 8;
+  // actions_t curr_test = actions_t::AHV;
+  int curr_test_position = -1;
+  int curr_test_approach_angle = -1;
 
   FloatT t = 0;
   int timesteps = 0;
