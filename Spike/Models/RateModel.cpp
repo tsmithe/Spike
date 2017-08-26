@@ -534,10 +534,8 @@ void Agent::choose_test_action(FloatT dt) {
 
       FloatT radial_angle = 0.0 // M_PI / test_approach_angles
         + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
-      radial_position(0) = test_approach_radius * cos(radial_angle);
-      radial_position(1) = test_approach_radius * sin(radial_angle);
-
-      position = radial_position;
+      position(0) = test_approach_radius * cos(radial_angle);
+      position(1) = test_approach_radius * sin(radial_angle);
       head_direction = radial_angle + M_PI;
       if (head_direction > 2 * M_PI) head_direction -= M_PI;
 
