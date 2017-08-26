@@ -165,14 +165,14 @@ int main(int argc, char *argv[]) {
 
   // General parameters:
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
-  FloatT eps = 0.02;
+  FloatT eps = 0; // 0.02;
 
 
   // VIS -> HD connectivity:
   FloatT VIS_HD_sparsity = 0.05;
   FloatT VIS_HD_scaling = 3200.0 / (N_VIS*VIS_HD_sparsity); // 1600
   FloatT VIS_HD_INH_scaling = -2.4 / (N_VIS*VIS_HD_sparsity); // -1.0
-  FloatT eps_VIS_HD = 0.06;
+  FloatT eps_VIS_HD = 0; // 0.06;
 
   // AHVxHD -> HD connectivity:
   FloatT AHVxHD_HD_scaling = 4000.0 / (N_AHVxHD*1.0); // 6000
