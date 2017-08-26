@@ -231,7 +231,7 @@ void Agent::add_test_time(FloatT t_test) {
 void Agent::add_test_position(FloatT x, FloatT y) {
   EigenVector2D pos;
   pos(0) = x;
-  pos(y) = y;
+  pos(1) = y;
   test_positions.push_back(pos);
 }
 
