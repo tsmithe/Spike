@@ -412,8 +412,8 @@ public:
   void add_distal_object(FloatT angle);
 
   void add_test_time(FloatT t_test);
-  void add_test_position(EigenVector2D const& pos);
-  void set_position_test_params(FloatT radius, FloatT num_directions);
+  void add_test_position(FloatT x, FloatT y);
+  void set_place_test_params(FloatT radius, FloatT num_directions);
 
   void add_FV(FloatT FV, FloatT duration);
   void add_AHV(FloatT AHV, FloatT duration);

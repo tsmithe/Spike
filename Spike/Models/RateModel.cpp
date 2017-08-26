@@ -228,7 +228,14 @@ void Agent::add_test_time(FloatT t_test) {
   test_times.push(t_test);
 }
 
-void Agent::set_position_test_params(FloatT radius, FloatT num_directions) {
+void Agent::add_test_position(FloatT x, FloatT y) {
+  EigenVector2D pos;
+  pos(0) = x;
+  pos(y) = y;
+  test_positions.push_back(pos);
+}
+
+void Agent::set_place_test_params(FloatT radius, FloatT num_directions) {
   test_approach_radius = radius;
   test_approach_angles = num_directions;
 }
@@ -384,8 +391,8 @@ void Agent::choose_test_action(FloatT dt) {
 
   // NB: Currently, we only test one AHV and one FV
   //     -- assume that AHVs[0].first and FVs[0].first > 0
-  assert(AHVs[0].first > 0);
-  assert(FVs[0].first > 0);
+  assert(AHVs.size() > 0); assert(AHVs[1].first > 0);
+  assert(FVs.size() > 0); assert(FVs[1].first > 0);
 
   const bool finished_place_test =
     (actions_t::FV == curr_action &&
@@ -396,10 +403,11 @@ void Agent::choose_test_action(FloatT dt) {
       // then we are on the AHV test
       // rotate through 4pi radians
       curr_action = actions_t::AHV;
-      curr_AHV = 0;
+      curr_AHV = 1;
+      curr_FV = 0;
       target_head_direction = 0;
       target_position = position;
-      FloatT duration = 4 * M_PI / AHVs[0].first;
+      FloatT duration = 4 * M_PI / AHVs[1].first;
       choose_next_action_ts = timesteps + round(duration / dt);
     } else if (curr_test_position < 2*test_positions.size()) {
       // then we are on the PLACE test, and have just finished
@@ -408,7 +416,8 @@ void Agent::choose_test_action(FloatT dt) {
       // so compute the bearing and the duration, and set
       // curr_action to FV
       curr_action = actions_t::FV;
-      curr_FV = 0;
+      curr_FV = 1;
+      curr_AHV = 0;
       FloatT radial_angle = M_PI / test_approach_angles
         + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
       head_direction = radial_angle + M_PI;
@@ -416,9 +425,10 @@ void Agent::choose_test_action(FloatT dt) {
       EigenVector2D new_radial_position;
       new_radial_position(0) = test_approach_radius * cos(head_direction);
       new_radial_position(1) = test_approach_radius * sin(head_direction);
-      target_position = test_positions[curr_test_position] + new_radial_position;
+      target_position = test_positions[curr_test_position%test_positions.size()]
+        + new_radial_position;
       target_head_direction = head_direction;
-      FloatT duration = 2.0 * test_approach_radius / FVs[0].first;
+      FloatT duration = 2.0 * test_approach_radius / FVs[1].first;
       choose_next_action_ts = timesteps + round(duration / dt);
     }
   } else {
@@ -439,17 +449,19 @@ void Agent::choose_test_action(FloatT dt) {
         FloatT radial_angle = M_PI / test_approach_angles;
         radial_position(0) = test_approach_radius * cos(radial_angle);
         radial_position(1) = test_approach_radius * sin(radial_angle);
-        position = test_positions[curr_test_position] + radial_position;
+        position = test_positions[curr_test_position%test_positions.size()]
+          + radial_position;
         head_direction = radial_angle + M_PI;
         if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
         curr_test_approach_angle = 0;
       } else {
-        position = test_positions[curr_test_position];
+        position = test_positions[curr_test_position%test_positions.size()];
         head_direction = 0;
       }
 
       // set equilibration
       curr_action = actions_t::STAY;
+      curr_FV = 0; curr_AHV = 0;
       target_position = position;
       target_head_direction = head_direction;
       choose_next_action_ts = timesteps + round(t_equilibration / dt);
@@ -489,11 +501,12 @@ void Agent::choose_test_action(FloatT dt) {
         target_position = next_radial_position;
         target_head_direction = head_direction;
 
-        FloatT duration = distance / FVs[0].first;
+        FloatT duration = distance / FVs[1].first;
         choose_next_action_ts = timesteps + round(duration / dt);
 
         curr_action = actions_t::FV;
-        curr_FV = 0;
+        curr_FV = 1;
+        curr_AHV = 0;
 
         curr_test_approach_angle = -curr_test_approach_angle;
       } else {
@@ -508,6 +521,7 @@ void Agent::choose_test_action(FloatT dt) {
 
         // equilibrate:
         curr_action = actions_t::STAY;
+        curr_FV = 0; curr_AHV = 0;
         choose_next_action_ts = timesteps + round(t_equilibration / dt);
       }
     } else {
