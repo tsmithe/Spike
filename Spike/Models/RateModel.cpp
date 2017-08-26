@@ -540,7 +540,7 @@ void Agent::choose_test_action(FloatT dt) {
       if (head_direction > 2 * M_PI) head_direction -= M_PI;
 
       target_position = position;
-      target_head_direction = head_direction:
+      target_head_direction = head_direction;
 
       // equilibrate:
       curr_action = actions_t::STAY;
