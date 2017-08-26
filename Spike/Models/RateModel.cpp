@@ -482,6 +482,7 @@ void Agent::choose_test_action(FloatT dt) {
       // + set equilibration: we are at the next position
 
       // printf("\n@@@@@ FV -> STAY : %d, %d\n", curr_test_position, curr_test_approach_angle);
+      /*
       if (curr_test_approach_angle >= 0) {
         // then on the other side
         FloatT this_radial_angle = 0.0 // M_PI / test_approach_angles
@@ -528,6 +529,25 @@ void Agent::choose_test_action(FloatT dt) {
         curr_FV = 0; curr_AHV = 0;
         choose_next_action_ts = timesteps + round(t_equilibration / dt);
       }
+      */
+      curr_test_approach_angle++;
+
+      FloatT radial_angle = 0.0 // M_PI / test_approach_angles
+        + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
+      radial_position(0) = test_approach_radius * cos(radial_angle);
+      radial_position(1) = test_approach_radius * sin(radial_angle);
+
+      position = radial_position;
+      head_direction = radial_angle + M_PI;
+      if (head_direction > 2 * M_PI) head_direction -= M_PI;
+
+      target_position = position;
+      target_head_direction = head_direction:
+
+      // equilibrate:
+      curr_action = actions_t::STAY;
+      curr_FV = 0; curr_AHV = 0;
+      choose_next_action_ts = timesteps + round(t_equilibration / dt);
     } else {
       // WHAT HAPPENS HERE? SHOULD NEVER REACH ...
       assert(false && "how did I get here?");
