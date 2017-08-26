@@ -22,9 +22,9 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 4000;
+  FloatT train_time = 300;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 25;
+  FloatT test_on_time = 100;
   FloatT test_off_time = 0;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  agent.add_test_time(0);
-  agent.set_place_test_params(0.1, 8);
+  agent.add_test_time(300);
+  agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
  
