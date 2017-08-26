@@ -413,6 +413,7 @@ public:
 
   void add_test_time(FloatT t_test);
   void add_test_position(EigenVector2D const& pos);
+  void set_position_test_params(FloatT radius, FloatT num_directions);
 
   void add_FV(FloatT FV, FloatT duration);
   void add_AHV(FloatT AHV, FloatT duration);
@@ -465,6 +466,7 @@ public:
   // actions_t curr_test = actions_t::AHV;
   int curr_test_position = -1;
   int curr_test_approach_angle = -1;
+  FloatT t_equilibration = 1.0;
 
   FloatT t = 0;
   int timesteps = 0;

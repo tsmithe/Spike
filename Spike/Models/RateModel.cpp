@@ -228,6 +228,11 @@ void Agent::add_test_time(FloatT t_test) {
   test_times.push(t_test);
 }
 
+void Agent::set_position_test_params(FloatT radius, FloatT num_directions) {
+  test_approach_radius = radius;
+  test_approach_angles = num_directions;
+}
+
 void Agent::update_per_dt(FloatT dt) {
   // buffer position & head_direction if necessary
   if (agent_buffer_interval
@@ -377,27 +382,77 @@ void Agent::choose_test_action(FloatT dt) {
      Once at last test stage, remove test_times.top(),
      and set curr_test_position to -1. */
 
-  if (actions_t::STAY == curr_action) {
+  // NB: Currently, we only test one AHV and one FV
+  //     -- assume that AHVs[0].first and FVs[0].first > 0
+  assert(AHVs[0].first > 0);
+  assert(FVs[0].first > 0);
+
+  const bool finished_place_test =
+    (actions_t::FV == curr_action &&
+     curr_test_approach_angle == test_approach_angles);
+
+  if (actions_t::STAY == curr_action && curr_test_position >= 0) {
     if (curr_test_position < test_positions.size()) {
       // then we are on the AHV test
       // rotate through 4pi radians
+      curr_action = actions_t::AHV;
+      curr_AHV = 0;
+      target_head_direction = 0;
+      target_position = position;
+      FloatT duration = 4 * M_PI / AHVs[0].first;
+      choose_next_action_ts = timesteps + round(duration / dt);
     } else if (curr_test_position < 2*test_positions.size()) {
       // then we are on the PLACE test, and have just finished
       // an equilibration
       //
       // so compute the bearing and the duration, and set
       // curr_action to FV
+      curr_action = actions_t::FV;
+      curr_FV = 0;
+      FloatT radial_angle = M_PI / test_approach_angles
+        + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
+      head_direction = radial_angle + M_PI;
+      if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
+      EigenVector2D new_radial_position;
+      new_radial_position(0) = test_approach_radius * cos(head_direction);
+      new_radial_position(1) = test_approach_radius * sin(head_direction);
+      target_position = test_positions[curr_test_position] + new_radial_position;
+      target_head_direction = head_direction;
+      FloatT duration = 2.0 * test_approach_radius / FVs[0].first;
+      choose_next_action_ts = timesteps + round(duration / dt);
     }
   } else {
-    const bool finished_place_test =
-      (actions_t::FV == curr_action &&
-       curr_test_approach_angle == test_approach_angles);
-    if (actions_t::AHV == curr_action || finished_place_test) {
+    if (actions_t::AHV == curr_action || finished_place_test
+        || curr_test_position < 0) {
       // then we have just finished an action (rather than an
       // equilibration) and so should move to the next position.
       curr_test_position++;
+
       // update position
+      //  -- nb: if at end of AHV, set position to the first
+      //         position on the PLACE test radius
+      if (curr_test_position >= test_positions.size()) {
+        // then we are at the PLACE test, and so should set the
+        // position (and heading) to first next position /on the
+        // PLACE test radius/ !
+        EigenVector2D radial_position;
+        FloatT radial_angle = M_PI / test_approach_angles;
+        radial_position(0) = test_approach_radius * cos(radial_angle);
+        radial_position(1) = test_approach_radius * sin(radial_angle);
+        position = test_positions[curr_test_position] + radial_position;
+        head_direction = radial_angle + M_PI;
+        if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
+        curr_test_approach_angle = 0;
+      } else {
+        position = test_positions[curr_test_position];
+        head_direction = 0;
+      }
+
       // set equilibration
+      curr_action = actions_t::STAY;
+      target_position = position;
+      target_head_direction = head_direction;
+      choose_next_action_ts = timesteps + round(t_equilibration / dt);
     } else if (actions_t::FV == curr_action && !finished_place_test) {
       // then we are part-way through the PLACE test:
       // we have finished moving through the target location once
@@ -411,13 +466,61 @@ void Agent::choose_test_action(FloatT dt) {
       // if just back (ie, curr_test_approach_angle < 0):
       // + set curr_test_approach_angle +ve and increment
       // + set equilibration: we are at the next position
+      if (curr_test_approach_angle >= 0) {
+        // then on the other side
+        FloatT this_radial_angle = M_PI / test_approach_angles
+          + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
+        FloatT next_radial_angle = M_PI / test_approach_angles
+          + 2 * M_PI * (curr_test_approach_angle + 1) / test_approach_angles;
+
+        EigenVector2D this_radial_position;
+        this_radial_position(0) = test_approach_radius * cos(this_radial_angle);
+        this_radial_position(1) = test_approach_radius * sin(this_radial_angle);
+
+        EigenVector2D next_radial_position;
+        next_radial_position(0) = test_approach_radius * cos(next_radial_angle);
+        next_radial_position(1) = test_approach_radius * sin(next_radial_angle);
+
+        EigenVector2D chord = this_radial_position + next_radial_position;
+        FloatT distance = chord.norm();
+        head_direction = acos(chord(0) / distance);
+        if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
+
+        target_position = next_radial_position;
+        target_head_direction = head_direction;
+
+        FloatT duration = distance / FVs[0].first;
+        choose_next_action_ts = timesteps + round(duration / dt);
+
+        curr_action = actions_t::FV;
+        curr_FV = 0;
+
+        curr_test_approach_angle = -curr_test_approach_angle;
+      } else {
+        // then just back
+        curr_test_approach_angle = abs(curr_test_approach_angle) + 1;
+        FloatT radial_angle = M_PI / test_approach_angles
+          + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
+        head_direction = radial_angle + M_PI;
+        if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
+        target_position = position;
+        target_head_direction = head_direction;
+
+        // equilibrate:
+        curr_action = actions_t::STAY;
+        choose_next_action_ts = timesteps + round(t_equilibration / dt);
+      }
+    } else {
+      // WHAT HAPPENS HERE? SHOULD NEVER REACH ...
+      assert(false && "how did I get here?");
     }
   }
 
   if (3*test_positions.size() - 1 == curr_test_position
-      && actions_t::STAY != curr_action) {
-    // then we are on the last test position:
+      && finished_place_test) {
     curr_test_position = -1;
+    curr_test_approach_angle = 0;
+    // TODO: set position and bearing to those at start of test period?
     test_times.pop();
   }
 }
