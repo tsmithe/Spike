@@ -92,6 +92,11 @@ int main(int argc, char *argv[]) {
   agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
+
+  agent.add_test_time(0);
+  agent.set_place_test_params(0.1, 8);
+  agent.add_test_position(0.4, 0.4);
+  agent.add_test_position(-0.4, -0.4);
  
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
