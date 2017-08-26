@@ -432,6 +432,9 @@ void Agent::choose_test_action(FloatT dt) {
       choose_next_action_ts = timesteps + round(duration / dt);
 
       // printf("\n@@@@@ STAY -> FV : %d, %d\n", curr_test_position, curr_test_approach_angle);
+    } else {
+      // printf("\n@@@@@ ??? : %d, %d\n", curr_test_position, curr_test_approach_angle);
+      assert(false && "whoops -- logic error");
     }
   } else {
     if (actions_t::AHV == curr_action || finished_place_test
@@ -554,8 +557,9 @@ void Agent::choose_test_action(FloatT dt) {
     }
   }
 
-  if (3*test_positions.size() - 1 == curr_test_position
+  if (2*test_positions.size() - 1 == curr_test_position
       && finished_place_test) {
+    // printf("\n@@@@@ ??. : %d, %d\n", curr_test_position, curr_test_approach_angle);
     curr_test_position = -1;
     curr_test_approach_angle = 0;
     // TODO: set position and bearing to those at start of test period?
@@ -1260,7 +1264,9 @@ void RateModel::simulation_loop() {
     // Print simulation time every 0.05s:
     if (!((timesteps * 20) % timesteps_per_second)) {
       if (agent)
-        printf("\r%.2f: %.2f, %.2f, %.2f", t, agent->position(0), agent->position(1), (180/M_PI)*(agent->head_direction));
+        printf("\r%.2f (%d): %.2f, %.2f, %.2f .. %d",
+               t, timesteps, agent->position(0), agent->position(1),
+               (180/M_PI)*(agent->head_direction), agent->choose_next_action_ts);
       else
         printf("\r%.2f", t);
       std::cout.flush();
