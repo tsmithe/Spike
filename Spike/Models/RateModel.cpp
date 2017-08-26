@@ -418,7 +418,7 @@ void Agent::choose_test_action(FloatT dt) {
       curr_action = actions_t::FV;
       curr_FV = 1;
       curr_AHV = 0;
-      FloatT radial_angle = M_PI / test_approach_angles
+      FloatT radial_angle = 0.0 // M_PI / test_approach_angles
         + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
       head_direction = radial_angle + M_PI;
       if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
@@ -448,7 +448,7 @@ void Agent::choose_test_action(FloatT dt) {
         // position (and heading) to first next position /on the
         // PLACE test radius/ !
         EigenVector2D radial_position;
-        FloatT radial_angle = M_PI / test_approach_angles;
+        FloatT radial_angle = 0; // M_PI / test_approach_angles;
         radial_position(0) = test_approach_radius * cos(radial_angle);
         radial_position(1) = test_approach_radius * sin(radial_angle);
         position = test_positions[curr_test_position%test_positions.size()]
@@ -484,9 +484,9 @@ void Agent::choose_test_action(FloatT dt) {
       // printf("\n@@@@@ FV -> STAY : %d, %d\n", curr_test_position, curr_test_approach_angle);
       if (curr_test_approach_angle >= 0) {
         // then on the other side
-        FloatT this_radial_angle = M_PI / test_approach_angles
+        FloatT this_radial_angle = 0.0 // M_PI / test_approach_angles
           + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
-        FloatT next_radial_angle = M_PI / test_approach_angles
+        FloatT next_radial_angle = 0.0 // M_PI / test_approach_angles
           + 2 * M_PI * (curr_test_approach_angle + 1) / test_approach_angles;
 
         EigenVector2D this_radial_position;
@@ -516,7 +516,7 @@ void Agent::choose_test_action(FloatT dt) {
       } else {
         // then just back
         curr_test_approach_angle = abs(curr_test_approach_angle);
-        FloatT radial_angle = M_PI / test_approach_angles
+        FloatT radial_angle = 0.0 // M_PI / test_approach_angles
           + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
         head_direction = radial_angle + M_PI;
         if (head_direction > 2 * M_PI) head_direction -= 2 * M_PI;
