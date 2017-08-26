@@ -534,7 +534,7 @@ void Agent::choose_test_action(FloatT dt) {
 
       FloatT radial_angle = 0.0 // M_PI / test_approach_angles
         + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
-      position = test_positions[curr_test_position%test_positions.size()]
+      position = test_positions[curr_test_position%test_positions.size()];
       position(0) += test_approach_radius * cos(radial_angle);
       position(1) += test_approach_radius * sin(radial_angle);
       head_direction = radial_angle + M_PI;
@@ -546,7 +546,8 @@ void Agent::choose_test_action(FloatT dt) {
       // equilibrate:
       curr_action = actions_t::STAY;
       curr_FV = 0; curr_AHV = 0;
-      choose_next_action_ts = timesteps + round(t_equilibration / dt);
+      // TODO: Best equilibration time? Or use 'clever' algorithm?
+      choose_next_action_ts = timesteps + round(0.2 * t_equilibration / dt);
     } else {
       // WHAT HAPPENS HERE? SHOULD NEVER REACH ...
       assert(false && "how did I get here?");
