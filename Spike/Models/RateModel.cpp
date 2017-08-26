@@ -430,6 +430,8 @@ void Agent::choose_test_action(FloatT dt) {
       target_head_direction = head_direction;
       FloatT duration = 2.0 * test_approach_radius / FVs[1].first;
       choose_next_action_ts = timesteps + round(duration / dt);
+
+      // printf("\n@@@@@ STAY -> FV : %d, %d\n", curr_test_position, curr_test_approach_angle);
     }
   } else {
     if (actions_t::AHV == curr_action || finished_place_test
@@ -478,6 +480,8 @@ void Agent::choose_test_action(FloatT dt) {
       // if just back (ie, curr_test_approach_angle < 0):
       // + set curr_test_approach_angle +ve and increment
       // + set equilibration: we are at the next position
+
+      // printf("\n@@@@@ FV -> STAY : %d, %d\n", curr_test_position, curr_test_approach_angle);
       if (curr_test_approach_angle >= 0) {
         // then on the other side
         FloatT this_radial_angle = M_PI / test_approach_angles
@@ -508,10 +512,10 @@ void Agent::choose_test_action(FloatT dt) {
         curr_FV = 1;
         curr_AHV = 0;
 
-        curr_test_approach_angle = -curr_test_approach_angle;
+        curr_test_approach_angle = -(curr_test_approach_angle+1);
       } else {
         // then just back
-        curr_test_approach_angle = abs(curr_test_approach_angle) + 1;
+        curr_test_approach_angle = abs(curr_test_approach_angle);
         FloatT radial_angle = M_PI / test_approach_angles
           + 2 * M_PI * curr_test_approach_angle / test_approach_angles;
         head_direction = radial_angle + M_PI;
