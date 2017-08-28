@@ -173,15 +173,15 @@ int main(int argc, char *argv[]) {
 
   // VIS -> HD connectivity:
   FloatT VIS_HD_sparsity = 0.05;
-  FloatT VIS_HD_scaling = 3000.0 / (N_VIS*VIS_HD_sparsity); // 1600
-  FloatT VIS_HD_INH_scaling = -2.25 / (N_VIS*VIS_HD_sparsity); // -1.0
+  FloatT VIS_HD_scaling = 3200.0 / (N_VIS*VIS_HD_sparsity); // 1600
+  FloatT VIS_HD_INH_scaling = -2.0 / (N_VIS*VIS_HD_sparsity); // -1.0
   FloatT eps_VIS_HD = 0.06;
 
   // AHVxHD -> HD connectivity:
   FloatT AHVxHD_HD_scaling = 6400.0 / (N_AHVxHD*1.0); // 6000
 
   // HD -> HD connectivity
-  FloatT HD_inhibition = -200.0 / N_HD; // 300
+  FloatT HD_inhibition = -600.0 / N_HD; // 300
 
   // HD -> AHVxHD connectivity:
   FloatT HD_AHVxHD_sparsity = 0.05;
