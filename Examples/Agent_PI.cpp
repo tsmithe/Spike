@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 300;
+  FloatT train_time = 1000; // 300
   if (read_weights) train_time = 0;
   FloatT test_on_time = 100;
   FloatT test_off_time = 0;
@@ -56,13 +56,16 @@ int main(int argc, char *argv[]) {
   agent.add_distal_object(1.5 * M_PI);
   agent.add_distal_object(1.75 * M_PI);
 
+  agent.add_distal_object(2.0 * M_PI / 3.0);
+  agent.add_distal_object(4.0 * M_PI / 3.0);
+
   ///*
   agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
-  agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
+  // agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
-  agent.add_proximal_object(0, 0.6*bound_y);
+  // agent.add_proximal_object(0, 0.6*bound_y);
   agent.add_proximal_object(0, -0.6*bound_y);
   agent.add_proximal_object(0.6*bound_x, 0);
   agent.add_proximal_object(-0.6*bound_x, 0);
@@ -93,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  agent.add_test_time(300);
+  agent.add_test_time(1000);
   agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
@@ -120,7 +123,7 @@ int main(int argc, char *argv[]) {
   // HD neurons:
   int N_HD = 300; // N_VIS
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.8;
+  FloatT beta_HD = 0.6;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
@@ -170,25 +173,25 @@ int main(int argc, char *argv[]) {
 
   // VIS -> HD connectivity:
   FloatT VIS_HD_sparsity = 0.05;
-  FloatT VIS_HD_scaling = 3200.0 / (N_VIS*VIS_HD_sparsity); // 1600
-  FloatT VIS_HD_INH_scaling = -2.4 / (N_VIS*VIS_HD_sparsity); // -1.0
+  FloatT VIS_HD_scaling = 3000.0 / (N_VIS*VIS_HD_sparsity); // 1600
+  FloatT VIS_HD_INH_scaling = -2.25 / (N_VIS*VIS_HD_sparsity); // -1.0
   FloatT eps_VIS_HD = 0.06;
 
   // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 4000.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 6400.0 / (N_AHVxHD*1.0); // 6000
 
   // HD -> HD connectivity
-  FloatT HD_inhibition = -20.0 / N_HD; // 300
+  FloatT HD_inhibition = -200.0 / N_HD; // 300
 
   // HD -> AHVxHD connectivity:
   FloatT HD_AHVxHD_sparsity = 0.05;
-  FloatT HD_AHVxHD_scaling = 345.0 / (N_HD*HD_AHVxHD_sparsity); // 500
+  FloatT HD_AHVxHD_scaling = 350.0 / (N_HD*HD_AHVxHD_sparsity); // 500
 
   // AHV -> AHVxHD connectivity:
-  FloatT AHV_AHVxHD_scaling = 300.0 / N_AHV; // 240
+  FloatT AHV_AHVxHD_scaling = 320.0 / N_AHV; // 240
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -30.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -100.0 / N_AHVxHD; // -250
 
 #ifdef ENABLE_PLACE
   // FV -> PLACExFVxHD connectivity:
