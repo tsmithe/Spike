@@ -2,7 +2,7 @@
 #include <fenv.h>
 #include <omp.h>
 
-//#define ENABLE_PLACE
+#define ENABLE_PLACE
 
 // TODO: Add signal handlers
 
@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
     weights_path = argv[1];
   }
 
-  FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 1000; // 300
+  FloatT timestep = pow(2, -10); // seconds (TODO units)
+  FloatT train_time = 4000; // 300
   if (read_weights) train_time = 0;
   FloatT test_on_time = 100;
   FloatT test_off_time = 0;
@@ -56,16 +56,16 @@ int main(int argc, char *argv[]) {
   agent.add_distal_object(1.5 * M_PI);
   agent.add_distal_object(1.75 * M_PI);
 
-  agent.add_distal_object(2.0 * M_PI / 3.0);
-  agent.add_distal_object(4.0 * M_PI / 3.0);
+  // agent.add_distal_object(2.0 * M_PI / 3.0);
+  // agent.add_distal_object(4.0 * M_PI / 3.0);
 
   ///*
   agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
-  // agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
+  agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
-  // agent.add_proximal_object(0, 0.6*bound_y);
+  agent.add_proximal_object(0, 0.6*bound_y);
   agent.add_proximal_object(0, -0.6*bound_y);
   agent.add_proximal_object(0.6*bound_x, 0);
   agent.add_proximal_object(-0.6*bound_x, 0);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  agent.add_test_time(1000);
+  agent.add_test_time(4000);
   agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
   // PLACE neurons:
   int N_PLACE = N_HD; // N_VIS;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 1.0;
+  FloatT beta_PLACE = 0.6;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   // PLACExFVxHD neurons:
   int N_PLACExFVxHD = N_PLACE * agent.num_FV_states * agent.num_AHV_states;
   FloatT alpha_PLACExFVxHD = 20.0;
-  FloatT beta_PLACExFVxHD = 1.2;
+  FloatT beta_PLACExFVxHD = 0.6;
   FloatT tau_PLACExFVxHD = 1e-2;
   RateNeurons PLACExFVxHD(ctx, N_PLACExFVxHD, "PLACExFVxHD",
                           alpha_PLACExFVxHD, beta_PLACExFVxHD,
@@ -195,17 +195,17 @@ int main(int argc, char *argv[]) {
 
 #ifdef ENABLE_PLACE
   // FV -> PLACExFVxHD connectivity:
-  FloatT FV_PLACExFVxHD_scaling = 240.0 / N_FV;
+  FloatT FV_PLACExFVxHD_scaling = 160.0 / N_FV;
 
   // HD -> PLACExFVxHD connectivity:
-  FloatT HD_PLACExFVxHD_scaling = 240.0 / N_HD;
+  FloatT HD_PLACExFVxHD_scaling = 160.0 / N_HD;
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
   FloatT PLACE_PLACExFVxHD_scaling = 360.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -120.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_inhibition = -100.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = VIS_HD_sparsity;
@@ -214,10 +214,10 @@ int main(int argc, char *argv[]) {
   FloatT eps_VIS_PLACE = eps_VIS_HD;
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 4500.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_PLACE_scaling = 6400.0 / N_PLACExFVxHD;
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -32.0 / N_PLACE;
+  FloatT PLACE_inhibition = -600.0 / N_PLACE;
 #endif
 
   // VIS -> HD connectivity
@@ -517,9 +517,9 @@ int main(int argc, char *argv[]) {
   model.add(&AHVxHD);
 
 #ifdef ENABLE_PLACE
-  //model.add(&PLACE);
-  //model.add(&FV);
-  //model.add(&PLACExFVxHD);
+  model.add(&PLACE);
+  model.add(&FV);
+  model.add(&PLACExFVxHD);
 #endif
 
   model.add(&VIS_elecs);
@@ -529,9 +529,9 @@ int main(int argc, char *argv[]) {
   model.add(&AHVxHD_elecs);
 
 #ifdef ENABLE_PLACE
-  //model.add(&FV_elecs);
-  //model.add(&PLACE_elecs);
-  //model.add(&PLACExFVxHD_elecs);
+  model.add(&FV_elecs);
+  model.add(&PLACE_elecs);
+  model.add(&PLACExFVxHD_elecs);
 #endif
 
 
