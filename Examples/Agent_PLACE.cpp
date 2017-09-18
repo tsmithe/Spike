@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
   FloatT buffer_timestep = pow(2, -6);
   FloatT train_time = 4000; // 300
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 100;
-  FloatT test_off_time = 0;
+  FloatT test_on_time = 200;
+  FloatT test_off_time = 200;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
   // Input neurons:
   AgentVISRateNeurons VIS(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");
-  AgentHDRateNeurons HD(ctx, &agent, N_HD, sigma_VIS, lambda_VIS, "VIS");
+  AgentHDRateNeurons HD(ctx, &agent, N_HD, sigma_VIS, lambda_VIS, "HD");
   AgentFVRateNeurons FV(ctx, &agent, N_per_state, "FV");
 
   int N_VIS = VIS.size;
