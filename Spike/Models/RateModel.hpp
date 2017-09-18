@@ -459,7 +459,7 @@ public:
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
 
-  std::priority_queue<FloatT> test_times;
+  std::priority_queue<FloatT, std::vector<FloatT>, std::greater<FloatT> > test_times;
   std::vector<EigenVector2D> test_positions;
   FloatT test_approach_radius = 1.0;
   int test_approach_angles = 8;

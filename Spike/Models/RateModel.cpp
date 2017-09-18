@@ -1263,12 +1263,15 @@ void RateModel::simulation_loop() {
 
     // Print simulation time every 0.05s:
     if (!((timesteps * 20) % timesteps_per_second)) {
-      if (agent)
-        printf("\r%.2f (%d): %.2f, %.2f, %.2f .. %d",
+      if (agent) {
+        FloatT next_test = -1;
+        if (!agent->test_times.empty()) next_test = agent->test_times.top();
+        printf("\r%.2f (%d): %.2f, %.2f, %.2f .. %d .. %.2f",
                t, timesteps, agent->position(0), agent->position(1),
-               (180/M_PI)*(agent->head_direction), agent->choose_next_action_ts);
-      else
+               (180/M_PI)*(agent->head_direction), agent->choose_next_action_ts, next_test);
+      } else {
         printf("\r%.2f", t);
+      }
       std::cout.flush();
     }
 
