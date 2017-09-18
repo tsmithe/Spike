@@ -154,6 +154,7 @@ class DummyRateNeurons;
 class InputDummyRateNeurons;
 class RandomDummyRateNeurons;
 class AgentVISRateNeurons;
+class AgentHDRateNeurons;
 class AgentAHVRateNeurons;
 class AgentFVRateNeurons;
 class RateSynapses;
@@ -254,6 +255,18 @@ namespace Backend {
   public:
     ~AgentVISRateNeurons() override = default;
     SPIKE_ADD_BACKEND_FACTORY(AgentVISRateNeurons);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+    void connect_input(RateSynapses* synapses,
+                       RatePlasticity* plasticity) override = 0;
+    bool staged_integrate_timestep(FloatT dt) override = 0;
+    const EigenVector& rate() override = 0;
+  };
+
+  class AgentHDRateNeurons : public virtual RateNeurons {
+  public:
+    ~AgentHDRateNeurons() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(AgentHDRateNeurons);
     void prepare() override = 0;
     void reset_state() override = 0;
     void connect_input(RateSynapses* synapses,
@@ -626,6 +639,29 @@ public:
 
 private:
   std::shared_ptr<::Backend::AgentVISRateNeurons> _backend;
+};
+
+class AgentHDRateNeurons : public virtual RateNeurons {
+public:
+  AgentHDRateNeurons(Context* ctx, Agent* agent_,
+                     int size_,
+                     FloatT sigma_IN_, FloatT lambda_,
+                     std::string label_);
+  ~AgentHDRateNeurons() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(AgentHDRateNeurons, RateNeurons);
+
+  Agent* agent;
+
+  FloatT sigma_IN, lambda;
+
+  EigenVector theta_pref;
+
+  FloatT t_stop_after = infinity<FloatT>();
+
+private:
+  std::shared_ptr<::Backend::AgentHDRateNeurons> _backend;
 };
 
 class AgentAHVRateNeurons : public virtual RateNeurons {

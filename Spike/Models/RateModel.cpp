@@ -796,6 +796,27 @@ AgentVISRateNeurons::~AgentVISRateNeurons() {
 }
 
 
+AgentHDRateNeurons::AgentHDRateNeurons(Context* ctx,
+                                       Agent* agent_,
+                                       int size_,
+                                       FloatT sigma_IN_,
+                                       FloatT lambda_,
+                                       std::string label_)
+  : RateNeurons(nullptr, size_, label_, 0, 1, 1),
+    agent(agent_),
+    sigma_IN(sigma_IN_), lambda(lambda_) {
+
+  theta_pref = EigenVector::Zero(size);
+  for (int j = 0; j < size; ++j)
+    theta_pref(j) = 2 * M_PI * j/size;
+
+  if (ctx)
+    init_backend(ctx);
+}
+
+AgentHDRateNeurons::~AgentHDRateNeurons() {
+}
+
 
 AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
                                          Agent* agent_,
@@ -812,8 +833,6 @@ AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
 
 AgentAHVRateNeurons::~AgentAHVRateNeurons() {
 }
-
-
 
 AgentFVRateNeurons::AgentFVRateNeurons(Context* ctx,
                                        Agent* agent_,
@@ -1421,6 +1440,7 @@ SPIKE_MAKE_INIT_BACKEND(DummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(InputDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RandomDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(AgentVISRateNeurons);
+SPIKE_MAKE_INIT_BACKEND(AgentHDRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(AgentAHVRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(AgentFVRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);

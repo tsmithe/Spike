@@ -228,6 +228,38 @@ namespace Backend {
       EigenVector d;
     };
 
+    class AgentHDRateNeurons
+      : public virtual ::Backend::AgentHDRateNeurons,
+        public virtual ::Backend::Eigen::RateNeurons {
+      friend class RateSynapses;
+      friend class RatePlasticity;
+      friend class BCMPlasticity;
+    public:
+      // AgentHDRateNeurons() = default;
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(AgentHDRateNeurons);
+      ~AgentHDRateNeurons() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      void connect_input(::Backend::RateSynapses*,
+                         ::Backend::RatePlasticity*) override;
+
+      bool staged_integrate_timestep(FloatT dt) override;
+      EigenVector const& rate() override;
+      EigenVector const& rate(unsigned int n_back=0) override;
+
+    protected:
+      FloatT t, dt_;
+
+      EigenVector _rate;
+
+      EigenVector sigma_IN_sqr;
+
+      EigenVector theta_pref;
+      EigenVector d;
+    };
+
     class AgentAHVRateNeurons
       : public virtual ::Backend::AgentAHVRateNeurons,
         public virtual ::Backend::Eigen::RateNeurons {
