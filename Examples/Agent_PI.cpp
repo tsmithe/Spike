@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   FloatT AHV_AHVxHD_scaling = 300.0 / N_AHV; // 240
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -30.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -300.0 / N_AHVxHD; // -250
 
 #ifdef ENABLE_PLACE
   // FV -> PLACExFVxHD connectivity:
