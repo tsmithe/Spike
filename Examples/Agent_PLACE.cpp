@@ -146,11 +146,11 @@ int main(int argc, char *argv[]) {
 
 
   // FV -> PLACExFVxHD connectivity:
-  FloatT FV_PLACExFVxHD_scaling = 90.0 / N_FV;
+  FloatT FV_PLACExFVxHD_scaling = 100.0 / N_FV;
 
   // HD -> PLACExFVxHD connectivity:
-  FloatT HD_PLACExFVxHD_sparsity = 0.05;
-  FloatT HD_PLACExFVxHD_scaling = 130.0 / (HD_PLACExFVxHD_sparsity*N_HD);
+  FloatT HD_PLACExFVxHD_sparsity = 0.134;
+  FloatT HD_PLACExFVxHD_scaling = 100.0 / (HD_PLACExFVxHD_sparsity*N_HD);
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
   FloatT PLACExFVxHD_inhibition = -160.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
-  FloatT VIS_PLACE_sparsity = 0.05;
-  FloatT VIS_PLACE_scaling = 3200.0 / (N_PLACE*VIS_PLACE_sparsity);
+  FloatT VIS_PLACE_sparsity = 0.139;
+  FloatT VIS_PLACE_scaling = 1600.0 / (N_PLACE*VIS_PLACE_sparsity);
   FloatT VIS_PLACE_INH_scaling = -2.0 / (N_VIS*VIS_PLACE_sparsity);
   FloatT eps_VIS_PLACE = 0.06;
 
