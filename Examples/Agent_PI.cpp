@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = pow(2, -10); // seconds (TODO units)
+  FloatT buffer_timestep = pow(2, -6);
   FloatT train_time = 4000; // 300
   if (read_weights) train_time = 0;
   FloatT test_on_time = 100;
@@ -96,9 +97,15 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
+  agent.add_test_time(100);
+  agent.add_test_time(500);
+  agent.add_test_time(1000);
+  agent.add_test_time(2000);
   agent.add_test_time(4000);
   agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0.4, 0.4);
+  agent.add_test_position(0.4, -0.4);
+  agent.add_test_position(-0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
  
   int N_per_obj = 100;
@@ -195,17 +202,18 @@ int main(int argc, char *argv[]) {
 
 #ifdef ENABLE_PLACE
   // FV -> PLACExFVxHD connectivity:
-  FloatT FV_PLACExFVxHD_scaling = 160.0 / N_FV;
+  FloatT FV_PLACExFVxHD_scaling = 90.0 / N_FV;
 
   // HD -> PLACExFVxHD connectivity:
-  FloatT HD_PLACExFVxHD_scaling = 160.0 / N_HD;
+  FloatT HD_PLACExFVxHD_sparsity = 0.05;
+  FloatT HD_PLACExFVxHD_scaling = 130.0 / (HD_PLACExFVxHD_sparsity*N_HD);
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
-  FloatT PLACE_PLACExFVxHD_scaling = 360.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+  FloatT PLACE_PLACExFVxHD_scaling = 280.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -100.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_inhibition = -160.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = VIS_HD_sparsity;
@@ -214,7 +222,7 @@ int main(int argc, char *argv[]) {
   FloatT eps_VIS_PLACE = eps_VIS_HD;
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 6400.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_PLACE_scaling = 6800.0 / N_PLACExFVxHD;
 
   // PLACE -> PLACE connectivity:
   FloatT PLACE_inhibition = -600.0 / N_PLACE;
@@ -537,12 +545,12 @@ int main(int argc, char *argv[]) {
 
   // Set simulation time parameters:
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
-  model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
-  model.set_weights_buffer_interval(ceil(2.0/timestep));
+  model.set_buffer_intervals((float)buffer_timestep); // TODO: Use proper units
+  model.set_weights_buffer_interval(ceil(10.0/timestep));
   model.set_buffer_start(start_recording_time);
 
   agent.save_map("HD_VIS_out");
-  agent.record_history("HD_VIS_out", round(1e-2/timestep),
+  agent.record_history("HD_VIS_out", round(buffer_timestep/timestep),
                        round(start_recording_time/timestep));
 
 
