@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   FloatT buffer_timestep = pow(2, -6);
   FloatT train_time = 4000; // 300
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 200;
+  FloatT test_on_time = 800;
   FloatT test_off_time = 200;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
@@ -42,21 +42,24 @@ int main(int argc, char *argv[]) {
   Agent agent;
   agent.seed(123);
 
-  FloatT radius = 2;
-  FloatT bound_x = 2;
+  FloatT radius = 1.8;
+  FloatT bound_x = 1.8;
   FloatT bound_y = bound_x;
 
   agent.set_boundary(bound_x, bound_y);
 
-  agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
+  //agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
-  agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
+  //agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
   agent.add_proximal_object(0, 0.6*bound_y);
   agent.add_proximal_object(0, -0.6*bound_y);
   agent.add_proximal_object(0.6*bound_x, 0);
   agent.add_proximal_object(-0.6*bound_x, 0);
+
+  agent.add_proximal_object(-0.1*bound_x, 0.1*bound_y);
+  agent.add_proximal_object(0.1*bound_x, -0.1*bound_y);
 
   /*
   agent.add_proximal_object(0.8*bound_x, 0.8*bound_y);
@@ -71,11 +74,11 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  FloatT fwd_move_dist = 0.4 * radius;
-  FloatT rot_angle = M_PI / 2;
+  FloatT fwd_move_dist = 0.1 * radius;
+  FloatT rot_angle = M_PI / 4;
 
-  FloatT fwd_move_time = 0.5; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.5; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
 
   agent.p_fwd = 1.0/3.0;
 
@@ -89,11 +92,14 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(1000);
   agent.add_test_time(2000);
   agent.add_test_time(4000);
-  agent.set_place_test_params(0.1, 16);
-  agent.add_test_position(0.4, 0.4);
-  agent.add_test_position(0.4, -0.4);
-  agent.add_test_position(-0.4, 0.4);
-  agent.add_test_position(-0.4, -0.4);
+  agent.set_place_test_params(0.2*radius, 20);
+  agent.add_test_position(0.75*bound_x, 0.75*bound_x);
+  agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
+  agent.add_test_position(0.4*bound_x, 0.4*bound_x);
+  agent.add_test_position(0.4*bound_x, 0.4*bound_x);
+  agent.add_test_position(0.4*bound_x, -0.4*bound_x);
+  agent.add_test_position(-0.4*bound_x, 0.4*bound_y);
+  agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
  
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
@@ -162,14 +168,14 @@ int main(int argc, char *argv[]) {
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = 0.139;
   FloatT VIS_PLACE_scaling = 1600.0 / (N_PLACE*VIS_PLACE_sparsity);
-  FloatT VIS_PLACE_INH_scaling = -2.0 / (N_VIS*VIS_PLACE_sparsity);
+  FloatT VIS_PLACE_INH_scaling = -2.25 / (N_VIS*VIS_PLACE_sparsity);
   FloatT eps_VIS_PLACE = 0.06;
 
   // PLACExFVxHD -> PLACE connectivity:
   FloatT PLACExFVxHD_PLACE_scaling = 6800.0 / N_PLACExFVxHD;
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -600.0 / N_PLACE;
+  FloatT PLACE_inhibition = -900.0 / N_PLACE;
 
   // FV -> PLACExFVxHD connectivity:
   RateSynapses FV_PLACExFVxHD(ctx, &FV, &PLACExFVxHD,
