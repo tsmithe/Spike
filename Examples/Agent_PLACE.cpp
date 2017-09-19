@@ -42,24 +42,24 @@ int main(int argc, char *argv[]) {
   Agent agent;
   agent.seed(123);
 
-  FloatT radius = 1.8;
-  FloatT bound_x = 1.8;
+  FloatT radius = 1.0;
+  FloatT bound_x = 1.0;
   FloatT bound_y = bound_x;
 
   agent.set_boundary(bound_x, bound_y);
 
-  //agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
+  agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
-  //agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
+  agent.add_proximal_object(-0.4*bound_x, -0.4*bound_y);
 
   agent.add_proximal_object(0, 0.6*bound_y);
   agent.add_proximal_object(0, -0.6*bound_y);
   agent.add_proximal_object(0.6*bound_x, 0);
   agent.add_proximal_object(-0.6*bound_x, 0);
 
-  agent.add_proximal_object(-0.1*bound_x, 0.1*bound_y);
-  agent.add_proximal_object(0.1*bound_x, -0.1*bound_y);
+  // agent.add_proximal_object(-0.1*bound_x, 0.1*bound_y);
+  // agent.add_proximal_object(0.1*bound_x, -0.1*bound_y);
 
   /*
   agent.add_proximal_object(0.8*bound_x, 0.8*bound_y);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  FloatT fwd_move_dist = 0.1 * radius;
+  FloatT fwd_move_dist = 0.2;
   FloatT rot_angle = M_PI / 4;
 
   FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
