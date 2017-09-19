@@ -128,17 +128,15 @@ int main(int argc, char *argv[]) {
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
-  /*
   // FVxHD neurons:
   int N_FVxHD = N_HD * agent.num_FV_states;
   FloatT alpha_FVxHD = 20.0;
-  FloatT beta_FVxHD = 1.2;
+  FloatT beta_FVxHD = 0.6;
   FloatT tau_FVxHD = 1e-2;
   RateNeurons FVxHD(ctx, N_FVxHD, "FVxHD", alpha_FVxHD, beta_FVxHD, tau_FVxHD);
-  */
 
   // PLACExFVxHD neurons:
-  int N_PLACExFVxHD = N_PLACE * agent.num_FV_states * agent.num_AHV_states;
+  int N_PLACExFVxHD = N_PLACE * 2 * agent.num_FV_states;
   FloatT alpha_PLACExFVxHD = 20.0;
   FloatT beta_PLACExFVxHD = 0.6;
   FloatT tau_PLACExFVxHD = 1e-2;
@@ -151,12 +149,19 @@ int main(int argc, char *argv[]) {
   FloatT eps = 0.02;
 
 
-  // FV -> PLACExFVxHD connectivity:
-  FloatT FV_PLACExFVxHD_scaling = 100.0 / N_FV;
+  // FV -> FVxHD connectivity:
+  FloatT FV_FVxHD_scaling = 100.0 / N_FV;
+
+  // HD -> FVxHD connectivity:
+  FloatT HD_FVxHD_sparsity = 0.05;
+  FloatT HD_FVxHD_scaling = 100.0 / (HD_PLACExFVxHD_sparsity*N_HD);
+
+  // FVxHD -> FVxHD connectivity:
+  FloatT FVxHD_inhibition = -160.0 / N_FVxHD;
 
   // HD -> PLACExFVxHD connectivity:
-  FloatT HD_PLACExFVxHD_sparsity = 0.134;
-  FloatT HD_PLACExFVxHD_scaling = 100.0 / (HD_PLACExFVxHD_sparsity*N_HD);
+  FloatT FVxHD_PLACExFVxHD_sparsity = 0.05;
+  FloatT FVxHD_PLACExFVxHD_scaling = 100.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
@@ -166,7 +171,7 @@ int main(int argc, char *argv[]) {
   FloatT PLACExFVxHD_inhibition = -160.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
-  FloatT VIS_PLACE_sparsity = 0.139;
+  FloatT VIS_PLACE_sparsity = 0.05;
   FloatT VIS_PLACE_scaling = 1600.0 / (N_PLACE*VIS_PLACE_sparsity);
   FloatT VIS_PLACE_INH_scaling = -2.25 / (N_VIS*VIS_PLACE_sparsity);
   FloatT eps_VIS_PLACE = 0.06;
@@ -177,38 +182,73 @@ int main(int argc, char *argv[]) {
   // PLACE -> PLACE connectivity:
   FloatT PLACE_inhibition = -900.0 / N_PLACE;
 
-  // FV -> PLACExFVxHD connectivity:
-  RateSynapses FV_PLACExFVxHD(ctx, &FV, &PLACExFVxHD,
-                              FV_PLACExFVxHD_scaling, "FV_PLACExFVxHD");
-  EigenMatrix W_FV_PLACExFVxHD
-    = Eigen::make_random_matrix(N_PLACExFVxHD, N_FV);
+  // FV -> FVxHD connectivity:
+  RateSynapses FV_FVxHD(ctx, &FV, &FVxHD,
+                        FV_FVxHD_scaling, "FV_FVxHD");
+  EigenMatrix W_FV_FVxHD
+    = Eigen::make_random_matrix(N_FVxHD, N_FV);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_FV_PLACExFVxHD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_FV_PLACExFVxHD,
-                       N_PLACExFVxHD, N_FV);
+    std::string tmp_path = weights_path + "/W_FV_FVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_FV_FVxHD,
+                       N_FVxHD, N_FV);
   }
-  FV_PLACExFVxHD.weights(W_FV_PLACExFVxHD);
+  FV_FVxHD.weights(W_FV_FVxHD);
 
-  BCMPlasticity plast_FV_PLACExFVxHD(ctx, &FV_PLACExFVxHD);
+  BCMPlasticity plast_FV_FVxHD(ctx, &FV_FVxHD);
 
-  PLACExFVxHD.connect_input(&FV_PLACExFVxHD, &plast_FV_PLACExFVxHD);
+  FVxHD.connect_input(&FV_FVxHD, &plast_FV_FVxHD);
 
 
-  // HD -> PLACExFVxHD connectivity:
-  RateSynapses HD_PLACExFVxHD(ctx, &HD, &PLACExFVxHD,
-                              HD_PLACExFVxHD_scaling, "HD_PLACExFVxHD");
-  EigenMatrix W_HD_PLACExFVxHD
-    = Eigen::make_random_matrix(N_PLACExFVxHD, N_HD);
+  // HD -> FVxHD connectivity:
+  RateSynapses HD_FVxHD(ctx, &HD, &FVxHD,
+                              HD_FVxHD_scaling, "HD_FVxHD");
+  EigenMatrix W_HD_FVxHD
+    = Eigen::make_random_matrix(N_FVxHD, N_HD,
+                                1.0, true, 1.0-HD_FVxHD_sparsity, 0, false);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_HD_PLACExFVxHD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_HD_PLACExFVxHD,
-                       N_PLACExFVxHD, N_HD);
+    std::string tmp_path = weights_path + "/W_HD_FVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_HD_FVxHD,
+                       N_FVxHD, N_HD);
   }
-  HD_PLACExFVxHD.weights(W_HD_PLACExFVxHD);
+  HD_FVxHD.weights(W_HD_FVxHD);
+  HD_FVxHD.make_sparse();
 
-  BCMPlasticity plast_HD_PLACExFVxHD(ctx, &HD_PLACExFVxHD);
+  BCMPlasticity plast_HD_FVxHD(ctx, &HD_FVxHD);
 
-  PLACExFVxHD.connect_input(&HD_PLACExFVxHD, &plast_HD_PLACExFVxHD);
+  FVxHD.connect_input(&HD_FVxHD, &plast_HD_FVxHD);
+
+
+  // FVxHD -> FVxHD connectivity:
+  RateSynapses FVxHD_FVxHD_INH(ctx, &FVxHD, &FVxHD,
+                               FVxHD_inhibition,
+                               "FVxHD_FVxHD_INH");
+  FVxHD_FVxHD_INH.weights(EigenMatrix::Ones(N_FVxHD, N_FVxHD));
+
+  BCMPlasticity plast_FVxHD_FVxHD_INH(ctx, &FVxHD_FVxHD_INH);
+
+  FVxHD.connect_input(&FVxHD_FVxHD_INH,
+                      &plast_FVxHD_FVxHD_INH);
+
+
+  // FVxHD -> PLACExFVxHD connectivity:
+  RateSynapses FVxHD_PLACExFVxHD(ctx, &FVxHD, &PLACExFVxHD,
+                                 FVxHD_PLACExFVxHD_scaling,
+                                 "FVxHD_PLACExFVxHD");
+  FVxHD_PLACExFVxHD.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_FVxHD_PLACExFVxHD
+    = Eigen::make_random_matrix(N_PLACExFVxHD, N_PLACE,
+                                1.0, true, 1.0-FVxHD_PLACExFVxHD_sparsity, 0, false);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_FVxHD_PLACExFVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_FVxHD_PLACExFVxHD,
+                       N_PLACExFVxHD, N_PLACE);
+  }
+  FVxHD_PLACExFVxHD.weights(W_FVxHD_PLACExFVxHD);
+  FVxHD_PLACExFVxHD.make_sparse();
+
+  BCMPlasticity plast_FVxHD_PLACExFVxHD(ctx, &FVxHD_PLACExFVxHD);
+
+  PLACExFVxHD.connect_input(&FVxHD_PLACExFVxHD, &plast_FVxHD_PLACExFVxHD);
 
 
   // PLACE -> PLACExFVxHD connectivity:
@@ -307,26 +347,30 @@ int main(int argc, char *argv[]) {
 
   // No inhibitory plasticity:
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_FVxHD_FVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACExFVxHD_PLACExFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
   plast_VIS_PLACE.add_schedule(train_time, eps_VIS_PLACE);
   plast_PLACExFVxHD_PLACE.add_schedule(train_time, eps*0.8);
   plast_PLACE_PLACExFVxHD.add_schedule(train_time, eps*1.2);
-  plast_FV_PLACExFVxHD.add_schedule(train_time, eps);
-  plast_HD_PLACExFVxHD.add_schedule(train_time, eps);
+  plast_FVxHD_PLACExFVxHD.add_schedule(train_time, eps);
+  plast_FV_FVxHD.add_schedule(train_time, eps);
+  plast_HD_FVxHD.add_schedule(train_time, eps);
 
   plast_VIS_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_PLACExFVxHD_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_FV_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_HD_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_FVxHD_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_FV_FVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_HD_FVxHD.add_schedule(infinity<FloatT>(), 0);
 
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs("PLACE_out", &VIS);
   RateElectrodes HD_elecs("PLACE_out", &HD);
   RateElectrodes FV_elecs("PLACE_out", &FV);
+  RateElectrodes FVxHD_elecs("PLACE_out", &FVxHD);
 
   RateElectrodes PLACE_elecs("PLACE_out", &PLACE);
   RateElectrodes PLACExFVxHD_elecs("PLACE_out", &PLACExFVxHD);
@@ -340,6 +384,7 @@ int main(int argc, char *argv[]) {
 
   model.add(&HD);
   model.add(&FV);
+  model.add(&FVxHD);
   model.add(&PLACExFVxHD);
   model.add(&PLACE);
 
@@ -347,6 +392,7 @@ int main(int argc, char *argv[]) {
 
   model.add(&HD_elecs);
   model.add(&FV_elecs);
+  model.add(&FVxHD_elecs);
   model.add(&PLACExFVxHD_elecs);
   model.add(&PLACE_elecs);
 
