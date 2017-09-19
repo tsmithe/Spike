@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -10); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 4000; // 300
+  FloatT train_time = 6000; // 300
   if (read_weights) train_time = 0;
   FloatT test_on_time = 800;
   FloatT test_off_time = 200;
@@ -91,7 +91,10 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(500);
   agent.add_test_time(1000);
   agent.add_test_time(2000);
+  agent.add_test_time(3000);
   agent.add_test_time(4000);
+  agent.add_test_time(5000);
+  agent.add_test_time(6000);
   agent.set_place_test_params(0.2*radius, 20);
   agent.add_test_position(0.75*bound_x, 0.75*bound_x);
   agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
@@ -124,21 +127,21 @@ int main(int argc, char *argv[]) {
   // PLACE neurons:
   int N_PLACE = N_HD;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 0.6;
+  FloatT beta_PLACE = 0.3;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
   // FVxHD neurons:
   int N_FVxHD = N_HD * agent.num_FV_states;
   FloatT alpha_FVxHD = 20.0;
-  FloatT beta_FVxHD = 0.6;
+  FloatT beta_FVxHD = 0.3;
   FloatT tau_FVxHD = 1e-2;
   RateNeurons FVxHD(ctx, N_FVxHD, "FVxHD", alpha_FVxHD, beta_FVxHD, tau_FVxHD);
 
   // PLACExFVxHD neurons:
   int N_PLACExFVxHD = N_PLACE * 2 * agent.num_FV_states;
   FloatT alpha_PLACExFVxHD = 20.0;
-  FloatT beta_PLACExFVxHD = 0.6;
+  FloatT beta_PLACExFVxHD = 0.4;
   FloatT tau_PLACExFVxHD = 1e-2;
   RateNeurons PLACExFVxHD(ctx, N_PLACExFVxHD, "PLACExFVxHD",
                           alpha_PLACExFVxHD, beta_PLACExFVxHD,
@@ -150,34 +153,34 @@ int main(int argc, char *argv[]) {
 
 
   // FV -> FVxHD connectivity:
-  FloatT FV_FVxHD_scaling = 100.0 / N_FV;
+  FloatT FV_FVxHD_scaling = 270.0 / N_FV;
 
   // HD -> FVxHD connectivity:
   FloatT HD_FVxHD_sparsity = 0.05;
-  FloatT HD_FVxHD_scaling = 100.0 / (HD_PLACExFVxHD_sparsity*N_HD);
+  FloatT HD_FVxHD_scaling = 450.0 / (HD_FVxHD_sparsity*N_HD);
 
   // FVxHD -> FVxHD connectivity:
-  FloatT FVxHD_inhibition = -160.0 / N_FVxHD;
+  FloatT FVxHD_inhibition = -360.0 / N_FVxHD;
 
-  // HD -> PLACExFVxHD connectivity:
+  // FVxHD -> PLACExFVxHD connectivity:
   FloatT FVxHD_PLACExFVxHD_sparsity = 0.05;
-  FloatT FVxHD_PLACExFVxHD_scaling = 100.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
+  FloatT FVxHD_PLACExFVxHD_scaling = 770.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
-  FloatT PLACE_PLACExFVxHD_scaling = 280.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+  FloatT PLACE_PLACExFVxHD_scaling = 300.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -160.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_inhibition = -120.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = 0.05;
   FloatT VIS_PLACE_scaling = 1600.0 / (N_PLACE*VIS_PLACE_sparsity);
-  FloatT VIS_PLACE_INH_scaling = -2.25 / (N_VIS*VIS_PLACE_sparsity);
+  FloatT VIS_PLACE_INH_scaling = -2.6 / (N_VIS*VIS_PLACE_sparsity);
   FloatT eps_VIS_PLACE = 0.06;
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 6800.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_PLACE_scaling = 7000.0 / N_PLACExFVxHD;
 
   // PLACE -> PLACE connectivity:
   FloatT PLACE_inhibition = -900.0 / N_PLACE;
