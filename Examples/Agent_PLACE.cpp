@@ -48,15 +48,25 @@ int main(int argc, char *argv[]) {
 
   agent.set_boundary(bound_x, bound_y);
 
-  agent.add_proximal_object(-0.75*bound_x, -0.5*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, -0.5*bound_y);
-  agent.add_proximal_object(0.25*bound_x, -0.5*bound_y);
-  agent.add_proximal_object(0.75*bound_x, -0.5*bound_y);
+  agent.add_proximal_object(-0.75*bound_x, -0.25*bound_y);
+  agent.add_proximal_object(-0.25*bound_x, -0.25*bound_y);
+  agent.add_proximal_object(0.25*bound_x, -0.25*bound_y);
+  agent.add_proximal_object(0.75*bound_x, -0.25*bound_y);
 
-  agent.add_proximal_object(-0.75*bound_x, 0.5*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, 0.5*bound_y);
-  agent.add_proximal_object(0.25*bound_x, 0.5*bound_y);
-  agent.add_proximal_object(0.75*bound_x, 0.5*bound_y);
+  agent.add_proximal_object(-0.75*bound_x, 0.25*bound_y);
+  agent.add_proximal_object(-0.25*bound_x, 0.25*bound_y);
+  agent.add_proximal_object(0.25*bound_x, 0.25*bound_y);
+  agent.add_proximal_object(0.75*bound_x, 0.25*bound_y);
+
+  agent.add_proximal_object(-0.75*bound_x, -0.75*bound_y);
+  agent.add_proximal_object(-0.25*bound_x, -0.75*bound_y);
+  agent.add_proximal_object(0.25*bound_x, -0.75*bound_y);
+  agent.add_proximal_object(0.75*bound_x, -0.75*bound_y);
+
+  agent.add_proximal_object(-0.75*bound_x, 0.75*bound_y);
+  agent.add_proximal_object(-0.25*bound_x, 0.75*bound_y);
+  agent.add_proximal_object(0.25*bound_x, 0.75*bound_y);
+  agent.add_proximal_object(0.75*bound_x, 0.75*bound_y);
 
   // agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   // agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
@@ -84,17 +94,17 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  FloatT fwd_move_dist = 0.25;
-  FloatT rot_angle = M_PI;
+  FloatT fwd_move_dist = 0.05;
+  FloatT rot_angle = M_PI / 8;
 
-  FloatT fwd_move_time = 0.2; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.2; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
 
-  agent.p_fwd = 1.0/2.0;
-  // agent.p_fwd = 1.0/3.0;
+  // agent.p_fwd = 1.0/2.0;
+  agent.p_fwd = 1.0/3.0;
 
   agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
-  // agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
+  agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
@@ -106,11 +116,13 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(4000);
   agent.add_test_time(5000);
   agent.add_test_time(6000);
-  agent.set_place_test_params(0.2*radius, 1); // 20);
+  agent.set_place_test_params(0.2*radius, 20);
 
-  agent.add_test_position(-0.5*bound_x, 0);
+  agent.add_test_position(-0.5*bound_x, 0.5*bound_y);
+  agent.add_test_position(-0.5*bound_x, -0.5*bound_y);
+  agent.add_test_position(0.5*bound_x, 0.5*bound_y);
+  agent.add_test_position(0.5*bound_x, -0.5*bound_y);
   agent.add_test_position(0, 0);
-  agent.add_test_position(0.5*bound_x, 0);
 
   // agent.add_test_position(0.75*bound_x, 0.75*bound_x);
   // agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
@@ -141,14 +153,14 @@ int main(int argc, char *argv[]) {
   DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
 
   // PLACE neurons:
-  int N_PLACE = 50;
+  int N_PLACE = 100;
   FloatT alpha_PLACE = 20.0;
   FloatT beta_PLACE = 0.3;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
   // GRID neurons:
-  int N_GRID = N_HD;
+  int N_GRID = 300;
   FloatT alpha_GRID = 20.0;
   FloatT beta_GRID = 0.3;
   FloatT tau_GRID = 1e-2;
@@ -199,7 +211,7 @@ int main(int argc, char *argv[]) {
   // VIS -> GRID connectivity:
   FloatT VIS_GRID_sparsity = 0.05;
   FloatT VIS_GRID_scaling = 500.0 / (N_GRID*VIS_GRID_sparsity);
-  FloatT VIS_GRID_INH_scaling = -1.0 / (N_VIS*VIS_GRID_sparsity);
+  FloatT VIS_GRID_INH_scaling = -1.05 / (N_VIS*VIS_GRID_sparsity);
   FloatT eps_VIS_GRID = 0.06;
 
   // GRIDxFVxHD -> GRID connectivity:
@@ -213,7 +225,11 @@ int main(int argc, char *argv[]) {
   FloatT GRID_PLACE_scaling = 25000.0 / (N_GRID*GRID_PLACE_sparsity);
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -1400.0 / N_PLACE;
+  FloatT PLACE_inhibition = -3600.0 / N_PLACE;
+
+  // PLACE -> GRID connectivity
+  FloatT PLACE_GRID_sparsity = 0.1;
+  FloatT PLACE_GRID_scaling = 180.0 / (N_PLACE*PLACE_GRID_sparsity);
 
 
   // FV -> FVxHD connectivity:
@@ -405,6 +421,27 @@ int main(int argc, char *argv[]) {
   PLACE.connect_input(&PLACE_PLACE_INH, &plast_PLACE_PLACE_INH);
 
 
+  // PLACE -> GRID connectivity:
+  RateSynapses PLACE_GRID(ctx, &PLACE, &GRID,
+                          PLACE_GRID_scaling,
+                          "PLACE_GRID");
+  PLACE_GRID.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_PLACE_GRID
+    = Eigen::make_random_matrix(N_GRID, N_PLACE,
+                                1.0, true, 1.0-PLACE_GRID_sparsity, 0, false);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_PLACE_GRID.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_PLACE_GRID,
+                       N_GRID, N_PLACE);
+  }
+  PLACE_GRID.weights(W_PLACE_GRID);
+  PLACE_GRID.make_sparse();
+
+  BCMPlasticity plast_PLACE_GRID(ctx, &PLACE_GRID);
+
+  GRID.connect_input(&PLACE_GRID, &plast_PLACE_GRID);
+
+
   // Set simulation schedule:
   VIS.t_stop_after = train_time + test_on_time;
   VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
@@ -422,6 +459,7 @@ int main(int argc, char *argv[]) {
   plast_GRID_GRIDxFVxHD.add_schedule(train_time, eps*1.2);
   plast_FVxHD_GRIDxFVxHD.add_schedule(train_time, eps);
   plast_GRID_PLACE.add_schedule(train_time, eps);
+  plast_PLACE_GRID.add_schedule(train_time, eps);
   plast_FV_FVxHD.add_schedule(train_time, eps);
   plast_HD_FVxHD.add_schedule(train_time, eps);
 
@@ -430,6 +468,7 @@ int main(int argc, char *argv[]) {
   plast_GRID_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_FVxHD_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_GRID_PLACE.add_schedule(infinity<FloatT>(), 0);
+  plast_PLACE_GRID.add_schedule(infinity<FloatT>(), 0);
   plast_FV_FVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_FVxHD.add_schedule(infinity<FloatT>(), 0);
 
