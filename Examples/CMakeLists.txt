@@ -4,6 +4,7 @@ foreach(example
     PageHD2_VIS
     Agent_PI
     Agent_PLACE
+    Agent_GRID-1D
     Jordan1
     SimpleRateModel
     CPUTest

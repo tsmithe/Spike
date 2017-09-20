@@ -386,13 +386,13 @@ int main(int argc, char *argv[]) {
 
 
   // Have to construct electrodes after neurons:
-  RateElectrodes VIS_elecs("PLACE_out", &VIS);
-  RateElectrodes HD_elecs("PLACE_out", &HD);
-  RateElectrodes FV_elecs("PLACE_out", &FV);
-  RateElectrodes FVxHD_elecs("PLACE_out", &FVxHD);
+  RateElectrodes VIS_elecs("GRID1_out", &VIS);
+  RateElectrodes HD_elecs("GRID1_out", &HD);
+  RateElectrodes FV_elecs("GRID1_out", &FV);
+  RateElectrodes FVxHD_elecs("GRID1_out", &FVxHD);
 
-  RateElectrodes PLACE_elecs("PLACE_out", &PLACE);
-  RateElectrodes PLACExFVxHD_elecs("PLACE_out", &PLACExFVxHD);
+  RateElectrodes PLACE_elecs("GRID1_out", &PLACE);
+  RateElectrodes PLACExFVxHD_elecs("GRID1_out", &PLACExFVxHD);
 
 
   // Add Agent, Neurons and Electrodes to Model
@@ -422,8 +422,8 @@ int main(int argc, char *argv[]) {
   model.set_weights_buffer_interval(ceil(10.0/timestep));
   model.set_buffer_start(start_recording_time);
 
-  agent.save_map("PLACE_out");
-  agent.record_history("PLACE_out", round(buffer_timestep/timestep),
+  agent.save_map("GRID1_out");
+  agent.record_history("GRID1_out", round(buffer_timestep/timestep),
                        round(start_recording_time/timestep));
 
 
