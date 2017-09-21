@@ -153,14 +153,14 @@ int main(int argc, char *argv[]) {
   DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
 
   // PLACE neurons:
-  int N_PLACE = 100;
+  int N_PLACE = 200;
   FloatT alpha_PLACE = 20.0;
   FloatT beta_PLACE = 0.3;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
   // GRID neurons:
-  int N_GRID = 300;
+  int N_GRID = 50;
   FloatT alpha_GRID = 20.0;
   FloatT beta_GRID = 0.3;
   FloatT tau_GRID = 1e-2;
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
   RateNeurons FVxHD(ctx, N_FVxHD, "FVxHD", alpha_FVxHD, beta_FVxHD, tau_FVxHD);
 
   // GRIDxFVxHD neurons:
-  int N_GRIDxFVxHD = N_GRID * 2 * agent.num_FV_states;
+  int N_GRIDxFVxHD = 300 * 2 * agent.num_FV_states;
   FloatT alpha_GRIDxFVxHD = 20.0;
   FloatT beta_GRIDxFVxHD = 0.4;
   FloatT tau_GRIDxFVxHD = 1e-2;
@@ -199,37 +199,37 @@ int main(int argc, char *argv[]) {
 
   // FVxHD -> GRIDxFVxHD connectivity:
   FloatT FVxHD_GRIDxFVxHD_sparsity = 0.05;
-  FloatT FVxHD_GRIDxFVxHD_scaling = 770.0 / (FVxHD_GRIDxFVxHD_sparsity*N_FVxHD);
+  FloatT FVxHD_GRIDxFVxHD_scaling = 700.0 / (FVxHD_GRIDxFVxHD_sparsity*N_FVxHD);
 
   // GRID -> GRIDxFVxHD connectivity:
   FloatT GRID_GRIDxFVxHD_sparsity = 0.05;
-  FloatT GRID_GRIDxFVxHD_scaling = 500.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
+  FloatT GRID_GRIDxFVxHD_scaling = 120.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
 
   // GRIDxFVxHD -> GRIDxFVxHD connectivity:
-  FloatT GRIDxFVxHD_inhibition = -120.0 / N_GRIDxFVxHD;
+  FloatT GRIDxFVxHD_inhibition = -400.0 / N_GRIDxFVxHD;
 
   // VIS -> GRID connectivity:
   FloatT VIS_GRID_sparsity = 0.05;
-  FloatT VIS_GRID_scaling = 500.0 / (N_GRID*VIS_GRID_sparsity);
+  FloatT VIS_GRID_scaling = 2500.0 / (N_VIS*VIS_GRID_sparsity);
   FloatT VIS_GRID_INH_scaling = -1.05 / (N_VIS*VIS_GRID_sparsity);
   FloatT eps_VIS_GRID = 0.06;
 
   // GRIDxFVxHD -> GRID connectivity:
-  FloatT GRIDxFVxHD_GRID_scaling = 6000.0 / N_GRIDxFVxHD;
+  FloatT GRIDxFVxHD_GRID_scaling = 11000.0 / N_GRIDxFVxHD;
 
   // GRID -> GRID connectivity:
-  FloatT GRID_inhibition = -900.0 / N_GRID;
+  FloatT GRID_inhibition = -1000.0 / N_GRID;
 
   // GRID -> PLACE connectivity
   FloatT GRID_PLACE_sparsity = 0.4;
   FloatT GRID_PLACE_scaling = 25000.0 / (N_GRID*GRID_PLACE_sparsity);
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -3600.0 / N_PLACE;
+  FloatT PLACE_inhibition = -20000.0 / N_PLACE;
 
   // PLACE -> GRID connectivity
   FloatT PLACE_GRID_sparsity = 0.1;
-  FloatT PLACE_GRID_scaling = 180.0 / (N_PLACE*PLACE_GRID_sparsity);
+  FloatT PLACE_GRID_scaling = 200.0 / (N_PLACE*PLACE_GRID_sparsity);
 
 
   // FV -> FVxHD connectivity:
