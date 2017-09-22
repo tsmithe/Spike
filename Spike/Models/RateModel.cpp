@@ -360,7 +360,19 @@ void Agent::choose_new_action(FloatT dt) {
 
         if ((fabs(target_position(0)) > bound_x)
             || (fabs(target_position(1)) > bound_y)) {
-          is_legal = false;
+          // is_legal = false;
+
+          curr_action = actions_t::AHV;
+          curr_FV = 0;
+          curr_AHV = AHV_die(rand_engine);
+
+          is_legal = true;
+
+          duration = M_PI / AHVs[curr_AHV].first;
+          target_head_direction = head_direction + M_PI;
+
+          if (target_head_direction > 2 * M_PI)
+            target_head_direction -= 2 * M_PI;
         } else {
           is_legal = true;          
         }

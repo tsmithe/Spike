@@ -217,14 +217,14 @@ int main(int argc, char *argv[]) {
 
   // GRID -> GRIDxFVxHD connectivity:
   FloatT GRID_GRIDxFVxHD_sparsity = 0.05;
-  FloatT GRID_GRIDxFVxHD_scaling = 540.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
+  FloatT GRID_GRIDxFVxHD_scaling = 100.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
 
   // GRIDxFVxHD -> GRIDxFVxHD connectivity:
   FloatT GRIDxFVxHD_inhibition = -600.0 / N_GRIDxFVxHD;
 
   // VIS -> GRID connectivity:
   FloatT VIS2_GRID_sparsity = 0.05;
-  FloatT VIS2_GRID_scaling = 1600.0 / (N_VIS2*VIS2_GRID_sparsity);
+  FloatT VIS2_GRID_scaling = 1800.0 / (N_VIS2*VIS2_GRID_sparsity);
   FloatT VIS2_GRID_INH_scaling = -0.4 / (N_VIS2*VIS2_GRID_sparsity);
   FloatT eps_VIS2_GRID = eps;
 
@@ -232,16 +232,16 @@ int main(int argc, char *argv[]) {
   FloatT GRIDxFVxHD_GRID_scaling = 12000.0 / N_GRIDxFVxHD; // ???14000
 
   // GRID -> GRID connectivity:
-  FloatT GRID_inhibition = -800.0 / N_GRID;
+  FloatT GRID_inhibition = -200.0 / N_GRID;
 
   // GRID -> PLACE connectivity
   FloatT GRID_PLACE_sparsity = 0.1;
-  FloatT GRID_PLACE_scaling = 2200.0 / (N_GRID*GRID_PLACE_sparsity);
+  FloatT GRID_PLACE_scaling = 1750.0 / (N_GRID*GRID_PLACE_sparsity);
 
   // PLACE -> PLACE connectivity:
   FloatT PLACE_PLACE_sparsity = 0.1;
   FloatT PLACE_PLACE_scaling = 1500.0 / (N_PLACE*PLACE_PLACE_sparsity);
-  FloatT PLACE_inhibition = -2500.0 / N_PLACE;
+  FloatT PLACE_inhibition = -3000.0 / N_PLACE;
 
   // PLACE -> GRID connectivity
   FloatT PLACE_GRID_sparsity = 0.1;
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
 
   // VIS -> PLACE connectivity:
   FloatT VIS2_PLACE_sparsity = 0.05;
-  FloatT VIS2_PLACE_scaling = 1100.0 / (N_VIS2*VIS2_PLACE_sparsity);
+  FloatT VIS2_PLACE_scaling = 1300.0 / (N_VIS2*VIS2_PLACE_sparsity);
   // FloatT VIS2_PLACE_INH_scaling = -1.05 / (N_VIS2*VIS2_PLACE_sparsity);
   FloatT eps_VIS2_PLACE = eps;
 
@@ -550,8 +550,8 @@ int main(int argc, char *argv[]) {
   // Rest have plasticity on only during training, with params above:
   plast_VIS_VIS2.add_schedule(train_time, eps);
   plast_VIS2_GRID.add_schedule(train_time, eps_VIS2_GRID);
-  plast_GRIDxFVxHD_GRID.add_schedule(train_time, eps*0.8);
-  plast_GRID_GRIDxFVxHD.add_schedule(train_time, eps*1.2);
+  plast_GRIDxFVxHD_GRID.add_schedule(train_time, eps);
+  plast_GRID_GRIDxFVxHD.add_schedule(train_time, eps);
   plast_FVxHD_GRIDxFVxHD.add_schedule(train_time, eps);
   plast_VIS2_PLACE.add_schedule(train_time, eps_VIS2_PLACE);
   plast_GRID_PLACE.add_schedule(train_time, eps);
