@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<RandomWalkPolicy, PlaceTestPolicy> agent;
+  Agent<ScanWalkPolicy, PlaceTestPolicy> agent;
   // agent.seed(123);
 
   FloatT radius = 1.0;
@@ -48,6 +48,11 @@ int main(int argc, char *argv[]) {
   FloatT bound_y = bound_x;
 
   agent.set_boundary(bound_x, bound_y);
+
+  // ScanWalkPolicy:---
+  agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
+  agent.set_row_separation(bound_y / 5);
+  // ---/
 
   agent.add_proximal_object(-0.75*bound_x, -0.25*bound_y);
   agent.add_proximal_object(-0.25*bound_x, -0.25*bound_y);
@@ -98,17 +103,20 @@ int main(int argc, char *argv[]) {
   FloatT fwd_move_dist = 0.05;
   FloatT rot_angle = M_PI / 8;
 
-  FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.2; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.2; ///6.0; // seconds per angular move
 
+  /* RandomWalkPolicy::
   agent.p_fwd = 1.0/2.0;
   // agent.p_fwd = 1.0/3.0;
+  */
 
   agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
   agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
+  /* PLACETESTPOLICY:
   agent.add_test_time(100);
   agent.add_test_time(500);
   agent.add_test_time(1000);
@@ -132,6 +140,7 @@ int main(int argc, char *argv[]) {
   // agent.add_test_position(0.4*bound_x, -0.4*bound_x);
   // agent.add_test_position(-0.4*bound_x, 0.4*bound_y);
   // agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
+  */
  
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;

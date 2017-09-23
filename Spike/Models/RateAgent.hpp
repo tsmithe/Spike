@@ -218,6 +218,20 @@ public:
 };
 
 
+class ScanWalkPolicy {
+  FloatT bound_x{0}, bound_y{0};
+  FloatT row_separation{0};
+  bool prepared{false};
+
+  void prepare(AgentBase& a);
+protected:
+  void choose_new_action(AgentBase& a, FloatT dt);
+public:
+  void set_scan_bounds(FloatT x, FloatT y);
+  void set_row_separation(FloatT distance);
+};
+
+
 class PlaceTestPolicy {
   std::vector<EigenVector2D> test_positions;
   FloatT test_approach_radius = 1.0;

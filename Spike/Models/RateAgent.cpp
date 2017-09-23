@@ -7,8 +7,8 @@ void RandomWalkPolicy::prepare(AgentBase& a) {
 }
 
 void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
-    // choose new action, ensuring legality
-    // choice random with uniform distribution (for now)
+  // choose new action, ensuring legality
+  // choice random with uniform distribution (for now)
 
   if (!prepared)
     prepare(a);
@@ -61,6 +61,54 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
   }
   int timesteps_per_action = round(duration / dt);
   a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+}
+
+void ScanWalkPolicy::prepare(AgentBase& a) {
+  if (0 == bound_x)
+    bound_x = a.bound_x;
+  if (0 == bound_y)
+    bound_y = a.bound_y;
+  if (0 == row_separation)
+    row_separation = bound_y / 5;
+
+  prepared = true;
+}
+
+void ScanWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
+  if (!prepared)
+    prepare(a);
+
+  a.position(0) = -bound_x;
+  if (a.choose_next_action_ts < 1) {
+    a.position(1) = bound_y;
+  } else {
+    a.position(1) -= row_separation;
+  }
+
+  if (a.position(1) < -bound_y) {
+    a.position(1) = bound_y;
+  }
+
+  a.curr_action = AgentBase::actions_t::FV;
+  a.curr_AHV = 0;
+  a.curr_FV = 1;
+  FloatT FV = a.FVs[a.curr_FV].first;
+
+  a.target_position(0) = bound_x;
+  a.target_position(1) = a.position(1);
+
+  FloatT duration = 2*bound_x / FV;
+  int timesteps_per_action = round(duration / dt);
+  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+}
+
+void ScanWalkPolicy::set_scan_bounds(FloatT x, FloatT y) {
+  bound_x = x;
+  bound_y = y;
+}
+
+void ScanWalkPolicy::set_row_separation(FloatT distance) {
+  row_separation = distance;
 }
 
 void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
