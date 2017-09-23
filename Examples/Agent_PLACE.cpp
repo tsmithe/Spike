@@ -26,8 +26,8 @@ int main(int argc, char *argv[]) {
   FloatT buffer_timestep = pow(2, -6);
   FloatT train_time = 6000; // 300
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 800;
-  FloatT test_off_time = 200;
+  FloatT test_on_time = 1000; // 800
+  FloatT test_off_time = 0; // 200
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   // ScanWalkPolicy:---
   agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
-  agent.set_row_separation(bound_y / 5);
+  agent.set_row_separation(bound_y / 10);
   // ---/
 
   agent.add_proximal_object(-0.75*bound_x, -0.25*bound_y);
