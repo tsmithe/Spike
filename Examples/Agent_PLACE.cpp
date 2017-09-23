@@ -1,4 +1,5 @@
 #include "Spike/Models/RateModel.hpp"
+#include "Spike/Models/RateAgent.hpp"
 #include <fenv.h>
 #include <omp.h>
 
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent agent;
-  agent.seed(123);
+  Agent<RandomWalkPolicy, PlaceTestPolicy> agent;
+  // agent.seed(123);
 
   FloatT radius = 1.0;
   FloatT bound_x = 1.0;

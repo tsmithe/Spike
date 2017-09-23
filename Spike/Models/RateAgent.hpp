@@ -190,6 +190,7 @@ struct AgentBase {
 
 
 class NullActionPolicy {
+protected:
   inline void choose_new_action(AgentBase&, FloatT) {}
 };
 
@@ -201,13 +202,16 @@ class RandomWalkPolicy {
   std::uniform_int_distribution<> AHV_die;
   std::uniform_int_distribution<> FV_die;
 
-  FloatT p_fwd = 0.5;
   bool prepared = false;
 
   void prepare(AgentBase& a);
+
+protected:
   void choose_new_action(AgentBase& a, FloatT dt);
 
 public:
+  FloatT p_fwd = 0.5; // TODO: should use setter...
+
   RandomWalkPolicy() {
     action_die = std::uniform_real_distribution<FloatT>(0, 1);
   }
@@ -223,6 +227,7 @@ class PlaceTestPolicy {
   int curr_test_approach_angle = -1;
   FloatT t_equilibration = 1.0;
 
+protected:
   void choose_new_action(AgentBase& a, FloatT dt);
 
 public:
@@ -340,9 +345,9 @@ public:
 
     if (timesteps >= choose_next_action_ts) {
       if (test_times.empty() || t < test_times.top()) {
-        choose_new_action(dt);
+        TrainPolicyT::choose_new_action(*this, dt);
       } else {
-        choose_test_action(dt);
+        TestPolicyT::choose_new_action(*this, dt);
       }
     }
 
@@ -386,9 +391,6 @@ public:
       }
     }
   }
-
-  void choose_new_action(FloatT dt);  // TODO
-  void choose_test_action(FloatT dt); // TODO
 
   void record_history(std::string output_prefix,
                       int buffer_interval, int buffer_start) {
