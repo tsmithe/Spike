@@ -222,6 +222,7 @@ class ScanWalkPolicy {
   FloatT bound_x{0}, bound_y{0};
   FloatT row_separation{0};
   bool prepared{false};
+  int walk_direction{1};
 
   void prepare(AgentBase& a);
 protected:

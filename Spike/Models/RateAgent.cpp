@@ -70,6 +70,7 @@ void ScanWalkPolicy::prepare(AgentBase& a) {
     bound_y = a.bound_y;
   if (0 == row_separation)
     row_separation = bound_y / 5;
+  walk_direction = 1;
 
   prepared = true;
 }
@@ -78,15 +79,18 @@ void ScanWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
   if (!prepared)
     prepare(a);
 
-  a.position(0) = -bound_x;
   if (a.choose_next_action_ts < 1) {
+    a.position(0) = -bound_x;
     a.position(1) = bound_y;
   } else {
-    a.position(1) -= row_separation;
+    a.position(1) -= 0.5 * row_separation * walk_direction;
   }
 
-  if (a.position(1) < -bound_y) {
-    a.position(1) = bound_y;
+  if ((walk_direction > 0 && a.position(1) < -bound_y) ||
+      (walk_direction < 0 && a.position(1) > bound_y)) {
+    // a.position(1) = bound_y;
+    a.position(1) += 0.5 * row_separation * walk_direction;
+    walk_direction *= -1;
   }
 
   a.curr_action = AgentBase::actions_t::FV;
@@ -94,7 +98,14 @@ void ScanWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
   a.curr_FV = 1;
   FloatT FV = a.FVs[a.curr_FV].first;
 
-  a.target_position(0) = bound_x;
+  if (a.position(0) >= bound_x) {
+    a.head_direction = M_PI;
+    a.target_position(0) = -bound_x;// * walk_direction;
+  } else {
+    a.head_direction = 0;
+    a.target_position(0) = bound_x;// * walk_direction;
+  }
+
   a.target_position(1) = a.position(1);
 
   FloatT duration = 2*bound_x / FV;
