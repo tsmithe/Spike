@@ -54,26 +54,42 @@ int main(int argc, char *argv[]) {
   agent.set_row_separation(bound_y / 10);
   // ---/
 
-  agent.add_proximal_object(-0.75*bound_x, -0.25*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, -0.25*bound_y);
-  agent.add_proximal_object(0.25*bound_x, -0.25*bound_y);
-  agent.add_proximal_object(0.75*bound_x, -0.25*bound_y);
+  FloatT start_x = -0.75;
+  FloatT stop_x = 0.75;
+  FloatT start_y = -0.75;
+  FloatT stop_y = 0.75;
+  unsigned n_objs_x = 5;
+  unsigned n_objs_y = 5;
 
-  agent.add_proximal_object(-0.75*bound_x, 0.25*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, 0.25*bound_y);
-  agent.add_proximal_object(0.25*bound_x, 0.25*bound_y);
-  agent.add_proximal_object(0.75*bound_x, 0.25*bound_y);
+  for (unsigned i = 0; i < n_objs_x; ++i) {
+    for (unsigned j = 0; j < n_objs_y; ++j) {
+      agent.add_proximal_object(start_x + (stop_x-start_x)*(FloatT)i/(n_objs_x-1),
+                                start_y + (stop_y-start_y)*(FloatT)j/(n_objs_y-1));
+    }
+  }
 
-  agent.add_proximal_object(-0.75*bound_x, -0.75*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, -0.75*bound_y);
-  agent.add_proximal_object(0.25*bound_x, -0.75*bound_y);
-  agent.add_proximal_object(0.75*bound_x, -0.75*bound_y);
+  // agent.add_proximal_object(-0.75*bound_x, -0.25*bound_y);
+  // agent.add_proximal_object(-0.25*bound_x, -0.25*bound_y);
+  // agent.add_proximal_object(0.25*bound_x, -0.25*bound_y);
+  // agent.add_proximal_object(0.75*bound_x, -0.25*bound_y);
 
-  agent.add_proximal_object(-0.75*bound_x, 0.75*bound_y);
-  agent.add_proximal_object(-0.25*bound_x, 0.75*bound_y);
-  agent.add_proximal_object(0.25*bound_x, 0.75*bound_y);
-  agent.add_proximal_object(0.75*bound_x, 0.75*bound_y);
+  // agent.add_proximal_object(-0.75*bound_x, 0.25*bound_y);
+  // agent.add_proximal_object(-0.25*bound_x, 0.25*bound_y);
+  // agent.add_proximal_object(0.25*bound_x, 0.25*bound_y);
+  // agent.add_proximal_object(0.75*bound_x, 0.25*bound_y);
 
+  // agent.add_proximal_object(-0.75*bound_x, -0.75*bound_y);
+  // agent.add_proximal_object(-0.25*bound_x, -0.75*bound_y);
+  // agent.add_proximal_object(0.25*bound_x, -0.75*bound_y);
+  // agent.add_proximal_object(0.75*bound_x, -0.75*bound_y);
+
+  // agent.add_proximal_object(-0.75*bound_x, 0.75*bound_y);
+  // agent.add_proximal_object(-0.25*bound_x, 0.75*bound_y);
+  // agent.add_proximal_object(0.25*bound_x, 0.75*bound_y);
+  // agent.add_proximal_object(0.75*bound_x, 0.75*bound_y);
+
+  /////////////
+  
   // agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   // agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   // agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
@@ -142,7 +158,7 @@ int main(int argc, char *argv[]) {
   // agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
   */
  
-  int N_per_obj = 100;
+  int N_per_obj = 60;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
 
@@ -157,6 +173,7 @@ int main(int argc, char *argv[]) {
   int N_VIS = VIS.size;
   int N_FV = FV.size;
 
+  /*
   // VIS2 neurons:
   int N_VIS2 = 500;
   FloatT alpha_VIS2 = 20.0;
@@ -167,18 +184,23 @@ int main(int argc, char *argv[]) {
   EigenVector VIS2_INH_on = EigenVector::Ones(N_VIS2);
   EigenVector VIS2_INH_off = EigenVector::Zero(N_VIS2);
   DummyRateNeurons VIS2_INH(ctx, N_VIS2, "VIS2_INH");
+  */
+
+  EigenVector VIS_INH_on = EigenVector::Ones(N_VIS);
+  EigenVector VIS_INH_off = EigenVector::Zero(N_VIS);
+  DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
 
   // PLACE neurons:
   int N_PLACE = 200;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 0.4;
+  FloatT beta_PLACE = 0.3;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
   // GRID neurons:
   int N_GRID = 200;
   FloatT alpha_GRID = 20.0;
-  FloatT beta_GRID = 0.3;
+  FloatT beta_GRID = 0.2;
   FloatT tau_GRID = 1e-2;
   RateNeurons GRID(ctx, N_GRID, "GRID", alpha_GRID, beta_GRID, tau_GRID);
 
@@ -192,7 +214,7 @@ int main(int argc, char *argv[]) {
   // GRIDxFVxHD neurons:
   int N_GRIDxFVxHD = 300 * 2 * agent.num_FV_states;
   FloatT alpha_GRIDxFVxHD = 20.0;
-  FloatT beta_GRIDxFVxHD = 0.4;
+  FloatT beta_GRIDxFVxHD = 0.3;
   FloatT tau_GRIDxFVxHD = 1e-2;
   RateNeurons GRIDxFVxHD(ctx, N_GRIDxFVxHD, "GRIDxFVxHD",
                          alpha_GRIDxFVxHD, beta_GRIDxFVxHD,
@@ -202,13 +224,14 @@ int main(int argc, char *argv[]) {
   FloatT axonal_delay = pow(2, -6); // seconds (TODO units)
   FloatT eps = 0.02;
 
-
+  /*
   // VIS -> VIS2 connectivity:
   FloatT VIS_VIS2_sparsity = 0.05;
-  FloatT VIS_VIS2_scaling = 2000.0 / (N_VIS*VIS_VIS2_sparsity);
+  FloatT VIS_VIS2_scaling = 3200.0 / (N_VIS*VIS_VIS2_sparsity);
 
   // VIS2 -> VIS2 connectivity:
   FloatT VIS2_inhibition = -500.0 / N_VIS2;
+  */
 
 
   // FV -> FVxHD connectivity:
@@ -227,43 +250,44 @@ int main(int argc, char *argv[]) {
 
   // GRID -> GRIDxFVxHD connectivity:
   FloatT GRID_GRIDxFVxHD_sparsity = 0.05;
-  FloatT GRID_GRIDxFVxHD_scaling = 100.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
+  FloatT GRID_GRIDxFVxHD_scaling = 160.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
 
   // GRIDxFVxHD -> GRIDxFVxHD connectivity:
-  FloatT GRIDxFVxHD_inhibition = -600.0 / N_GRIDxFVxHD;
+  FloatT GRIDxFVxHD_inhibition = -80.0 / N_GRIDxFVxHD;
 
   // VIS -> GRID connectivity:
-  FloatT VIS2_GRID_sparsity = 0.05;
-  FloatT VIS2_GRID_scaling = 1800.0 / (N_VIS2*VIS2_GRID_sparsity);
-  FloatT VIS2_GRID_INH_scaling = -0.4 / (N_VIS2*VIS2_GRID_sparsity);
-  FloatT eps_VIS2_GRID = eps;
+  FloatT VIS_GRID_sparsity = 0.05;
+  FloatT VIS_GRID_scaling = 1800.0 / (N_VIS*VIS_GRID_sparsity);
+  FloatT VIS_GRID_INH_scaling = -0.0 / (N_VIS*VIS_GRID_sparsity);
+  FloatT eps_VIS_GRID = eps;
 
   // GRIDxFVxHD -> GRID connectivity:
-  FloatT GRIDxFVxHD_GRID_scaling = 12000.0 / N_GRIDxFVxHD; // ???14000
+  FloatT GRIDxFVxHD_GRID_scaling = 5000.0 / N_GRIDxFVxHD; // ???14000
 
   // GRID -> GRID connectivity:
-  FloatT GRID_inhibition = -200.0 / N_GRID;
+  FloatT GRID_inhibition = -160.0 / N_GRID;
 
   // GRID -> PLACE connectivity
   FloatT GRID_PLACE_sparsity = 0.1;
-  FloatT GRID_PLACE_scaling = 1750.0 / (N_GRID*GRID_PLACE_sparsity);
+  FloatT GRID_PLACE_scaling = 1000.0 / (N_GRID*GRID_PLACE_sparsity);
 
   // PLACE -> PLACE connectivity:
   FloatT PLACE_PLACE_sparsity = 0.1;
-  FloatT PLACE_PLACE_scaling = 1500.0 / (N_PLACE*PLACE_PLACE_sparsity);
-  FloatT PLACE_inhibition = -3000.0 / N_PLACE;
+  FloatT PLACE_PLACE_scaling = 2000.0 / (N_PLACE*PLACE_PLACE_sparsity);
+  FloatT PLACE_inhibition = -4000.0 / N_PLACE;
 
   // PLACE -> GRID connectivity
   FloatT PLACE_GRID_sparsity = 0.1;
   FloatT PLACE_GRID_scaling = 700.0 / (N_PLACE*PLACE_GRID_sparsity);
 
   // VIS -> PLACE connectivity:
-  FloatT VIS2_PLACE_sparsity = 0.05;
-  FloatT VIS2_PLACE_scaling = 1300.0 / (N_VIS2*VIS2_PLACE_sparsity);
-  // FloatT VIS2_PLACE_INH_scaling = -1.05 / (N_VIS2*VIS2_PLACE_sparsity);
-  FloatT eps_VIS2_PLACE = eps;
+  FloatT VIS_PLACE_sparsity = 0.05;
+  FloatT VIS_PLACE_scaling = 1300.0 / (N_VIS*VIS_PLACE_sparsity);
+  // FloatT VIS_PLACE_INH_scaling = -1.05 / (N_VIS*VIS_PLACE_sparsity);
+  FloatT eps_VIS_PLACE = eps;
 
 
+  /*
   // VIS -> VIS2 connectivity:
   RateSynapses VIS_VIS2(ctx, &VIS, &VIS2, VIS_VIS2_scaling, "VIS_VIS2");
   EigenMatrix W_VIS_VIS2
@@ -289,6 +313,7 @@ int main(int argc, char *argv[]) {
   BCMPlasticity plast_VIS2_VIS2_INH(ctx, &VIS2_VIS2_INH);
 
   VIS2.connect_input(&VIS2_VIS2_INH, &plast_VIS2_VIS2_INH);
+  */
 
 
   // FV -> FVxHD connectivity:
@@ -395,29 +420,29 @@ int main(int argc, char *argv[]) {
                             &plast_GRIDxFVxHD_GRIDxFVxHD_INH);
 
 
-  // VIS2 -> GRID connectivity:
-  RateSynapses VIS2_GRID(ctx, &VIS2, &GRID, VIS2_GRID_scaling, "VIS2_GRID");
-  EigenMatrix W_VIS2_GRID
-    = Eigen::make_random_matrix(N_GRID, N_VIS2, 1.0, true,
-                                1.0-VIS2_GRID_sparsity, 0, false);
+  // VIS -> GRID connectivity:
+  RateSynapses VIS_GRID(ctx, &VIS, &GRID, VIS_GRID_scaling, "VIS_GRID");
+  EigenMatrix W_VIS_GRID
+    = Eigen::make_random_matrix(N_GRID, N_VIS, 1.0, true,
+                                1.0-VIS_GRID_sparsity, 0, false);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS2_GRID.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS2_GRID, N_GRID, N_VIS2);
+    std::string tmp_path = weights_path + "/W_VIS_GRID.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_VIS_GRID, N_GRID, N_VIS);
   }
-  VIS2_GRID.weights(W_VIS2_GRID);
-  VIS2_GRID.make_sparse();
+  VIS_GRID.weights(W_VIS_GRID);
+  VIS_GRID.make_sparse();
 
-  BCMPlasticity plast_VIS2_GRID(ctx, &VIS2_GRID);
+  BCMPlasticity plast_VIS_GRID(ctx, &VIS_GRID);
 
-  GRID.connect_input(&VIS2_GRID, &plast_VIS2_GRID);
+  GRID.connect_input(&VIS_GRID, &plast_VIS_GRID);
 
-  RateSynapses VIS2_GRID_INH(ctx, &VIS2_INH, &GRID,
-                             VIS2_GRID_INH_scaling, "VIS2_GRID_INH");
-  VIS2_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_VIS2));
+  RateSynapses VIS_GRID_INH(ctx, &VIS_INH, &GRID,
+                             VIS_GRID_INH_scaling, "VIS_GRID_INH");
+  VIS_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_VIS));
 
-  BCMPlasticity plast_VIS2_GRID_INH(ctx, &VIS2_GRID_INH);
+  BCMPlasticity plast_VIS_GRID_INH(ctx, &VIS_GRID_INH);
 
-  GRID.connect_input(&VIS2_GRID_INH, &plast_VIS2_GRID_INH);
+  GRID.connect_input(&VIS_GRID_INH, &plast_VIS_GRID_INH);
 
 
   // GRIDxFVxHD -> GRID connectivity:
@@ -520,61 +545,67 @@ int main(int argc, char *argv[]) {
   GRID.connect_input(&PLACE_GRID, &plast_PLACE_GRID);
 
 
-  // VIS2 -> PLACE connectivity:
-  RateSynapses VIS2_PLACE(ctx, &VIS2, &PLACE, VIS2_PLACE_scaling, "VIS2_PLACE");
-  EigenMatrix W_VIS2_PLACE
-    = Eigen::make_random_matrix(N_PLACE, N_VIS2, 1.0, true,
-                                1.0-VIS2_PLACE_sparsity, 0, false);
+  // VIS -> PLACE connectivity:
+  RateSynapses VIS_PLACE(ctx, &VIS, &PLACE, VIS_PLACE_scaling, "VIS_PLACE");
+  EigenMatrix W_VIS_PLACE
+    = Eigen::make_random_matrix(N_PLACE, N_VIS, 1.0, true,
+                                1.0-VIS_PLACE_sparsity, 0, false);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS2_PLACE.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS2_PLACE, N_PLACE, N_VIS2);
+    std::string tmp_path = weights_path + "/W_VIS_PLACE.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_VIS_PLACE, N_PLACE, N_VIS);
   }
-  VIS2_PLACE.weights(W_VIS2_PLACE);
-  VIS2_PLACE.make_sparse();
+  VIS_PLACE.weights(W_VIS_PLACE);
+  VIS_PLACE.make_sparse();
 
-  BCMPlasticity plast_VIS2_PLACE(ctx, &VIS2_PLACE);
+  BCMPlasticity plast_VIS_PLACE(ctx, &VIS_PLACE);
 
-  PLACE.connect_input(&VIS2_PLACE, &plast_VIS2_PLACE);
+  PLACE.connect_input(&VIS_PLACE, &plast_VIS_PLACE);
 
-  // RateSynapses VIS2_PLACE_INH(ctx, &VIS2_INH, &PLACE,
-  //                            VIS2_PLACE_INH_scaling, "VIS2_PLACE_INH");
-  // VIS2_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_VIS2));
+  // RateSynapses VIS_PLACE_INH(ctx, &VIS_INH, &PLACE,
+  //                            VIS_PLACE_INH_scaling, "VIS_PLACE_INH");
+  // VIS_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_VIS));
 
-  // BCMPlasticity plast_VIS2_PLACE_INH(ctx, &VIS2_PLACE_INH);
+  // BCMPlasticity plast_VIS_PLACE_INH(ctx, &VIS_PLACE_INH);
 
-  // PLACE.connect_input(&VIS2_PLACE_INH, &plast_VIS2_PLACE_INH);
+  // PLACE.connect_input(&VIS_PLACE_INH, &plast_VIS_PLACE_INH);
 
 
   // Set simulation schedule:
   VIS.t_stop_after = train_time + test_on_time;
-  VIS2_INH.add_schedule(VIS.t_stop_after, VIS2_INH_on);
-  VIS2_INH.add_schedule(infinity<FloatT>(), VIS2_INH_off);
+  VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
+  VIS_INH.add_schedule(infinity<FloatT>(), VIS_INH_off);
 
   // No inhibitory plasticity:
+  /*
   plast_VIS2_VIS2_INH.add_schedule(infinity<FloatT>(), 0);
+  */
   plast_GRID_GRID_INH.add_schedule(infinity<FloatT>(), 0);
   plast_FVxHD_FVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_GRIDxFVxHD_GRIDxFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
+  /*
   plast_VIS_VIS2.add_schedule(train_time, eps);
-  plast_VIS2_GRID.add_schedule(train_time, eps_VIS2_GRID);
+  */
+  plast_VIS_GRID.add_schedule(train_time, eps_VIS_GRID);
   plast_GRIDxFVxHD_GRID.add_schedule(train_time, eps);
   plast_GRID_GRIDxFVxHD.add_schedule(train_time, eps);
   plast_FVxHD_GRIDxFVxHD.add_schedule(train_time, eps);
-  plast_VIS2_PLACE.add_schedule(train_time, eps_VIS2_PLACE);
+  plast_VIS_PLACE.add_schedule(train_time, eps_VIS_PLACE);
   plast_GRID_PLACE.add_schedule(train_time, eps);
   plast_PLACE_GRID.add_schedule(train_time, eps);
   plast_FV_FVxHD.add_schedule(train_time, eps);
   plast_HD_FVxHD.add_schedule(train_time, eps);
 
+  /*
   plast_VIS_VIS2.add_schedule(infinity<FloatT>(), 0);
-  plast_VIS2_GRID.add_schedule(infinity<FloatT>(), 0);
+  */
+  plast_VIS_GRID.add_schedule(infinity<FloatT>(), 0);
   plast_GRIDxFVxHD_GRID.add_schedule(infinity<FloatT>(), 0);
   plast_GRID_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_FVxHD_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_VIS2_PLACE.add_schedule(infinity<FloatT>(), 0);
+  plast_VIS_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_GRID_PLACE.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_GRID.add_schedule(infinity<FloatT>(), 0);
   plast_FV_FVxHD.add_schedule(infinity<FloatT>(), 0);
@@ -583,7 +614,9 @@ int main(int argc, char *argv[]) {
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs("PLACE_out", &VIS);
+  /*
   RateElectrodes VIS2_elecs("PLACE_out", &VIS2);
+  */
   RateElectrodes HD_elecs("PLACE_out", &HD);
   RateElectrodes FV_elecs("PLACE_out", &FV);
   RateElectrodes FVxHD_elecs("PLACE_out", &FVxHD);
@@ -598,9 +631,12 @@ int main(int argc, char *argv[]) {
   model.add(&agent);
 
   model.add(&VIS);
+  model.add(&VIS_INH);
 
+  /*
   model.add(&VIS2);
   model.add(&VIS2_INH);
+  */
 
   model.add(&HD);
   model.add(&FV);
@@ -610,7 +646,9 @@ int main(int argc, char *argv[]) {
   model.add(&PLACE);
 
   model.add(&VIS_elecs);
+  /*
   model.add(&VIS2_elecs);
+  */
 
   model.add(&HD_elecs);
   model.add(&FV_elecs);
