@@ -260,6 +260,28 @@ public:
 };
 
 
+class HDTestPolicy {
+  EigenVector2D old_position, old_target_pos;
+  FloatT old_hd, old_target_hd;
+
+  std::vector<EigenVector2D> test_positions;
+  // actions_t curr_test = actions_t::AHV;
+  int curr_test_position = -1;
+  FloatT t_equilibration = 1.0;
+
+protected:
+  void choose_new_action(AgentBase& a, FloatT dt);
+
+public:
+  void add_test_position(FloatT x, FloatT y) {
+    EigenVector2D pos;
+    pos(0) = x;
+    pos(1) = y;
+    test_positions.push_back(pos);
+  }
+};
+
+
 template<typename TrainPolicyT, typename TestPolicyT>
 class Agent : public AgentBase,
               public TrainPolicyT,

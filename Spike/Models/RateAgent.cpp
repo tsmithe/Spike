@@ -49,7 +49,7 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
         is_legal = true;
 
-        duration = M_PI / a.AHVs[a.curr_AHV].first;
+        duration = M_PI / fabs(a.AHVs[a.curr_AHV].first);
         a.target_head_direction = a.head_direction + M_PI;
 
         if (a.target_head_direction > 2 * M_PI)
@@ -160,7 +160,7 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.curr_FV = 0;
       a.target_head_direction = 0;
       a.target_position = a.position;
-      FloatT duration = 4 * M_PI / a.AHVs[1].first;
+      FloatT duration = 4 * M_PI / fabs(a.AHVs[1].first);
       a.choose_next_action_ts = a.timesteps + round(duration / dt);
     } else if (curr_test_position < 2*test_positions.size()) {
       // then we are on the PLACE test, and have just finished
@@ -321,6 +321,66 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     a.test_times.pop();
   }
 }
+
+
+void HDTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
+  /*
+    At first: curr_test_position = -1
+    So curr_test_position++ if < 0 or done with AHVs
+    (And set equilibration)
+
+    So we might have curr_test_position = end
+    Let's ensure that doesn't happen
+
+    So if we are do curr_test_position++ and the next time is invalid,
+    pop the test time
+
+    What if we are not done with AHVs?
+    Then don't increment position index, but do increment AHV index
+
+    In every case, set the target data and choose_next_action_ts
+   */
+
+  if (curr_test_position < 0) {
+    old_position = a.position;
+    old_target_pos = a.target_position;
+    old_hd = a.head_direction;
+    old_target_hd = a.target_head_direction;
+  }
+
+  if (curr_test_position < 0 || a.AHVs.size() <= a.curr_AHV) {
+    curr_test_position++;
+    a.curr_AHV = -1;
+  }
+
+  a.position = test_positions[curr_test_position];
+  a.target_position = a.position;
+
+  if (test_positions.size() <= curr_test_position+1) {
+    curr_test_position = -1;
+    a.test_times.pop();
+    a.position = old_position;
+    a.target_position = old_target_pos;
+    a.head_direction = old_hd;
+    a.target_head_direction = old_target_hd;
+  }
+
+  a.curr_AHV++;
+
+  a.head_direction = 0;
+  a.target_head_direction = 0;
+
+  FloatT AHV = a.AHVs[a.curr_AHV].first;
+  FloatT duration;
+  if (a.curr_AHV == 0) {
+    duration = 1.0;
+  } else {
+    duration = 2 * M_PI / fabs(AHV);
+  }
+  int timesteps_per_action = round(duration / dt);
+  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+}
+
 
 /*
 void Agent::connect_actor(RateNeurons* actor_) {
