@@ -361,10 +361,12 @@ void HDTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     a.test_times.pop();
     a.position = old_position;
     a.target_position = old_target_pos;
-    a.head_direction = old_hd;
+    // a.head_direction = old_hd;
     a.target_head_direction = old_target_hd;
   }
 
+  a.curr_action = AgentBase::actions_t::AHV;
+  a.curr_FV = 0;
   a.curr_AHV++;
 
   a.head_direction = 0;
