@@ -348,7 +348,7 @@ void HDTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     old_target_hd = a.target_head_direction;
   }
 
-  if (curr_test_position < 0 || a.AHVs.size() <= a.curr_AHV) {
+  if (curr_test_position < 0 || a.AHVs.size() <= a.curr_AHV+1) {
     curr_test_position++;
     a.curr_AHV = -1;
   }
