@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<RandomWalkPolicy, HDTestPolicy> agent;
+  Agent<RandomWalkPolicy, ScanWalkTestPolicy> agent;
   // agent.seed(123);
 
   FloatT radius = 2;
@@ -117,12 +117,15 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(1000);
   agent.add_test_time(2000);
   agent.add_test_time(4000);
-  // agent.set_place_test_params(0.1, 16);
-  agent.add_test_position(0.4, 0.4);
-  agent.add_test_position(0.4, -0.4);
-  agent.add_test_position(-0.4, 0.4);
-  agent.add_test_position(-0.4, -0.4);
-  agent.add_test_position(0, 0);
+
+  agent.set_row_separation(0.1);
+
+  // // agent.set_place_test_params(0.1, 16);
+  // agent.add_test_position(0.4, 0.4);
+  // agent.add_test_position(0.4, -0.4);
+  // agent.add_test_position(-0.4, 0.4);
+  // agent.add_test_position(-0.4, -0.4);
+  // agent.add_test_position(0, 0);
 
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
