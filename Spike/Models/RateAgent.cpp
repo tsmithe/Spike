@@ -122,6 +122,64 @@ void ScanWalkPolicy::set_row_separation(FloatT distance) {
   row_separation = distance;
 }
 
+
+void ScanWalkTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
+  if (!prepared)
+    prepare(a);
+
+  if (!started) {
+    old_position = a.position;
+    old_target_pos = a.target_position;
+    old_hd = a.head_direction;
+    old_target_hd = a.target_head_direction;
+    started = true;
+
+    a.position(0) = -bound_x;
+    a.position(1) = bound_y;
+  } else {
+    a.position(1) -= 0.5 * row_separation * walk_direction;
+  }
+
+  if ((walk_direction > 0 && a.position(1) < -bound_y) ||
+      (walk_direction < 0 && a.position(1) > bound_y)) {
+    // a.position(1) += 0.5 * row_separation * walk_direction;
+    // walk_direction *= -1;
+    started = false;
+
+    a.test_times.pop();
+    a.position = old_position;
+    a.target_position = old_target_pos;
+    a.target_head_direction = old_target_hd;
+
+    a.curr_action = AgentBase::actions_t::STAY;
+    a.curr_AHV = 0;
+    a.curr_FV = 0;
+    a.choose_next_action_ts = a.timesteps + 1;
+
+    return;
+  }
+
+  a.curr_action = AgentBase::actions_t::FV;
+  a.curr_AHV = 0;
+  a.curr_FV = 1;
+  FloatT FV = a.FVs[a.curr_FV].first;
+
+  if (a.position(0) >= bound_x) {
+    a.head_direction = M_PI;
+    a.target_position(0) = -bound_x;// * walk_direction;
+  } else {
+    a.head_direction = 0;
+    a.target_position(0) = bound_x;// * walk_direction;
+  }
+
+  a.target_position(1) = a.position(1);
+
+  FloatT duration = 2*bound_x / FV;
+  int timesteps_per_action = round(duration / dt);
+  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+}
+
+
 void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
   /* How does testing work?
      - For each test position (AHV):
