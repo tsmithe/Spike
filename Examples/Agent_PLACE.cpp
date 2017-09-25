@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
                                  "FVxHD_GRIDxFVxHD");
   // FVxHD_GRIDxFVxHD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_FVxHD_GRIDxFVxHD
-    = Eigen::make_random_matrix(N_GRIDxFVxHD, N_GRID,
+    = Eigen::make_random_matrix(N_GRIDxFVxHD, N_FVxHD,
                                 1.0, true, 1.0-FVxHD_GRIDxFVxHD_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_FVxHD_GRIDxFVxHD.bin";
