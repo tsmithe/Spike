@@ -1,8 +1,9 @@
 #include "Spike/Models/RateModel.hpp"
+#include "Spike/Models/RateAgent.hpp"
 #include <fenv.h>
 #include <omp.h>
 
-#define ENABLE_PLACE
+//#define ENABLE_PLACE
 
 // TODO: Add signal handlers
 
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]) {
     weights_path = argv[1];
   }
 
-  FloatT timestep = pow(2, -10); // seconds (TODO units)
+  FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
   FloatT train_time = 4000; // 300
   if (read_weights) train_time = 0;
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent agent;
-  agent.seed(123);
+  Agent<RandomWalkPolicy, HDTestPolicy> agent;
+  // agent.seed(123);
 
   FloatT radius = 2;
   FloatT bound_x = 2;
@@ -60,7 +61,21 @@ int main(int argc, char *argv[]) {
   // agent.add_distal_object(2.0 * M_PI / 3.0);
   // agent.add_distal_object(4.0 * M_PI / 3.0);
 
-  ///*
+  FloatT start_x = -0.75;
+  FloatT stop_x = 0.75;
+  FloatT start_y = -0.75;
+  FloatT stop_y = 0.75;
+  unsigned n_objs_x = 4;
+  unsigned n_objs_y = 2;
+
+  for (unsigned i = 0; i < n_objs_x; ++i) {
+    for (unsigned j = 0; j < n_objs_y; ++j) {
+      agent.add_proximal_object(start_x + (stop_x-start_x)*(FloatT)i/(n_objs_x-1),
+                                start_y + (stop_y-start_y)*(FloatT)j/(n_objs_y-1));
+    }
+  }
+
+  /*
   agent.add_proximal_object(0.4*bound_x, 0.4*bound_y);
   agent.add_proximal_object(0.4*bound_x, -0.4*bound_y);
   agent.add_proximal_object(-0.4*bound_x, 0.4*bound_y);
@@ -102,12 +117,13 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(1000);
   agent.add_test_time(2000);
   agent.add_test_time(4000);
-  agent.set_place_test_params(0.1, 16);
+  // agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0.4, 0.4);
   agent.add_test_position(0.4, -0.4);
   agent.add_test_position(-0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
- 
+  agent.add_test_position(0, 0);
+
   int N_per_obj = 100;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
