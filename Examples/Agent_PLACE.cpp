@@ -40,26 +40,26 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<ScanWalkPolicy, HDTestPolicy> agent;
+  Agent<RandomWalkPolicy, HDTestPolicy> agent;
   // agent.seed(123);
 
   FloatT radius = 1.0;
-  FloatT bound_x = 1.0;
-  FloatT bound_y = bound_x;
+  FloatT bound_y = 1.0;
+  FloatT bound_x = bound_y;
 
-  agent.set_boundary(bound_x, bound_y);
+  agent.set_boundary(0.6*bound_x, 0.6*bound_y);
 
   // ScanWalkPolicy:---
-  agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
-  agent.set_row_separation(bound_y / 10);
+  // agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
+  // agent.set_row_separation(bound_y / 8);
   // ---/
 
-  FloatT start_x = -0.75;
-  FloatT stop_x = 0.75;
-  FloatT start_y = -0.75;
-  FloatT stop_y = 0.75;
-  unsigned n_objs_x = 8;
-  unsigned n_objs_y = 8;
+  FloatT start_x = -0.75*bound_x;
+  FloatT stop_x = 0.75*bound_x;
+  FloatT start_y = -0.75*bound_y;
+  FloatT stop_y = 0.75*bound_y;
+  unsigned n_objs_x = 4;
+  unsigned n_objs_y = 4;
 
   for (unsigned i = 0; i < n_objs_x; ++i) {
     for (unsigned j = 0; j < n_objs_y; ++j) {
@@ -116,11 +116,11 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  FloatT fwd_move_dist = 0.1;
+  FloatT fwd_move_dist = 0.05;
   FloatT rot_angle = M_PI / 8;
 
-  FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.05; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.05; ///6.0; // seconds per angular move
 
   /* RandomWalkPolicy::
   agent.p_fwd = 1.0/2.0;
@@ -132,31 +132,31 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  ///* PLACETESTPOLICY:
-  agent.add_test_time(100);
-  agent.add_test_time(500);
-  agent.add_test_time(1000);
-  agent.add_test_time(2000);
-  agent.add_test_time(3000);
-  agent.add_test_time(4000);
-  agent.add_test_time(5000);
-  agent.add_test_time(6000);
-  //agent.set_place_test_params(0.2*radius, 20);
+  // ///* PLACETESTPOLICY:
+  // agent.add_test_time(100);
+  // agent.add_test_time(500);
+  // agent.add_test_time(1000);
+  // agent.add_test_time(2000);
+  // agent.add_test_time(3000);
+  // agent.add_test_time(4000);
+  // agent.add_test_time(5000);
+  // agent.add_test_time(6000);
+  // //agent.set_place_test_params(0.2*radius, 20);
 
-  agent.add_test_position(-0.5*bound_x, 0.5*bound_y);
-  agent.add_test_position(-0.5*bound_x, -0.5*bound_y);
-  agent.add_test_position(0.5*bound_x, 0.5*bound_y);
-  agent.add_test_position(0.5*bound_x, -0.5*bound_y);
-  agent.add_test_position(0, 0);
+  // agent.add_test_position(-0.5*bound_x, 0.5*bound_y);
+  // agent.add_test_position(-0.5*bound_x, -0.5*bound_y);
+  // agent.add_test_position(0.5*bound_x, 0.5*bound_y);
+  // agent.add_test_position(0.5*bound_x, -0.5*bound_y);
+  // agent.add_test_position(0, 0);
 
-  // agent.add_test_position(0.75*bound_x, 0.75*bound_x);
-  // agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
-  // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
-  // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
-  // agent.add_test_position(0.4*bound_x, -0.4*bound_x);
-  // agent.add_test_position(-0.4*bound_x, 0.4*bound_y);
-  // agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
-  //*/
+  // // agent.add_test_position(0.75*bound_x, 0.75*bound_x);
+  // // agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
+  // // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
+  // // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
+  // // agent.add_test_position(0.4*bound_x, -0.4*bound_x);
+  // // agent.add_test_position(-0.4*bound_x, 0.4*bound_y);
+  // // agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
+  // //*/
  
   int N_per_obj = 60;
   FloatT sigma_VIS = M_PI / 9;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
   // GRID neurons:
   int N_GRID = 100;
   FloatT alpha_GRID = 20.0;
-  FloatT beta_GRID = 0.2;
+  FloatT beta_GRID = 0.5;
   FloatT tau_GRID = 1e-2;
   RateNeurons GRID(ctx, N_GRID, "GRID", alpha_GRID, beta_GRID, tau_GRID);
 

@@ -17,11 +17,11 @@ int main(int argc, char *argv[]) {
     weights_path = argv[1];
   }
 
-  FloatT timestep = 5e-4; // seconds (TODO units)
-  FloatT train_time = 12000;
+  FloatT timestep = pow(2.0, -9); // 5e-4; // seconds (TODO units)
+  FloatT train_time = 1280;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 10;
-  FloatT test_off_time = 20;
+  FloatT test_on_time = 16;
+  FloatT test_off_time = 32;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   int N_VIS = 400;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
-  FloatT revs_per_sec = 1;
+  FloatT revs_per_sec = 1.0;
 
   int N_HD = 400;
   FloatT alpha_HD = 20.0;
@@ -63,10 +63,10 @@ int main(int argc, char *argv[]) {
 
   FloatT VIS_HD_scaling = 1100.0 / (N_VIS*0.05); // 1600
 
-  FloatT VIS_INH_scaling = -2.3 / (N_VIS*0.05); // -1.0
-  FloatT HD_inhibition = -32.0 / N_HD; // 300
+  FloatT VIS_INH_scaling = -2.285 / (N_VIS*0.05); // -1.0
+  FloatT HD_inhibition = -54.0 / N_HD; // 300
 
-  FloatT AHVxHD_HD_scaling = 4500.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 4700.0 / (N_AHVxHD*1.0); // 6000
 
   FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*0.05); // 500
   FloatT AHV_AHVxHD_scaling = 240.0 / N_AHV; // 240
@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
     return 64;
   }
 
-  FloatT axonal_delay = 1e-2; // seconds (TODO units)
+  FloatT axonal_delay = pow(2.0, -6); // 1e-2; // seconds (TODO units)
 
 #ifdef TRAIN_VIS_HD
-  FloatT eps_VIS_HD = 0.05;
+  FloatT eps_VIS_HD = 0.01;
 #else
   FloatT eps_VIS_HD = 0;
 #endif
@@ -258,11 +258,11 @@ int main(int argc, char *argv[]) {
   plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
   // Have to construct electrodes after neurons:
-  RateElectrodes VIS_elecs("HD_VIS_out", &VIS);
-  RateElectrodes VIS_cf_elecs("HD_VIS_out", &VIS_cf);
-  RateElectrodes HD_elecs("HD_VIS_out", &HD);
-  RateElectrodes AHVxHD_elecs("HD_VIS_out", &AHVxHD);
-  RateElectrodes AHV_elecs("HD_VIS_out", &AHV);
+  RateElectrodes VIS_elecs("HD_out", &VIS);
+  RateElectrodes VIS_cf_elecs("HD_out", &VIS_cf);
+  RateElectrodes HD_elecs("HD_out", &HD);
+  RateElectrodes AHVxHD_elecs("HD_out", &AHVxHD);
+  RateElectrodes AHV_elecs("HD_out", &AHV);
 
   // Add Neurons and Electrodes to Model
   model.add(&VIS);
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
 
   // Set simulation time parameters:
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
-  model.set_buffer_intervals((float)1e-2); // TODO: Use proper units
+  model.set_buffer_intervals((float)pow(2.0, -6.0)); // TODO: Use proper units
   model.set_weights_buffer_interval(ceil(2.0/timestep));
   model.set_buffer_start(start_recording_time);
 
