@@ -1,15 +1,11 @@
 foreach(example
-    PageHD1
-    PageHD2
-    PageHD2_VIS
-    Agent_PI
-    Agent_PLACE
-    Agent_GRID-1D
-    Jordan1
-    SimpleRateModel
-    CPUTest
-    TSCSOptimiseFourLayerVisionSpikingModelFiringRates
-    VogelsAbbotNet
+    HD_simple-path-integration.cpp
+    HD_distal-only.cpp
+    HD_distal-plus-proximal.cpp
+    HD_proximal-only.cpp
+    HD_no-place.cpp
+    PLACE_proximal-only.cpp
+    PLACE_distal-only.cpp
     )
   add_executable(${example} ${example}.cpp)
   target_link_libraries(${example} Spike) # ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})
