@@ -1,6 +1,8 @@
 foreach(example
     HD_simple-path-integration.cpp
+    HD_inhib_simple-path-integration.cpp
     HD_distal-only.cpp
+    HD_distal-only_path_integration.cpp
     HD_distal-plus-proximal.cpp
     HD_proximal-only.cpp
     HD_no-place.cpp
