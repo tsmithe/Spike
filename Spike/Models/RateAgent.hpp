@@ -157,12 +157,16 @@ struct AgentBase {
 
   EigenVector object_bearings;
 
+  FloatT AHV, FV;
+  FloatT AHV_change, FV_change;
+
   int curr_AHV = 0;
   int curr_FV = 0;
 
   enum struct actions_t { AHV, FV, STAY };
   actions_t curr_action = actions_t::FV;
   int choose_next_action_ts = 0;
+  int change_action_ts = 0;
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
 
@@ -380,10 +384,12 @@ public:
     if (agent_buffer_interval
         && (timesteps >= agent_buffer_start)
         && !(timesteps % agent_buffer_interval)) {
-      EigenVector agent_buf = EigenVector::Zero(3);
+      EigenVector agent_buf = EigenVector::Zero(5);
       agent_buf(0) = position(0);
       agent_buf(1) = position(1);
       agent_buf(2) = head_direction;
+      agent_buf(3) = FV;
+      agent_buf(4) = AHV;
       agent_history.push_back(timesteps, agent_buf);
     }
 
@@ -396,12 +402,44 @@ public:
       } else {
         TestPolicyT::choose_new_action(*this, dt);
       }
+      // In case the policy hasn't updated change_action_ts
+      // (which is new, to support continuous changes in action):
+      if (change_action_ts <= timesteps) {
+        change_action_ts = timesteps + 1;
+      }
+    }
+
+    if (timesteps < change_action_ts) {
+      update_action(dt);
     }
 
     // ensure only one of AHV and FV is active currently:
     assert(!(curr_AHV && curr_FV));
     perform_action(dt);
     update_bearings();
+  }
+
+  void update_action(FloatT dt) {
+    if (timesteps == change_action_ts - 1) {
+      // then set action to target action
+      if (curr_action == actions_t::AHV) {
+        AHV = AHVs[curr_AHV].first;
+      } else if (curr_action == actions_t::FV) {
+        FV = FVs[curr_FV].first;
+      } else {
+        assert(false);
+      }
+      change_action_ts = 0;
+    } else {
+      // then update action towards target action
+      if (curr_action == actions_t::AHV) {
+        AHV += AHV_change;
+      } else if (curr_action == actions_t::FV) {
+        FV += FV_change;
+      } else {
+        assert(false);
+      }
+    }
   }
 
   void perform_action(FloatT dt) {
@@ -423,7 +461,6 @@ public:
     } else {
       // otherwise, compute update
       if (curr_action == actions_t::AHV) {
-        FloatT AHV = AHVs[curr_AHV].first;
         head_direction += AHV * dt;
         if (head_direction > 2*M_PI) {
           head_direction -= 2*M_PI;
@@ -431,7 +468,6 @@ public:
           head_direction += 2*M_PI;
         }
       } else if (curr_action == actions_t::FV) {
-        FloatT FV = FVs[curr_FV].first;
         FloatT r = FV * dt;
         position(0) += r * cos(head_direction);
         position(1) += r * sin(head_direction);
