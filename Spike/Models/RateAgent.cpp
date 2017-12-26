@@ -1,5 +1,14 @@
 #include "RateAgent.hpp"
 
+/*
+
+  ScanWalkPolicy::choose_new_action
+  ScanWalkTestPolicy::choose_new_action
+  PlaceTestPolicy::choose_new_action
+  HDTestPolicy::choose_new_action
+
+ */
+
 void RandomWalkPolicy::prepare(AgentBase& a) {
   FV_die = std::uniform_int_distribution<>(0, a.num_FV_states-1);
   AHV_die = std::uniform_int_distribution<>(0, a.num_AHV_states-1);
@@ -19,13 +28,25 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     if (action_die(rand_engine) > p_fwd) {
       a.curr_action = AgentBase::actions_t::AHV;
       a.curr_FV = 0;
-      a.curr_AHV = AHV_die(rand_engine);
 
+      a.curr_AHV = AHV_die(rand_engine);
       is_legal = true;
 
-      duration = a.AHVs[a.curr_AHV].second;
       FloatT angle_change = a.AHVs[a.curr_AHV].first * a.AHVs[a.curr_AHV].second;
       a.target_head_direction = a.head_direction + angle_change;
+      duration = a.AHVs[a.curr_AHV].second;
+
+      if (a.smooth_AHV) {
+        FloatT total_AHV_change = a.AHVs[a.curr_AHV].first - a.AHV;
+        FloatT AHV_change_time = total_AHV_change / a.AHV_speed;
+        FloatT AHV_change_timesteps = AHV_change_time / dt;
+
+        a.AHV_change = total_AHV_change / AHV_change_timesteps;
+        a.change_action_ts = a.timesteps + AHV_change_timesteps;
+        a.target_head_direction += a.AHV * AHV_change_time
+          + 0.5 * a.AHV_speed * std::pow(AHV_change_time, 2.0f);
+        duration += AHV_change_time;
+      }
     } else {
       a.curr_action = AgentBase::actions_t::FV;
       a.curr_AHV = 0;
@@ -538,10 +559,17 @@ AgentAHVRateNeurons::AgentAHVRateNeurons(Context* ctx,
                                          AgentBase* agent_,
                                          int neurons_per_state_,
                                          std::string label_)
-  : RateNeurons(nullptr, (int)(agent_->num_AHV_states) * neurons_per_state_,
-                label_, 0, 1, 1),
-    agent(agent_),
+  : RateNeurons(nullptr, 0, label_, 0, 1, 1), agent(agent_),
     neurons_per_state(neurons_per_state_) {
+
+  // compute size:
+  if (agent->smooth_AHV) {
+    size = 3 * neurons_per_state_; // 1 symmetric class; 2 asymmetric
+  } else {
+    size = (int)(agent_->num_AHV_states) * neurons_per_state_;
+  }
+
+  RateNeurons(nullptr, size, label_, 0, 1, 1);
 
   if (ctx)
     init_backend(ctx);

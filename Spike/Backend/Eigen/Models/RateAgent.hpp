@@ -93,6 +93,7 @@ namespace Backend {
     protected:
       EigenVector _rate;
       int curr_AHV = -2;
+      FloatT AHV;
 
       //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
     };

@@ -143,12 +143,37 @@ namespace Backend {
     bool AgentAHVRateNeurons::staged_integrate_timestep(FloatT dt) {
       AgentBase* agent = frontend()->agent;
 
-      if (curr_AHV != agent->curr_AHV) {
-        _rate = EigenVector::Zero(frontend()->size);
-        _rate.segment(frontend()->neurons_per_state * agent->curr_AHV,
-                      frontend()->neurons_per_state)
-          = EigenVector::Ones(frontend()->neurons_per_state);
-        curr_AHV = agent->curr_AHV;
+      if (AHV != agent->AHV) {
+        if (agent->smooth_AHV) {
+          AHV = agent->AHV;
+
+          FloatT rate_sym = frontend()->smooth_base_rate
+            + (1.0 - frontend()->smooth_base_rate) * tanh(frontend()->smooth_slope * fabs(AHV));
+
+          FloatT rate_asym_neg = frontend()->smooth_base_rate;
+          if (AHV < 0) {
+            rate_asym_neg += (1.0 - frontend()->smooth_base_rate) * tanh(frontend()->smooth_slope * (-AHV));
+          }
+
+          FloatT rate_asym_pos = frontend()->smooth_base_rate;
+          if (AHV > 0) {
+            rate_asym_pos += (1.0 - frontend()->smooth_base_rate) * tanh(frontend()->smooth_slope * AHV);
+          }
+
+          _rate.segment(0, frontend()->neurons_per_state)
+            = EigenVector::Constant(frontend()->neurons_per_state, rate_sym);
+          _rate.segment(frontend()->neurons_per_state, frontend()->neurons_per_state)
+            = EigenVector::Constant(frontend()->neurons_per_state, rate_asym_neg);
+          _rate.segment(frontend()->neurons_per_state * 2, frontend()->neurons_per_state)
+            = EigenVector::Constant(frontend()->neurons_per_state, rate_asym_pos);
+        } else {
+          _rate = EigenVector::Zero(frontend()->size);
+          _rate.segment(frontend()->neurons_per_state * agent->curr_AHV,
+                        frontend()->neurons_per_state)
+            = EigenVector::Ones(frontend()->neurons_per_state);
+          curr_AHV = agent->curr_AHV;
+          AHV = agent->AHV;
+        }
       }
 
       return true;

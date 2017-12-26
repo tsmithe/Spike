@@ -116,6 +116,13 @@ public:
   AgentBase* agent;
   int neurons_per_state;
 
+  FloatT smooth_base_rate = 0.1;
+  FloatT smooth_slope = 1.0 / (0.75*M_PI);
+  inline void set_smooth_params(FloatT base, FloatT slope) {
+    smooth_base_rate = base;
+    smooth_slope = slope;
+  }
+
 private:
   std::shared_ptr<::Backend::AgentAHVRateNeurons> _backend;
 };
@@ -157,6 +164,8 @@ struct AgentBase {
 
   EigenVector object_bearings;
 
+  bool smooth_AHV = false;
+  FloatT AHV_speed = 0;
   FloatT AHV, FV;
   FloatT AHV_change, FV_change;
 
@@ -306,6 +315,15 @@ public:
 
     add_FV(0, 0);
     add_AHV(0, 0);
+  }
+
+  void set_smooth_AHV(FloatT speed) {
+    AHV_speed = speed;
+    if (fabs(AHV_speed) > 0) {
+      smooth_AHV = true;
+    } else {
+      smooth_AHV = false;
+    }
   }
 
   void set_boundary(FloatT bound_x_, FloatT bound_y_) {
