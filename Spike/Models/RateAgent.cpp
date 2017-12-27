@@ -38,7 +38,7 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
       if (a.smooth_AHV) {
         FloatT total_AHV_change = a.AHVs[a.curr_AHV].first - a.AHV;
-        FloatT AHV_change_time = total_AHV_change / a.AHV_speed;
+        FloatT AHV_change_time = fabs(total_AHV_change / a.AHV_speed);
         FloatT AHV_change_timesteps = AHV_change_time / dt;
 
         a.AHV_change = total_AHV_change / AHV_change_timesteps;
@@ -72,13 +72,13 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
         duration = M_PI / fabs(a.AHVs[a.curr_AHV].first);
         a.target_head_direction = a.head_direction + M_PI;
-
-        if (a.target_head_direction > 2 * M_PI)
-          a.target_head_direction -= 2 * M_PI;
       } else {
         is_legal = true;          
       }
     }
+
+    if (a.target_head_direction > 2 * M_PI)
+      a.target_head_direction -= 2 * M_PI;
   }
   int timesteps_per_action = round(duration / dt);
   a.choose_next_action_ts = a.timesteps + timesteps_per_action;

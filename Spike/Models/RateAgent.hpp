@@ -117,7 +117,7 @@ public:
   int neurons_per_state;
 
   FloatT smooth_base_rate = 0.1;
-  FloatT smooth_slope = 1.0 / (0.75*M_PI);
+  FloatT smooth_slope = 1.0 / (1.5*M_PI);
   inline void set_smooth_params(FloatT base, FloatT slope) {
     smooth_base_rate = base;
     smooth_slope = slope;

@@ -7,6 +7,8 @@
 
 // TODO: Add signal handlers
 
+#define OUTPUT_PATH "HD_distal-only"
+
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
   omp_set_num_threads(32);
@@ -515,18 +517,18 @@ int main(int argc, char *argv[]) {
 
 
   // Have to construct electrodes after neurons:
-  RateElectrodes VIS_elecs("HD_VIS_out", &VIS);
-  RateElectrodes AHV_elecs("HD_VIS_out", &AHV);
+  RateElectrodes VIS_elecs(OUTPUT_PATH, &VIS);
+  RateElectrodes AHV_elecs(OUTPUT_PATH, &AHV);
 #ifdef ENABLE_PLACE
-  RateElectrodes FV_elecs("HD_VIS_out", &FV);
+  RateElectrodes FV_elecs(OUTPUT_PATH, &FV);
 #endif
 
-  RateElectrodes HD_elecs("HD_VIS_out", &HD);
-  RateElectrodes AHVxHD_elecs("HD_VIS_out", &AHVxHD);
+  RateElectrodes HD_elecs(OUTPUT_PATH, &HD);
+  RateElectrodes AHVxHD_elecs(OUTPUT_PATH, &AHVxHD);
 
 #ifdef ENABLE_PLACE
-  RateElectrodes PLACE_elecs("HD_VIS_out", &PLACE);
-  RateElectrodes PLACExFVxHD_elecs("HD_VIS_out", &PLACExFVxHD);
+  RateElectrodes PLACE_elecs(OUTPUT_PATH, &PLACE);
+  RateElectrodes PLACExFVxHD_elecs(OUTPUT_PATH, &PLACExFVxHD);
 #endif
 
 
@@ -565,8 +567,8 @@ int main(int argc, char *argv[]) {
   model.set_weights_buffer_interval(ceil(10.0/timestep));
   model.set_buffer_start(start_recording_time);
 
-  agent.save_map("HD_VIS_out");
-  agent.record_history("HD_VIS_out", round(buffer_timestep/timestep),
+  agent.save_map(OUTPUT_PATH);
+  agent.record_history(OUTPUT_PATH, round(buffer_timestep/timestep),
                        round(start_recording_time/timestep));
 
 

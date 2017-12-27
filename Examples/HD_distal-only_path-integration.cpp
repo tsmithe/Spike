@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 1000;
+  FloatT train_time = 2000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 100;
   FloatT test_off_time = 100;
@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
   FloatT fwd_move_dist = 0.4 * radius;
   FloatT rot_angle = M_PI / 2;
 
-  FloatT fwd_move_time = 0.5; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.5; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.2; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.2; ///6.0; // seconds per angular move
 
-  agent.p_fwd = 1.0/3.0;
+  agent.p_fwd = 0.5 * 1.0/3.0;
 
   agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
   agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   agent.add_test_position(-0.4, -0.4);
   agent.add_test_position(0, 0);
 
-  int N_per_obj = 100;
+  int N_per_obj = 50;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
 
@@ -104,9 +104,9 @@ int main(int argc, char *argv[]) {
   int N_AHV = AHV.size;
 
   // HD neurons:
-  int N_HD = 300; // N_VIS
+  int N_HD = 400; // N_VIS
   FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.6;
+  FloatT beta_HD = 1.0;
   FloatT tau_HD = 1e-2;
   RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
 
@@ -115,9 +115,9 @@ int main(int argc, char *argv[]) {
   DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
 
   // AHVxHD neurons:
-  int N_AHVxHD = N_HD * agent.num_AHV_states;
+  int N_AHVxHD = 800; // N_HD * agent.num_AHV_states;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.6;
+  FloatT beta_AHVxHD = 1.2;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
@@ -129,25 +129,25 @@ int main(int argc, char *argv[]) {
 
   // VIS -> HD connectivity:
   FloatT VIS_HD_sparsity = 0.05;
-  FloatT VIS_HD_scaling = 3200.0 / (N_VIS*VIS_HD_sparsity); // 1600
-  FloatT VIS_HD_INH_scaling = -2.0 / (N_VIS*VIS_HD_sparsity); // -1.0
+  FloatT VIS_HD_scaling = 1100.0 / (N_VIS*VIS_HD_sparsity); // 1600
+  FloatT VIS_HD_INH_scaling = -2.2 / (N_VIS*VIS_HD_sparsity); // -2.2
   FloatT eps_VIS_HD = 0.06;
 
   // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 6400.0 / (N_AHVxHD*1.0); // 6000
+  FloatT AHVxHD_HD_scaling = 4700.0 / (N_AHVxHD*1.0); // 6000
 
   // HD -> HD connectivity
-  FloatT HD_inhibition = -600.0 / N_HD; // 300
+  FloatT HD_inhibition = -54.0 / N_HD; // 300
 
   // HD -> AHVxHD connectivity:
   FloatT HD_AHVxHD_sparsity = 0.05;
-  FloatT HD_AHVxHD_scaling = 350.0 / (N_HD*HD_AHVxHD_sparsity); // 500
+  FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*HD_AHVxHD_sparsity); // 500
 
   // AHV -> AHVxHD connectivity:
-  FloatT AHV_AHVxHD_scaling = 320.0 / N_AHV; // 240
+  FloatT AHV_AHVxHD_scaling = 450.0 / N_AHV; // 240
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -100.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
 
   // VIS -> HD connectivity
   RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");

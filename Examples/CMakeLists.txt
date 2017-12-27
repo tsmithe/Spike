@@ -2,6 +2,7 @@ foreach(example
     HD_simple-path-integration
     HD_inhib_simple-path-integration
     HD_distal-only
+    HD_distal-only_smoothAHV
     HD_distal-only_path-integration
     HD_distal-plus-proximal
     HD_proximal-only
