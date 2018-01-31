@@ -1,4 +1,5 @@
 foreach(example
+    AHVxHD_simple_smoothAHV
     HD_simple-path-integration
     HD_inhib_simple-path-integration
     HD_distal-only

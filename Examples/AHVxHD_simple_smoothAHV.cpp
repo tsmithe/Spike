@@ -5,7 +5,7 @@
 
 // TODO: Add signal handlers
 
-#define OUTPUT_PATH "HD_distal-only_smoothAHV"
+#define OUTPUT_PATH "AHVxHD_simple_smoothAHV"
 
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
@@ -24,10 +24,10 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 4; // 2000;
+  FloatT train_time = 1200;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 0; // 100;
-  FloatT test_off_time = 0; //100;
+  FloatT test_on_time = 300;
+  FloatT test_off_time = 0;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
   
@@ -50,13 +50,6 @@ int main(int argc, char *argv[]) {
   agent.set_boundary(bound_x, bound_y);
 
   agent.add_distal_object(0);
-  agent.add_distal_object(0.25 * M_PI);
-  agent.add_distal_object(0.5 * M_PI);
-  agent.add_distal_object(0.75 * M_PI);
-  agent.add_distal_object(M_PI);
-  agent.add_distal_object(1.25 * M_PI);
-  agent.add_distal_object(1.5 * M_PI);
-  agent.add_distal_object(1.75 * M_PI);
 
   FloatT start_x = -0.75;
   FloatT stop_x = 0.75;
@@ -75,8 +68,10 @@ int main(int argc, char *argv[]) {
 
   agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
   agent.add_AHV(rot_angle / angle_move_time / 2, angle_move_time);
+  agent.add_AHV(rot_angle / angle_move_time / 3, angle_move_time);
   agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
   agent.add_AHV(-rot_angle / angle_move_time / 2, angle_move_time);
+  agent.add_AHV(-rot_angle / angle_move_time / 3, angle_move_time);
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
@@ -86,45 +81,39 @@ int main(int argc, char *argv[]) {
   agent.add_test_time(2000);
   agent.add_test_time(4000);
   // agent.set_place_test_params(0.1, 16);
+  agent.add_test_position(0, 0);
+  /*
   agent.add_test_position(0.4, 0.4);
   agent.add_test_position(0.4, -0.4);
-  /*
   agent.add_test_position(-0.4, 0.4);
   agent.add_test_position(-0.4, -0.4);
-  agent.add_test_position(0, 0);
   */
 
-  int N_per_obj = 50;
-  FloatT sigma_VIS = M_PI / 6;
+  int N_per_obj = 300;
+  FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
 
-  int N_per_state = 50;
+  int N_per_state = 100;
 
   // Input neurons:
-  AgentVISRateNeurons VIS(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");
+  AgentVISRateNeurons HD(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "HD");
 
   agent.set_smooth_AHV(rot_angle / angle_move_time * 2); // NB Need to do this first!
   AgentAHVRateNeurons AHV(ctx, &agent, N_per_state, "AHV");
-  AHV.set_smooth_params(0.1, 1.0, 1.0 / (1.5*M_PI));
+  // AHV.set_smooth_params(0.1, 1.0, 1.0 / (1.5*M_PI));
+  const EigenVector smooth_random = (0.5 * (EigenVector::Random(N_per_state).array() + 1)).matrix();
+  EigenVector smooth_base = (0.1 + 0.05 * EigenVector::Random(N_per_state).array()).matrix();
+  EigenVector smooth_max = (0.84 + 0.15 * EigenVector::Random(N_per_state).array()).matrix();
+  EigenVector smooth_slope = (1.0 / M_PI + 0.25 * EigenVector::Random(N_per_state).array()).matrix();
+  AHV.set_smooth_params(smooth_base, smooth_max, smooth_slope);
 
-  int N_VIS = VIS.size;
+  int N_HD = HD.size;
   int N_AHV = AHV.size;
 
-  // HD neurons:
-  int N_HD = 300; // N_VIS
-  FloatT alpha_HD = 20.0;
-  FloatT beta_HD = 0.6;
-  FloatT tau_HD = 1e-2;
-  RateNeurons HD(ctx, N_HD, "HD", alpha_HD, beta_HD, tau_HD);
-
-  EigenVector VIS_INH_on = EigenVector::Ones(N_VIS);
-  EigenVector VIS_INH_off = EigenVector::Zero(N_VIS);
-  DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
-
   // AHVxHD neurons:
-  int N_AHVxHD = 900; // N_HD * agent.num_AHV_states;
+  int N_AHVxHD = 600;
   FloatT alpha_AHVxHD = 20.0;
-  FloatT beta_AHVxHD = 0.6;
+  FloatT beta_AHVxHD = 0.5;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
@@ -133,18 +122,6 @@ int main(int argc, char *argv[]) {
   FloatT axonal_delay = 1e-2; // seconds (TODO units)
   FloatT eps = 0.02;
 
-
-  // VIS -> HD connectivity:
-  FloatT VIS_HD_sparsity = 0.05;
-  FloatT VIS_HD_scaling = 1000.0 / (N_VIS*VIS_HD_sparsity); // 1600
-  FloatT VIS_HD_INH_scaling = -2.2 / (N_VIS*VIS_HD_sparsity); // -2.2
-  FloatT eps_VIS_HD = 0.06;
-
-  // AHVxHD -> HD connectivity:
-  FloatT AHVxHD_HD_scaling = 0; // 6400.0 / (N_AHVxHD*1.0); // 6000
-
-  // HD -> HD connectivity
-  FloatT HD_inhibition = -600.0 / N_HD; // 300
 
   // HD -> AHVxHD connectivity:
   FloatT HD_AHVxHD_sparsity = 0.05;
@@ -156,61 +133,9 @@ int main(int argc, char *argv[]) {
   // AHVxHD -> AHVxHD connectivity:
   FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
 
-  // VIS -> HD connectivity
-  RateSynapses VIS_HD(ctx, &VIS, &HD, VIS_HD_scaling, "VIS_HD");
-  EigenMatrix W_VIS_HD = Eigen::make_random_matrix(N_HD, N_VIS, 1.0, true,
-                                                   1.0-VIS_HD_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS_HD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS_HD, N_HD, N_VIS);
-  }
-  VIS_HD.weights(W_VIS_HD);
-  VIS_HD.make_sparse();
-
-  BCMPlasticity plast_VIS_HD(ctx, &VIS_HD);
-
-  HD.connect_input(&VIS_HD, &plast_VIS_HD);
-
-  RateSynapses VIS_HD_INH(ctx, &VIS_INH, &HD,
-                          VIS_HD_INH_scaling, "VIS_HD_INH");
-  VIS_HD_INH.weights(EigenMatrix::Ones(N_HD, N_VIS));
-
-  BCMPlasticity plast_VIS_HD_INH(ctx, &VIS_HD_INH);
-
-  HD.connect_input(&VIS_HD_INH, &plast_VIS_HD_INH);
-
-
-  // AHVxHD -> HD connectivity:
-  RateSynapses AHVxHD_HD(ctx, &AHVxHD, &HD, AHVxHD_HD_scaling, "AHVxHD_HD");
-  AHVxHD_HD.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_AHVxHD_HD = Eigen::make_random_matrix(N_HD, N_AHVxHD);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_AHVxHD_HD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_AHVxHD_HD, N_HD, N_AHVxHD);
-  }
-  AHVxHD_HD.weights(W_AHVxHD_HD);
-
-  BCMPlasticity plast_AHVxHD_HD(ctx, &AHVxHD_HD);
-
-  // RateSynapses AHVxHD_HD_INH(ctx, &AHVxHD, &HD, AHVxHD_inhibition, "AHVxHD_HD_INH");
-  // AHVxHD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_AHVxHD));
-  // BCMPlasticity plast_AHVxHD_HD_INH(ctx, &AHVxHD_HD_INH);
-
-  HD.connect_input(&AHVxHD_HD, &plast_AHVxHD_HD);
-
-
-  // HD -> HD connectivity
-  RateSynapses HD_HD_INH(ctx, &HD, &HD, HD_inhibition, "HD_HD_INH");
-  HD_HD_INH.weights(EigenMatrix::Ones(N_HD, N_HD));
-
-  BCMPlasticity plast_HD_HD_INH(ctx, &HD_HD_INH);
-
-  HD.connect_input(&HD_HD_INH, &plast_HD_HD_INH);
-
-
   // HD -> AHVxHD connectivity:
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
-  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
+  // HD_AHVxHD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
                                                       1.0-HD_AHVxHD_sparsity, 0, false);
   if (read_weights) {
@@ -254,30 +179,19 @@ int main(int argc, char *argv[]) {
   AHVxHD.connect_input(&AHVxHD_AHVxHD_INH, &plast_AHVxHD_AHVxHD_INH);
 
 
-  // Set simulation schedule:
-  VIS.t_stop_after = train_time + test_on_time;
-  VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
-  VIS_INH.add_schedule(infinity<FloatT>(), VIS_INH_off);
-
   // No inhibitory plasticity:
-  plast_HD_HD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_AHVxHD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   // plast_AHVxHD_HD_INH.add_schedule(infinity<FloatT>(), 0);
   // plast_HD_AHVxHD_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
-  plast_VIS_HD.add_schedule(train_time, eps_VIS_HD);
-  plast_AHVxHD_HD.add_schedule(train_time, eps*0.8);
   plast_HD_AHVxHD.add_schedule(train_time, eps*1.2);
   plast_AHV_AHVxHD.add_schedule(train_time, eps);
 
-  plast_VIS_HD.add_schedule(infinity<FloatT>(), 0);
-  plast_AHVxHD_HD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_AHVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_AHV_AHVxHD.add_schedule(infinity<FloatT>(), 0);
 
   // Have to construct electrodes after neurons:
-  RateElectrodes VIS_elecs(OUTPUT_PATH, &VIS);
   RateElectrodes AHV_elecs(OUTPUT_PATH, &AHV);
 
   RateElectrodes HD_elecs(OUTPUT_PATH, &HD);
@@ -287,14 +201,9 @@ int main(int argc, char *argv[]) {
   // Add Agent, Neurons and Electrodes to Model
   model.add(&agent);
 
-  model.add(&VIS);
-  model.add(&VIS_INH);
-
   model.add(&HD);
   model.add(&AHV);
   model.add(&AHVxHD);
-
-  model.add(&VIS_elecs);
 
   model.add(&HD_elecs);
   model.add(&AHV_elecs);
