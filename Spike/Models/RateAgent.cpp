@@ -38,13 +38,14 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
       if (a.smooth_AHV) {
         FloatT total_AHV_change = a.AHVs[a.curr_AHV].first - a.AHV;
+        FloatT new_AHV_speed = total_AHV_change > 0 ? a.AHV_speed : -a.AHV_speed;
+
         FloatT AHV_change_time = fabs(total_AHV_change / a.AHV_speed);
         FloatT AHV_change_timesteps = AHV_change_time / dt;
 
         a.AHV_change = total_AHV_change / AHV_change_timesteps;
         a.change_action_ts = a.timesteps + AHV_change_timesteps;
-        a.target_head_direction += a.AHV * AHV_change_time
-          + 0.5 * a.AHV_speed * std::pow(AHV_change_time, 2.0f);
+        a.target_head_direction += AHV_change_time * a.AHV + 0.5 * std::pow(AHV_change_time, 2.0f) * new_AHV_speed;
         duration += AHV_change_time;
       }
     } else {

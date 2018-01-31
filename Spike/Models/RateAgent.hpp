@@ -116,10 +116,21 @@ public:
   AgentBase* agent;
   int neurons_per_state;
 
-  FloatT smooth_base_rate = 0.1;
-  FloatT smooth_slope = 1.0 / (1.5*M_PI);
-  inline void set_smooth_params(FloatT base, FloatT slope) {
+  // FloatT smooth_base_rate = 0.1;
+  // FloatT smooth_slope = 1.0 / (1.5*M_PI);
+  EigenVector smooth_base_rate;
+  EigenVector smooth_scale;
+  EigenVector smooth_slope;
+  inline void set_smooth_params(FloatT base, FloatT max, FloatT slope) {
+    smooth_base_rate = EigenVector::Constant(neurons_per_state, base);
+    smooth_scale = EigenVector::Constant(neurons_per_state, max - base);
+    smooth_slope = EigenVector::Constant(neurons_per_state, slope);
+  }
+
+  inline void set_smooth_params(EigenVector base, EigenVector max, EigenVector slope) {
+    // assert correct sizes
     smooth_base_rate = base;
+    smooth_scale = max - base;
     smooth_slope = slope;
   }
 
@@ -170,6 +181,7 @@ struct AgentBase {
   FloatT AHV_change, FV_change;
 
   int curr_AHV = 0;
+  // FloatT curr_AHV_speed = 0;
   int curr_FV = 0;
 
   enum struct actions_t { AHV, FV, STAY };
@@ -442,8 +454,10 @@ public:
       // then set action to target action
       if (curr_action == actions_t::AHV) {
         AHV = AHVs[curr_AHV].first;
+        FV = 0;
       } else if (curr_action == actions_t::FV) {
         FV = FVs[curr_FV].first;
+        AHV = 0;
       } else {
         assert(false);
       }
@@ -452,8 +466,10 @@ public:
       // then update action towards target action
       if (curr_action == actions_t::AHV) {
         AHV += AHV_change;
+        FV = 0;
       } else if (curr_action == actions_t::FV) {
         FV += FV_change;
+        AHV = 0;
       } else {
         assert(false);
       }
@@ -466,7 +482,10 @@ public:
 
     if (timesteps == choose_next_action_ts - 1) {
       // if last timestep of action, just set angle / position to target
+      //
+      // TODO: SMOOTH TRANSITIONS BETWEEN ACTIONS
       if (curr_action == actions_t::AHV) {
+        FV = 0;
         head_direction = target_head_direction;
         if (head_direction > 2*M_PI) {
           head_direction -= 2*M_PI;
@@ -474,11 +493,14 @@ public:
           head_direction += 2*M_PI;
         }
       } else if (curr_action == actions_t::FV) {
+        AHV = 0;
         position = target_position;
       }
+      // std::cout << "\n@ " << t << "   " << head_direction << "   " << AHV;
     } else {
       // otherwise, compute update
       if (curr_action == actions_t::AHV) {
+        FV = 0;
         head_direction += AHV * dt;
         if (head_direction > 2*M_PI) {
           head_direction -= 2*M_PI;
@@ -486,10 +508,12 @@ public:
           head_direction += 2*M_PI;
         }
       } else if (curr_action == actions_t::FV) {
+        AHV = 0;
         FloatT r = FV * dt;
         position(0) += r * cos(head_direction);
         position(1) += r * sin(head_direction);
       }
+      // std::cout << "\n. " << t << "   " << head_direction << "   " << FV << "    " << AHV;
     }
   }
 
