@@ -36,7 +36,7 @@ namespace Backend {
       if (t > frontend()->t_stop_after)
         return true;
 
-      for (int i = 0; i < agent->num_objects; ++i) {
+      for (int i = 0; i < dynamic_cast<WorldBase*>(agent)->num_objects; ++i) {
         FloatT theta = agent->object_bearings(i);
 
         // EigenVector d_i_tmp = (theta_pref.array() - theta).abs().matrix();
@@ -149,19 +149,19 @@ namespace Backend {
           // std::cout << " .?. " << AHV << " -> " << agent->AHV; // << "    " << _rate.size();
 
           auto rate_sym = _rate.segment(0, frontend()->neurons_per_state);
-          rate_sym = (frontend()->smooth_base_rate.array()
-                      + frontend()->smooth_scale.array() * (frontend()->smooth_slope * fabs(AHV)).array().tanh()).matrix();
+          rate_sym = (frontend()->smooth_sym_base_rate.array()
+                      + frontend()->smooth_sym_scale.array() * (frontend()->smooth_sym_slope * fabs(AHV)).array().tanh()).matrix();
 
           auto rate_asym_neg = _rate.segment(frontend()->neurons_per_state, frontend()->neurons_per_state);
-          rate_asym_neg = frontend()->smooth_base_rate;
+          rate_asym_neg = frontend()->smooth_asym_neg_base_rate;
           if (AHV < 0) {
-            rate_asym_neg += (frontend()->smooth_scale.array() * (frontend()->smooth_slope * (-AHV)).array().tanh()).matrix();
+            rate_asym_neg += (frontend()->smooth_asym_neg_scale.array() * (frontend()->smooth_asym_neg_slope * (-AHV)).array().tanh()).matrix();
           }
 
           auto rate_asym_pos = _rate.segment(frontend()->neurons_per_state * 2, frontend()->neurons_per_state);
-          rate_asym_pos = frontend()->smooth_base_rate;
+          rate_asym_pos = frontend()->smooth_asym_pos_base_rate;
           if (AHV > 0) {
-            rate_asym_pos += (frontend()->smooth_scale.array() * (frontend()->smooth_slope * AHV).array().tanh()).matrix();
+            rate_asym_pos += (frontend()->smooth_asym_pos_scale.array() * (frontend()->smooth_asym_pos_slope * AHV).array().tanh()).matrix();
           }
         } else {
           _rate = EigenVector::Zero(frontend()->size);

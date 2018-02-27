@@ -118,20 +118,54 @@ public:
 
   // FloatT smooth_base_rate = 0.1;
   // FloatT smooth_slope = 1.0 / (1.5*M_PI);
-  EigenVector smooth_base_rate;
-  EigenVector smooth_scale;
-  EigenVector smooth_slope;
+  EigenVector smooth_sym_base_rate;
+  EigenVector smooth_sym_scale;
+  EigenVector smooth_sym_slope;
+
+  EigenVector smooth_asym_pos_base_rate;
+  EigenVector smooth_asym_pos_scale;
+  EigenVector smooth_asym_pos_slope;
+
+  EigenVector smooth_asym_neg_base_rate;
+  EigenVector smooth_asym_neg_scale;
+  EigenVector smooth_asym_neg_slope;
+
   inline void set_smooth_params(FloatT base, FloatT max, FloatT slope) {
-    smooth_base_rate = EigenVector::Constant(neurons_per_state, base);
-    smooth_scale = EigenVector::Constant(neurons_per_state, max - base);
-    smooth_slope = EigenVector::Constant(neurons_per_state, slope);
+    smooth_sym_base_rate = EigenVector::Constant(neurons_per_state, base);
+    smooth_sym_scale = EigenVector::Constant(neurons_per_state, max - base);
+    smooth_sym_slope = EigenVector::Constant(neurons_per_state, slope);
+
+    smooth_asym_neg_base_rate = EigenVector::Constant(neurons_per_state, base);
+    smooth_asym_neg_scale = EigenVector::Constant(neurons_per_state, max - base);
+    smooth_asym_neg_slope = EigenVector::Constant(neurons_per_state, slope);
+
+    smooth_asym_pos_base_rate = EigenVector::Constant(neurons_per_state, base);
+    smooth_asym_pos_scale = EigenVector::Constant(neurons_per_state, max - base);
+    smooth_asym_pos_slope = EigenVector::Constant(neurons_per_state, slope);
+  }
+
+  inline void set_smooth_params(EigenVector base_sym, EigenVector max_sym, EigenVector slope_sym,
+                                EigenVector base_asym_neg, EigenVector max_asym_neg, EigenVector slope_asym_neg,
+                                EigenVector base_asym_pos, EigenVector max_asym_pos, EigenVector slope_asym_pos) {
+    // assert correct sizes
+    smooth_sym_base_rate = base_sym;
+    smooth_sym_scale = max_sym - base_sym;
+    smooth_sym_slope = slope_sym;
+
+    smooth_asym_neg_base_rate = base_asym_neg;
+    smooth_asym_neg_scale = max_asym_neg - base_asym_neg;
+    smooth_asym_neg_slope = slope_asym_neg;
+
+    smooth_asym_pos_base_rate = base_asym_pos;
+    smooth_asym_pos_scale = max_asym_pos - base_asym_pos;
+    smooth_asym_pos_slope = slope_asym_pos;
   }
 
   inline void set_smooth_params(EigenVector base, EigenVector max, EigenVector slope) {
     // assert correct sizes
-    smooth_base_rate = base;
-    smooth_scale = max - base;
-    smooth_slope = slope;
+    smooth_sym_base_rate = base; smooth_asym_pos_base_rate = base; smooth_asym_neg_base_rate = base;
+    smooth_sym_scale = max - base; smooth_asym_pos_scale = max - base; smooth_asym_neg_scale = max - base;
+    smooth_sym_slope = slope; smooth_asym_pos_slope = slope; smooth_asym_neg_slope = slope;
   }
 
 private:
@@ -158,14 +192,9 @@ private:
 typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
 typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
+
 struct AgentBase {
   // FloatT velocity_scaling = 1;
-
-  FloatT bound_x = 10, bound_y = 10;
-
-  int num_objects = 0;
-  int num_proximal_objects = 0;
-  int num_distal_objects = 0;
 
   int num_AHV_states = 0;
   int num_FV_states = 0;
@@ -206,17 +235,101 @@ struct AgentBase {
   // RateNeurons* actor;
   // EigenMatrix2D actor_tuning;
 
-  EigenMatrix2D proximal_objects;
-  std::vector<FloatT> distal_objects;
-
   std::vector<std::pair<FloatT, FloatT> > FVs;  //  FV, duration
   std::vector<std::pair<FloatT, FloatT> > AHVs; // AHV, duration
 };
 
 
+class WorldBase {
+protected:
+  inline void prepare(AgentBase&) {}
+  inline void update_per_dt(AgentBase&, FloatT) {}
+
+public:
+  FloatT bound_x = 10, bound_y = 10;
+
+  int num_objects = 0;
+  int num_proximal_objects = 0;
+  int num_distal_objects = 0;
+
+  EigenMatrix2D proximal_objects;
+  std::vector<FloatT> distal_objects;
+};
+
+
+class OpenWorld : public virtual WorldBase {
+public:
+  void set_boundary(FloatT bound_x_, FloatT bound_y_) {
+    bound_x = bound_x_;
+    bound_y = bound_y_;
+  }
+
+  void add_proximal_object(FloatT x, FloatT y) {
+    num_objects += 1;
+    num_proximal_objects += 1;
+    if (num_proximal_objects == 1) {
+      proximal_objects.resize(Eigen::NoChange, 1);
+    } else {
+      proximal_objects.conservativeResize(Eigen::NoChange, num_proximal_objects);
+    }
+    proximal_objects(0, num_proximal_objects-1) = x;
+    proximal_objects(1, num_proximal_objects-1) = y;
+  }
+
+  void add_distal_object(FloatT angle) {
+    // ensure angle is in range [0, 2pi)
+    if (angle < 0) angle += 2*M_PI;
+    if (angle > 2*M_PI) angle -= 2*M_PI;
+
+    distal_objects.push_back(angle);
+    num_distal_objects += 1;
+    num_objects += 1;
+  }
+};
+
+
+class MazeWorld : public virtual WorldBase {
+public:
+  // void load_map(std::string filename);
+  void load_map(std::string map);
+  void load_rewards(std::string map);
+
+  void print_map();
+
+  /*
+
+    first, strip whitespace from edges
+
+    map: "x" -> invisible barrier
+         "*" -> barrier with visible object
+         "o" -> visible object (no barrier)
+              - else passable
+
+    rewards:
+    + first, define character mapping
+    + second, load from map string
+      - again, strip whitespace
+      - ignore unmapped chars
+
+    provide function to compute intersection / visibility of ray with any barrier
+
+   */
+};
+
+
+template<typename WorldT>
+class WorldAgentBase : public virtual AgentBase,
+                       public virtual WorldT {
+public:
+  using world_type = WorldT;
+};
+
+
 class NullActionPolicy {
 protected:
+  inline void prepare(AgentBase&) {}
   inline void choose_new_action(AgentBase&, FloatT) {}
+  inline void update_per_dt(AgentBase&, FloatT) {}
 };
 
 
@@ -229,9 +342,9 @@ class RandomWalkPolicy {
 
   bool prepared = false;
 
-  void prepare(AgentBase& a);
-
 protected:
+  void prepare(AgentBase& a);
+  inline void update_per_dt(AgentBase&, FloatT) {}
   void choose_new_action(AgentBase& a, FloatT dt);
 
 public:
@@ -240,6 +353,62 @@ public:
   RandomWalkPolicy() {
     action_die = std::uniform_real_distribution<FloatT>(0, 1);
   }
+};
+
+
+template<typename AgentT>
+class QMazePolicy {
+  /*
+   * Load a maze from a file
+     - including reward values
+   * During exploration, learn Q
+   * Sequence actions according to softmax policy over Q]
+     - set of actions is predefined: maps to sequences of primitive actions
+       (in principle, this can be replace with a circuit mechanism, too)
+
+   * In future, want to replace action selection with circuits
+   * - need a mechanism!
+   */
+
+  /* get_state_index:
+     - given state coordinates, return state index into Q
+  */
+  uint32_t get_state_index(/*coords*/);
+
+protected:
+  /* prepare:
+     - compute action sequences from velocity data
+       - at first, ignore smooth_ahv
+     - construct initial Q matrix
+       - uniform positive over reachable states;
+       - uniform negative over unreachable states
+       - OR LOAD FROM FILE?
+   */
+  void prepare(AgentT& a);
+
+  /* update_per_dt:
+     - update Q matrix
+     - update visible objects (algorithm?) */
+  void update_per_dt(AgentT& agent, FloatT dt);
+  void update_Q(AgentT& agent, FloatT dt);
+
+  /* update_visible_objects:
+     - represent maze as set of line segments
+       (we assume a MazeWorld agent instance, accessible using CRTP)
+   */
+  void update_visible_objects(AgentT& agent, FloatT dt);
+
+  /* choose_new_action:
+     - use Q matrix to choose probabilistically (softmax)
+     - then sequence action primitives accordingly
+       - add_velocity has already added the (hd, speed) pairs,
+         so just need to do a rotation then a forward movement
+   */
+  void choose_new_action(AgentT& a, FloatT dt);
+
+public:
+  void add_velocity(FloatT theta, FloatT r);
+  void buffer_q_interval(int timesteps);
 };
 
 
@@ -252,6 +421,8 @@ protected:
 
   void prepare(AgentBase& a);
   virtual void choose_new_action(AgentBase& a, FloatT dt);
+
+  inline void update_per_dt(AgentBase&, FloatT) {}
 public:
   void set_scan_bounds(FloatT x, FloatT y);
   void set_row_separation(FloatT distance);
@@ -278,7 +449,9 @@ class PlaceTestPolicy {
   FloatT t_equilibration = 1.0;
 
 protected:
+  inline void prepare(AgentBase&) {}
   void choose_new_action(AgentBase& a, FloatT dt);
+  inline void update_per_dt(AgentBase&, FloatT) {}
 
 public:
   void add_test_position(FloatT x, FloatT y) {
@@ -305,7 +478,9 @@ class HDTestPolicy {
   FloatT t_equilibration = 1.0;
 
 protected:
+  inline void prepare(AgentBase&) {}
   void choose_new_action(AgentBase& a, FloatT dt);
+  inline void update_per_dt(AgentBase&, FloatT) {}
 
 public:
   void add_test_position(FloatT x, FloatT y) {
@@ -317,16 +492,34 @@ public:
 };
 
 
-template<typename TrainPolicyT, typename TestPolicyT>
-class Agent : public AgentBase,
+template<typename WorldT, typename TrainPolicyT, typename TestPolicyT>
+class Agent : public virtual AgentBase,
+              public virtual WorldT,
+              public virtual WorldAgentBase<WorldT>,
               public TrainPolicyT,
               public TestPolicyT {
+  bool prepared = false;
+
 public:
   Agent() {
-    position = EigenVector2D::Zero();
+    this->position = EigenVector2D::Zero();
 
     add_FV(0, 0);
     add_AHV(0, 0);
+  }
+
+  void prepare() {
+    if (prepared) return;
+
+    WorldT::prepare(*this);
+
+    object_bearings.resize(this->num_objects);
+    object_bearings = EigenVector::Zero(this->num_objects);
+
+    TrainPolicyT::prepare(*this);
+    TestPolicyT::prepare(*this);
+
+    prepared = true;
   }
 
   void set_smooth_AHV(FloatT speed) {
@@ -338,64 +531,31 @@ public:
     }
   }
 
-  void set_boundary(FloatT bound_x_, FloatT bound_y_) {
-    bound_x = bound_x_;
-    bound_y = bound_y_;
-  }
-
-  void add_proximal_object(FloatT x, FloatT y) {
-    num_objects += 1;
-    num_proximal_objects += 1;
-    if (num_proximal_objects == 1) {
-      proximal_objects.resize(Eigen::NoChange, 1);
-    } else {
-      proximal_objects.conservativeResize(Eigen::NoChange, num_proximal_objects);
-    }
-    proximal_objects(0, num_proximal_objects-1) = x;
-    proximal_objects(1, num_proximal_objects-1) = y;
-
-    object_bearings.resize(num_objects);
-    object_bearings = EigenVector::Zero(num_objects);
-  }
-
-  void add_distal_object(FloatT angle) {
-    // ensure angle is in range [0, 2pi)
-    if (angle < 0) angle += 2*M_PI;
-    if (angle > 2*M_PI) angle -= 2*M_PI;
-
-    distal_objects.push_back(angle);
-    num_distal_objects += 1;
-    num_objects += 1;
-
-    object_bearings.resize(num_objects);
-    object_bearings = EigenVector::Zero(num_objects);
-  }
-
   void add_test_time(FloatT t_test) {
     test_times.push(t_test);
   }
 
   void add_FV(FloatT FV, FloatT duration) {
-    FVs.push_back({FV, duration});
-    num_FV_states += 1;
+    this->FVs.push_back({FV, duration});
+    this->num_FV_states += 1;
   }
 
   void add_AHV(FloatT AHV, FloatT duration) {
-    AHVs.push_back({AHV, duration});
-    num_AHV_states += 1;
+    this->AHVs.push_back({AHV, duration});
+    this->num_AHV_states += 1;
   }
 
   void update_bearings() {
     int i = 0;
-    for (; i < num_distal_objects; ++i) {
-      object_bearings(i) = distal_objects[i] - head_direction;
+    for (; i < this->num_distal_objects; ++i) {
+      object_bearings(i) = this->distal_objects[i] - head_direction;
     }
-    for (int j = 0; j < num_proximal_objects; ++i, ++j) {
+    for (int j = 0; j < this->num_proximal_objects; ++i, ++j) {
       // There is possibly a neater way to do this, using the updates above...
-      EigenVector2D obj_vector = proximal_objects.col(j) - position;
+      EigenVector2D obj_vector = this->proximal_objects.col(j) - position;
       object_bearings(i) = atan2(obj_vector(1), obj_vector(0)) - head_direction;
     }
-    for (i = 0; i < num_objects; ++i) {
+    for (i = 0; i < this->num_objects; ++i) {
       FloatT angle = object_bearings(i);
       /* // For 270deg restricted visual field:
       if ((angle > 0.75*M_PI && angle < M_PI)
@@ -410,41 +570,48 @@ public:
   }
 
   void update_per_dt(FloatT dt) override {
+    if (!prepared) prepare();
+
     // buffer position & head_direction if necessary
-    if (agent_buffer_interval
-        && (timesteps >= agent_buffer_start)
-        && !(timesteps % agent_buffer_interval)) {
-      EigenVector agent_buf = EigenVector::Zero(5);
-      agent_buf(0) = position(0);
-      agent_buf(1) = position(1);
-      agent_buf(2) = head_direction;
-      agent_buf(3) = FV;
-      agent_buf(4) = AHV;
-      agent_history.push_back(timesteps, agent_buf);
+    if (this->agent_buffer_interval
+        && (this->timesteps >= this->agent_buffer_start)
+        && !(this->timesteps % this->agent_buffer_interval)) {
+      EigenVector agent_buf = EigenVector::Zero(6);
+      agent_buf(0) = this->position(0);
+      agent_buf(1) = this->position(1);
+      agent_buf(2) = this->head_direction;
+      agent_buf(3) = this->FV;
+      agent_buf(4) = this->AHV;
+      agent_buf(5) = this->t;
+      this->agent_history.push_back(this->timesteps, agent_buf);
     }
 
-    t += dt;
-    timesteps += 1;
+    this->t += dt;
+    this->timesteps += 1;
 
-    if (timesteps >= choose_next_action_ts) {
-      if (test_times.empty() || t < test_times.top()) {
+    WorldT::update_per_dt(*this, dt);
+    TrainPolicyT::update_per_dt(*this, dt);
+    TestPolicyT::update_per_dt(*this, dt);
+
+    if (this->timesteps >= this->choose_next_action_ts) {
+      if (this->test_times.empty() || this->t < this->test_times.top()) {
         TrainPolicyT::choose_new_action(*this, dt);
       } else {
         TestPolicyT::choose_new_action(*this, dt);
       }
       // In case the policy hasn't updated change_action_ts
       // (which is new, to support continuous changes in action):
-      if (change_action_ts <= timesteps) {
-        change_action_ts = timesteps + 1;
+      if (this->change_action_ts <= this->timesteps) {
+        this->change_action_ts = this->timesteps + 1;
       }
     }
 
-    if (timesteps < change_action_ts) {
+    if (this->timesteps < this->change_action_ts) {
       update_action(dt);
     }
 
     // ensure only one of AHV and FV is active currently:
-    assert(!(curr_AHV && curr_FV));
+    assert(!(this->curr_AHV && this->curr_FV));
     perform_action(dt);
     update_bearings();
   }
@@ -576,17 +743,17 @@ public:
     }
 
     std::ofstream map_file(output_dir + "/map.info");
-    map_file << bound_x << "," << bound_y << "\n";
-    for (int i = 0; i < num_distal_objects; ++i) {
-      map_file << distal_objects[i];
-      if (i == num_distal_objects-1) {
+    map_file << this->bound_x << "," << this->bound_y << "\n";
+    for (int i = 0; i < this->num_distal_objects; ++i) {
+      map_file << this->distal_objects[i];
+      if (i == this->num_distal_objects-1) {
         map_file << "\n";
       } else {
         map_file << ",";
       }
     }
-    for (int i = 0; i < num_proximal_objects; ++i) {
-      EigenVector2D obj_pos = proximal_objects.col(i);
+    for (int i = 0; i < this->num_proximal_objects; ++i) {
+      EigenVector2D obj_pos = this->proximal_objects.col(i);
       map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
     }
     map_file.flush();

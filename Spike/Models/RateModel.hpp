@@ -11,7 +11,14 @@
 // |---
 class AgentBase;
 
-template<typename TrainPolicyT, typename TestPolicyT>
+class WorldBase;
+class OpenWorld;
+class MazeWorld;
+
+template<typename WorldT>
+class WorldAgentBase;
+
+template<typename WorldT, typename TrainPolicyT, typename TestPolicyT>
 class Agent;
 
 class RateNeurons;

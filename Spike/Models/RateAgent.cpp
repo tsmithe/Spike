@@ -61,8 +61,8 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.target_position(0) += r * cos(a.head_direction);
       a.target_position(1) += r * sin(a.head_direction);
 
-      if ((fabs(a.target_position(0)) > a.bound_x)
-          || (fabs(a.target_position(1)) > a.bound_y)) {
+      if ((fabs(a.target_position(0)) > dynamic_cast<WorldBase&>(a).bound_x)
+          || (fabs(a.target_position(1)) > dynamic_cast<WorldBase&>(a).bound_y)) {
         // is_legal = false;
 
         a.curr_action = AgentBase::actions_t::AHV;
@@ -87,9 +87,9 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
 void ScanWalkPolicy::prepare(AgentBase& a) {
   if (0 == bound_x)
-    bound_x = a.bound_x;
+    bound_x = dynamic_cast<WorldBase&>(a).bound_x;
   if (0 == bound_y)
-    bound_y = a.bound_y;
+    bound_y = dynamic_cast<WorldBase&>(a).bound_y;
   if (0 == row_separation)
     row_separation = bound_y / 5;
   walk_direction = 1;
@@ -421,37 +421,54 @@ void HDTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     In every case, set the target data and choose_next_action_ts
    */
 
-  if (curr_test_position < 0) {
+  auto first_run = [&]() -> bool { return curr_test_position < 0; };
+  auto finished_positions = [&]() -> bool { return test_positions.size() <= curr_test_position+1; };
+  auto finished_AHVs = [&]() -> bool { return a.AHVs.size() <= a.curr_AHV+1; };
+
+  if (first_run()) {
+    // Store old data
     old_position = a.position;
     old_target_pos = a.target_position;
     old_hd = a.head_direction;
     old_target_hd = a.target_head_direction;
-  }
 
-  if (curr_test_position < 0 || a.AHVs.size() <= a.curr_AHV+1) {
+    // Advance to first position
     curr_test_position++;
     a.curr_AHV = -1;
   }
 
+  if (finished_positions() && finished_AHVs()) {
+    curr_test_position = -1;
+    a.test_times.pop();
+
+    // Reset to old data
+    a.position = old_position;
+    a.target_position = old_target_pos;
+    a.head_direction = old_hd;
+    a.target_head_direction = old_target_hd;
+
+    return;
+  }
+
+  if (finished_AHVs()) {
+    curr_test_position++;
+    a.curr_AHV = -1;
+  }
+
+  // Update agent position
   a.position = test_positions[curr_test_position];
   a.target_position = a.position;
 
-  if (test_positions.size() <= curr_test_position+1) {
-    curr_test_position = -1;
-    a.test_times.pop();
-    a.position = old_position;
-    a.target_position = old_target_pos;
-    // a.head_direction = old_hd;
-    a.target_head_direction = old_target_hd;
-  }
-
+  // Set new action
   a.curr_action = AgentBase::actions_t::AHV;
   a.curr_FV = 0;
   a.curr_AHV++;
 
+  // Update HD data
   a.head_direction = 0;
   a.target_head_direction = 0;
 
+  // Compute action data
   FloatT AHV = a.AHVs[a.curr_AHV].first;
   FloatT duration;
   if (a.curr_AHV == 0) {
@@ -515,7 +532,7 @@ AgentVISRateNeurons::AgentVISRateNeurons(Context* ctx,
                                          FloatT sigma_IN_,
                                          FloatT lambda_,
                                          std::string label_)
-  : RateNeurons(nullptr, (int)(agent_->num_objects) * neurons_per_object_,
+  : RateNeurons(nullptr, (int)(dynamic_cast<WorldBase*>(agent_)->num_objects) * neurons_per_object_,
                 label_, 0, 1, 1),
     agent(agent_),
     neurons_per_object(neurons_per_object_),
