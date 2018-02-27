@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 1200;
+  FloatT train_time = 16200;
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 300;
+  FloatT test_on_time = 0; //300;
   FloatT test_off_time = 0;
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
   FloatT fwd_move_dist = 0.4 * radius;
   FloatT rot_angle = M_PI / 2;
 
-  FloatT fwd_move_time = 0.4; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.4; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 1.0; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 1.0; ///6.0; // seconds per angular move
 
   agent.p_fwd = 0.5 * 1.0/3.0;
 
@@ -75,11 +75,16 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  agent.add_test_time(100);
-  agent.add_test_time(500);
-  agent.add_test_time(1000);
+  // agent.add_test_time(100);
+  // agent.add_test_time(500);
   agent.add_test_time(2000);
   agent.add_test_time(4000);
+  agent.add_test_time(6000);
+  agent.add_test_time(8000);
+  agent.add_test_time(10000);
+  agent.add_test_time(12000);
+  agent.add_test_time(14000);
+  agent.add_test_time(16000);
   // agent.set_place_test_params(0.1, 16);
   agent.add_test_position(0, 0);
   /*
@@ -102,40 +107,49 @@ int main(int argc, char *argv[]) {
   AgentAHVRateNeurons AHV(ctx, &agent, N_per_state, "AHV");
   // AHV.set_smooth_params(0.1, 1.0, 1.0 / (1.5*M_PI));
   const EigenVector smooth_random = (0.5 * (EigenVector::Random(N_per_state).array() + 1)).matrix();
-  EigenVector smooth_base = (0.1 + 0.05 * EigenVector::Random(N_per_state).array()).matrix();
-  EigenVector smooth_max = (0.84 + 0.15 * EigenVector::Random(N_per_state).array()).matrix();
-  EigenVector smooth_slope = (1.0 / M_PI + 0.25 * EigenVector::Random(N_per_state).array()).matrix();
-  AHV.set_smooth_params(smooth_base, smooth_max, smooth_slope);
+  auto smooth_sym_base = (0.1 + 0.05 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_sym_max = (0.25 + 0.15 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_sym_slope = (1.5 / M_PI + 0.4 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_neg_base = (0.1 + 0.1 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_neg_max = (0.85 + 0.15 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_neg_slope = (1.5 / M_PI + 0.4 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_pos_base = (0.1 + 0.1 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_pos_max = (0.85 + 0.15 * EigenVector::Random(N_per_state).array()).matrix();
+  auto smooth_asym_pos_slope = (1.5 / M_PI + 0.4 * EigenVector::Random(N_per_state).array()).matrix();
+  AHV.set_smooth_params(smooth_sym_base, smooth_sym_max, smooth_sym_slope,
+                        smooth_asym_neg_base, smooth_asym_neg_max, smooth_asym_neg_slope,
+                        smooth_asym_pos_base, smooth_asym_pos_max, smooth_asym_pos_slope);
 
   int N_HD = HD.size;
   int N_AHV = AHV.size;
 
   // AHVxHD neurons:
   int N_AHVxHD = 600;
-  FloatT alpha_AHVxHD = 20.0;
+  FloatT alpha_AHVxHD = 16.0;
   FloatT beta_AHVxHD = 0.5;
   FloatT tau_AHVxHD = 1e-2;
   RateNeurons AHVxHD(ctx, N_AHVxHD, "AHVxHD",
                      alpha_AHVxHD, beta_AHVxHD, tau_AHVxHD);
 
   // General parameters:
-  FloatT axonal_delay = 1e-2; // seconds (TODO units)
-  FloatT eps = 0.02;
+  FloatT axonal_delay = 0; //1e-2; // seconds (TODO units)
+  FloatT eps = 0.03;
 
 
   // HD -> AHVxHD connectivity:
   FloatT HD_AHVxHD_sparsity = 0.05;
-  FloatT HD_AHVxHD_scaling = 360.0 / (N_HD*HD_AHVxHD_sparsity); // 500
+  FloatT HD_AHVxHD_scaling = 200.0 / (N_HD*HD_AHVxHD_sparsity); // 500
 
   // AHV -> AHVxHD connectivity:
-  FloatT AHV_AHVxHD_scaling = 450.0 / N_AHV; // 240
+  FloatT AHV_AHVxHD_sparsity = 0.4;
+  FloatT AHV_AHVxHD_scaling = 320.0 / (N_AHV*AHV_AHVxHD_sparsity); // 240
 
   // AHVxHD -> AHVxHD connectivity:
-  FloatT AHVxHD_inhibition = -120.0 / N_AHVxHD; // -250
+  FloatT AHVxHD_inhibition = -160.0 / N_AHVxHD; // -250
 
   // HD -> AHVxHD connectivity:
   RateSynapses HD_AHVxHD(ctx, &HD, &AHVxHD, HD_AHVxHD_scaling, "HD_AHVxHD");
-  // HD_AHVxHD.delay(ceil(axonal_delay / timestep));
+  HD_AHVxHD.delay(ceil(axonal_delay / timestep));
   EigenMatrix W_HD_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_HD, 1.0, true,
                                                       1.0-HD_AHVxHD_sparsity, 0, false);
   if (read_weights) {
@@ -157,7 +171,8 @@ int main(int argc, char *argv[]) {
 
   // AHV -> AHVxHD connectivity:
   RateSynapses AHV_AHVxHD(ctx, &AHV, &AHVxHD, AHV_AHVxHD_scaling, "AHV_AHVxHD");
-  EigenMatrix W_AHV_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_AHV);
+  EigenMatrix W_AHV_AHVxHD = Eigen::make_random_matrix(N_AHVxHD, N_AHV, 1.0, true,
+                                                      1.0-AHV_AHVxHD_sparsity, 0, false);
   if (read_weights) {
     std::string tmp_path = weights_path + "/W_AHV_AHVxHD.bin";
     Eigen::read_binary(tmp_path.c_str(), W_AHV_AHVxHD, N_AHVxHD, N_AHV);
