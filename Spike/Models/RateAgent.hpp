@@ -492,7 +492,7 @@ public:
 };
 
 
-template<typename WorldT, typename TrainPolicyT, typename TestPolicyT>
+template<typename TrainPolicyT, typename TestPolicyT, typename WorldT>
 class Agent : public virtual AgentBase,
               public virtual WorldT,
               public virtual WorldAgentBase<WorldT>,

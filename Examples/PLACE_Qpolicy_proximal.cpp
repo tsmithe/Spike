@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<OpenWorld, RandomWalkPolicy, HDTestPolicy> agent;
+  Agent<RandomWalkPolicy, HDTestPolicy> agent;
   // agent.seed(123);
 
   FloatT radius = 1.0;

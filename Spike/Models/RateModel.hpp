@@ -18,7 +18,7 @@ class MazeWorld;
 template<typename WorldT>
 class WorldAgentBase;
 
-template<typename WorldT, typename TrainPolicyT, typename TestPolicyT>
+template<typename TrainPolicyT, typename TestPolicyT, typename WorldT=OpenWorld>
 class Agent;
 
 class RateNeurons;
