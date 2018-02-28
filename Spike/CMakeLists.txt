@@ -35,6 +35,8 @@ add_library(Spike
 
 # target_compile_features(Spike PUBLIC cxx_nullptr)
 
+add_definitions(-DEIGEN_MATRIX_PLUGIN="${PROJECT_SOURCE_DIR}/Submodules/eigen-initializer_list/src/Matrix_initializer_list.h" -DEIGEN_ARRAY_PLUGIN="${PROJECT_SOURCE_DIR}/Submodules/eigen-initializer_list/src/Array_initializer_list.h")
+
 target_link_libraries(Spike PRIVATE pthread)
 
 if (MKL_FOUND)
