@@ -5,3 +5,6 @@
 	path = Submodules/eigen
 	url = https://github.com/tsmithe/eigen.git
 	branch = 3.3
+[submodule "Submodules/eigen-initializer_list"]
+	path = Submodules/eigen-initializer_list
+	url = https://github.com/hauptmech/eigen-initializer_list.git
