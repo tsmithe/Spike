@@ -700,59 +700,146 @@ public:
 };
 
 
-template<typename AgentT>
 class QMazePolicy {
   /*
-   * Load a maze from a file
-     - including reward values
-   * During exploration, learn Q
-   * Sequence actions according to softmax policy over Q]
-     - set of actions is predefined: maps to sequences of primitive actions
-       (in principle, this can be replace with a circuit mechanism, too)
-
    * In future, want to replace action selection with circuits
    * - need a mechanism!
    */
 
-  /* get_state_index:
-     - given state coordinates, return state index into Q
-  */
-  uint32_t get_state_index(/*coords*/);
+  std::vector<std::tuple<FloatT, FloatT, FloatT> > actions;
+  std::uniform_real_distribution<FloatT> action_die;
+
+  EigenMatrix Q;
+  unsigned buffer_Q_timesteps = 0;
+
+  FloatT q0 = 10;                 // initial Q values: larger encourages exploration
+  FloatT beta = 0.5;              // softmax inverse temperature
+  FloatT invalid_act_reward = -1; // 'reward' for taking an invalid action
+  FloatT alpha = 0.1;             // Q learning rate
+  FloatT gamma = 0.85;            // Q learning discount factor
+
+  bool prepared = false;
+  bool started = false;
+  unsigned prev_state;
+  int action_stage = 0;
+
+  unsigned state_index(FloatT x, FloatT y) {
+    /* given state coordinates, return state index into Q
+       + nb: x is horizontal, which means along columns of map */
+    int i = std::round(y);
+    int j = std::round(x);
+    assert(i > 0 && j > 0);
+    return i * Q.cols() + j;
+  }
 
 protected:
-  /* prepare:
-     - compute action sequences from velocity data
-       - at first, ignore smooth_ahv
-     - construct initial Q matrix
-       - uniform positive over reachable states;
-       - uniform negative over unreachable states
-       - OR LOAD FROM FILE?
-   */
-  void prepare(AgentT& a);
+  void prepare(AgentBase& a) {
+    if (prepared) return;
+    prepared = true;
+    t = 0;
+    auto w = dynamic_cast<MazeWorld&>(a);
+    Q = q0 * EigenMatrix::Ones(w.world_size(0) * w.world_size(1), actions.size());
+  }
 
-  /* update_per_dt:
-     - update Q matrix
-     - update visible objects (algorithm?) */
-  void update_per_dt(AgentT& agent, FloatT dt);
-  void update_Q(AgentT& agent, FloatT dt);
+  void update_per_dt(AgentBase& agent, FloatT dt) {
+    update_visible_objects(agent, dt);
 
-  /* update_visible_objects:
-     - represent maze as set of line segments
-       (we assume a MazeWorld agent instance, accessible using CRTP)
-   */
-  void update_visible_objects(AgentT& agent, FloatT dt);
+    // TODO: and buffer Q to disk
 
-  /* choose_new_action:
-     - use Q matrix to choose probabilistically (softmax)
-     - then sequence action primitives accordingly
-       - add_velocity has already added the (hd, speed) pairs,
-         so just need to do a rotation then a forward movement
-   */
-  void choose_new_action(AgentT& a, FloatT dt);
+    t += dt;
+  }
+
+  void update_Q(AgentBase& a, FloatT dt) {
+    /* standard q learning, given world reward structure */
+    auto q = Q(previous_state, current_action);
+
+    // rows are along y axis; columns along x
+    FloatT x = a.position(0);
+    FloatT y = a.position(1);
+    unsigned i = std::round(y);
+    unsigned j = std::round(x);
+
+    Q(prev_state, current_action)
+      = (1 - alpha) * q
+      + alpha * (reward(i, j) + gamma * Q.row(state_index(x, y)).maxCoeff());
+  }
+
+  void update_visible_objects(AgentBase& agent, FloatT dt) {
+    /* check intersections of rays from self to objects, and barriers */
+  }
+
+  void choose_new_action(AgentBase& a, FloatT dt) {
+    if (0 == action_stage) {
+      /* We only update Q when we choose a new action,
+         thereby simplifying the problem through discretisation.
+         Later, we can update Q continuously in update_per_dt. */
+      auto curr_state = state_index(a.position(0), a.position(1));
+      if (started) update_Q(a, dt);
+      else started = true;
+
+      while (true) {
+        /* - use Q matrix to choose probabilistically (softmax) */
+        EigenVector p_action = (beta * Q.row(curr_state)).array().exp().matrix();
+        p_action /= p_action.sum();
+
+        FloatT action_choice = action_die(rand_engine);
+        unsigned action_i = 0;
+        for (; action_i < p_action.size(); ++action_i) {
+          action_choice -= p_action(i);
+          if (action_choice < 0) break;
+        }
+
+        // check action validity:
+        // TODO ...
+        bool action_valid = true;
+
+        // got a valid action:
+        if (action_valid) {
+          break;
+        } else {
+          // update Q matrix accordingly
+          // TODO ...
+        }
+
+        prev_state = curr_state;
+      }
+
+      // now sequence actions accordingly
+      ++action_stage;
+
+      // first of all, do rotation:
+      // ...
+    } else {
+      // finish currently sequenced action
+      // do forward motion:
+      // ...
+
+      // next time, choose new action
+      action_stage = 0;
+    }
+  }
 
 public:
-  void add_velocity(FloatT theta, FloatT r);
-  void buffer_q_interval(int timesteps);
+  QMazePolicy() {
+    action_die = std::uniform_real_distribution<FloatT>(0, 1);
+  }
+
+  void add_velocity(FloatT theta, FloatT r, FloatT duration) {
+    actions.push_back({theta, r, duration});
+  }
+
+  void buffer_q_interval(int timesteps) {
+    buffer_Q_timesteps = timesteps;
+  }
+
+  void set_rl_params(FloatT _q0, FloatT _beta, FloatT _invalid_act_reward,
+                     FloatT _alpha, FloatT _gamma) {
+    q0 = _q0;
+    beta = _beta;
+    invalid_act_reward = _invalid_act_reward;
+    alpha = _alpha;
+    gamma = _gamma;
+  }
 };
 
 
