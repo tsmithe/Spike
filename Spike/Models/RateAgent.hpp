@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "Spike/Models/RateBase.hpp"
 #include "Spike/Models/RateModel.hpp"
 
@@ -254,6 +256,42 @@ public:
 
   EigenMatrix2D proximal_objects;
   std::vector<FloatT> distal_objects;
+
+  void save_map(std::string output_prefix) {
+    {
+      const int err = mkdir(output_prefix.c_str(),
+                            S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      if (-1 == err && EEXIST != errno)
+        std::cout << "\nTrouble making output directory "
+                  << output_prefix << "\n";
+    }
+
+    std::string output_dir = output_prefix + "/Agent";
+
+    {
+      const int err = mkdir(output_dir.c_str(),
+                            S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      if (-1 == err && EEXIST != errno)
+        std::cout << "\nTrouble making output directory "
+                  << output_dir << "\n";
+    }
+
+    std::ofstream map_file(output_dir + "/map.info");
+    map_file << this->bound_x << "," << this->bound_y << "\n";
+    for (int i = 0; i < this->num_distal_objects; ++i) {
+      map_file << this->distal_objects[i];
+      if (i == this->num_distal_objects-1) {
+        map_file << "\n";
+      } else {
+        map_file << ",";
+      }
+    }
+    for (int i = 0; i < this->num_proximal_objects; ++i) {
+      EigenVector2D obj_pos = this->proximal_objects.col(i);
+      map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
+    }
+    map_file.flush();
+  }
 };
 
 
@@ -291,11 +329,17 @@ public:
 class MazeWorld : public virtual WorldBase {
   /* It is assumed that every line in map is of the same length */
 
+public:
   Eigen::Vector2i world_size; // {rows, cols}
 
   /* ray_t: {start_pos, stop_pos} */
   using ray_t = std::pair<Eigen::Vector2i, Eigen::Vector2i>;
+
   std::vector<ray_t> barriers;
+  EigenMatrix2D test_locations;
+
+  EigenMatrix reward;
+  std::unordered_map<char, FloatT> reward_legend;
 
 protected:
   void prepare(AgentBase&) override {
@@ -310,7 +354,20 @@ protected:
 "x    x   x    x\n"
 "xxxxxxxxxxxxxxx");
 
+    load_rewards(
+"xxxxxxxxxxxxxxx\n"
+"x    x   x    x\n"
+"* ++ x   x    *\n"
+"x    xx*xx    x\n"
+"*             *\n"
+"x    x*x*x    x\n"
+"*    x   x -- *\n"
+"x    x   x    x\n"
+"xxxxxxxxxxxxxxx",
+{{'+', 1.0}, {'-', -1.1}});
+
     print_map();
+    print_rewards();
   }
 
   static Eigen::Vector2i compute_size(std::string const& map) {
@@ -404,18 +461,68 @@ protected:
     return barriers;
   }
 
-public:
-  // void load_map(std::string filename);
+  static EigenMatrix2D extract_objects(std::string map, Eigen::Vector2i world_size,
+                                       std::string obj_chars) {
+    auto map_coord = get_map_coord(world_size);
+    auto map_index = get_map_index(world_size);
 
+    unsigned num_objects = 0;
+    EigenMatrix2D objects;
+
+    while (true) {
+      auto idx = map.find_first_of(obj_chars);
+      if (std::string::npos == idx) break;
+
+      ++num_objects;
+      if (num_objects == 1) {
+        objects.resize(Eigen::NoChange, 1);
+      } else {
+        objects.conservativeResize(Eigen::NoChange, num_objects);
+      }
+
+      auto obj_coord = map_coord(idx).cast<FloatT>();
+      objects.col(num_objects-1) = obj_coord.transpose();
+
+      map[idx] = ' ';
+    }
+
+    return objects;
+  }
+
+public:
   void load_map(std::string map) {
     trim(map);
     world_size = compute_size(map);
+
+    // In the old code, the origin is at the centre of the map:
+    bound_x = 1 + world_size.cast<FloatT>()(0) / 2;
+    bound_y = 1 + world_size.cast<FloatT>()(1) / 2;
+
     barriers = extract_barriers(map, world_size);
+    proximal_objects = extract_objects(map, world_size, "*o");
+    test_locations = extract_objects(map, world_size, "t");
   }
 
-  void load_rewards(std::string map);
+  void load_rewards(std::string map, std::unordered_map<char, FloatT> legend) {
+    trim(map);
+    assert(compute_size(map) == world_size);
 
-  void print_map() {
+    reward = EigenMatrix::Zero(world_size(0), world_size(1));
+    reward_legend = legend;
+
+    auto map_coord = get_map_coord(world_size);
+    for (auto const& r : legend) {
+      while (true) {
+        auto idx = map.find(r.first);
+        if (std::string::npos == idx) break;
+        auto coord = map_coord(idx);
+        reward(coord(0), coord(1)) = r.second;
+        map[idx] = ' ';
+      }
+    }
+  }
+
+  std::string barriers_to_string() {
     std::string map((world_size(0)+1) * (world_size(1)+1), ' ');
     auto map_index = get_map_index(world_size);
 
@@ -442,9 +549,77 @@ public:
       }
     }
 
+    return map;
+  }
+
+  void print_map() {
+    std::string map = barriers_to_string();
+    auto map_index = get_map_index(world_size);
+
+    for (unsigned i = 0; i < proximal_objects.cols(); ++i) {
+      Eigen::Vector2i coord = proximal_objects.col(i).cast<int>();
+      auto idx = map_index(coord);
+      if ('x' == map[idx]) {
+        map[idx] = '*';
+      } else {
+        map[idx] = 'o';
+      }
+    }
+
+    for (unsigned i = 0; i < test_locations.cols(); ++i) {
+      Eigen::Vector2i coord = test_locations.col(i).cast<int>();
+      auto idx = map_index(coord);
+      map[idx] = 't';
+    }
+
     trim(map);
     std::cout << "\n" << map << std::endl;;
   }
+
+  void print_rewards() {
+    std::string map = barriers_to_string();
+
+    std::unordered_map<FloatT, char> reverse_legend;
+    for (auto const& r : reward_legend) {
+      reverse_legend[r.second] = r.first;
+    }
+
+    auto map_index = get_map_index(world_size);
+    for (unsigned i = 0; i < world_size(0); ++i) {
+      for (unsigned j = 0; j < world_size(1); ++j) {
+        const FloatT r = reward(i, j);
+        if (0 == r) continue;
+        map[map_index({i, j})] = reverse_legend[r];
+      }
+    }
+
+    trim(map);
+    std::cout << "\n" << map << std::endl;;
+  }
+
+  void save_map(std::string output_prefix) {
+    WorldBase::save_map(output_prefix);
+
+    std::string output_dir = output_prefix + "/Agent";
+
+    /*
+    std::ofstream barrier_file(output_dir + "/barrier.info");
+    for (int i = 0; i < this->num_distal_objects; ++i) {
+      map_file << this->distal_objects[i];
+      if (i == this->num_distal_objects-1) {
+        map_file << "\n";
+      } else {
+        map_file << ",";
+      }
+    }
+    for (int i = 0; i < this->num_proximal_objects; ++i) {
+      EigenVector2D obj_pos = this->proximal_objects.col(i);
+      map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
+    }
+    map_file.flush();
+    */
+  }
+
 
   /*
 
@@ -454,6 +629,7 @@ public:
          "*" -> barrier with visible object
          "o" -> visible object (no barrier)
               - else passable
+      +  "t" for test locations
 
     rewards:
     + first, define character mapping
@@ -871,41 +1047,5 @@ public:
     std::string history_fname = output_dir + "/history.bin";
     agent_history.open(history_fname);
     global_writer.add_buffer(&agent_history);
-  }
-
-  void save_map(std::string output_prefix) {
-    {
-      const int err = mkdir(output_prefix.c_str(),
-                            S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      if (-1 == err && EEXIST != errno)
-        std::cout << "\nTrouble making output directory "
-                  << output_prefix << "\n";
-    }
-
-    std::string output_dir = output_prefix + "/Agent";
-
-    {
-      const int err = mkdir(output_dir.c_str(),
-                            S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      if (-1 == err && EEXIST != errno)
-        std::cout << "\nTrouble making output directory "
-                  << output_dir << "\n";
-    }
-
-    std::ofstream map_file(output_dir + "/map.info");
-    map_file << this->bound_x << "," << this->bound_y << "\n";
-    for (int i = 0; i < this->num_distal_objects; ++i) {
-      map_file << this->distal_objects[i];
-      if (i == this->num_distal_objects-1) {
-        map_file << "\n";
-      } else {
-        map_file << ",";
-      }
-    }
-    for (int i = 0; i < this->num_proximal_objects; ++i) {
-      EigenVector2D obj_pos = this->proximal_objects.col(i);
-      map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
-    }
-    map_file.flush();
   }
 };
