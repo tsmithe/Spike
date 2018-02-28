@@ -243,9 +243,16 @@ struct AgentBase {
 
 
 class WorldBase {
+  AgentBase* agent = nullptr;
+
 protected:
-  virtual void prepare(AgentBase&) {}
-  virtual void update_per_dt(AgentBase&, FloatT) {}
+  template<typename T>
+  void embed_agent(T& a) {
+    agent = &a;
+  }
+
+  virtual void prepare() {}
+  virtual void update_per_dt(FloatT) {}
 
 public:
   FloatT bound_x = 10, bound_y = 10;
@@ -329,6 +336,8 @@ public:
 class MazeWorld : public virtual WorldBase {
   /* It is assumed that every line in map is of the same length */
 
+  bool prepared = false;
+
 public:
   Eigen::Vector2i world_size; // {rows, cols}
 
@@ -342,7 +351,10 @@ public:
   std::unordered_map<char, FloatT> reward_legend;
 
 protected:
-  void prepare(AgentBase&) override {
+  void prepare() override {
+    if (prepared) return;
+    prepared = true;
+
     load_map(
 "xxxxxxxxxxxxxxx\n"
 "x    x   x    x\n"
@@ -366,8 +378,8 @@ protected:
 "xxxxxxxxxxxxxxx",
 {{'+', 1.0}, {'-', -1.1}});
 
-    print_map();
-    print_rewards();
+    std::cout << "\n" << map_to_string() << "\n"
+              << "\n" << reward_to_string() << std::endl;
   }
 
   static Eigen::Vector2i compute_size(std::string const& map) {
@@ -552,7 +564,7 @@ public:
     return map;
   }
 
-  void print_map() {
+  std::string map_to_string() {
     std::string map = barriers_to_string();
     auto map_index = get_map_index(world_size);
 
@@ -573,10 +585,10 @@ public:
     }
 
     trim(map);
-    std::cout << "\n" << map << std::endl;;
+    return map;
   }
 
-  void print_rewards() {
+  std::string reward_to_string() {
     std::string map = barriers_to_string();
 
     std::unordered_map<FloatT, char> reverse_legend;
@@ -594,30 +606,36 @@ public:
     }
 
     trim(map);
-    std::cout << "\n" << map << std::endl;;
+    return map;
   }
 
   void save_map(std::string output_prefix) {
+    prepare();
+
     WorldBase::save_map(output_prefix);
 
     std::string output_dir = output_prefix + "/Agent";
 
-    /*
-    std::ofstream barrier_file(output_dir + "/barrier.info");
-    for (int i = 0; i < this->num_distal_objects; ++i) {
-      map_file << this->distal_objects[i];
-      if (i == this->num_distal_objects-1) {
-        map_file << "\n";
-      } else {
-        map_file << ",";
-      }
+    std::ofstream barrier_file(output_dir + "/barriers.info");
+    for (auto const& b : barriers) {
+      barrier_file << b.first(0) << "," << b.first(1) << ","
+                   << b.second(0) << "," << b.second(1) << "\n";
     }
-    for (int i = 0; i < this->num_proximal_objects; ++i) {
-      EigenVector2D obj_pos = this->proximal_objects.col(i);
-      map_file << obj_pos(0) << "," << obj_pos(1) << "\n";
+    barrier_file.flush();
+
+    std::ofstream map_file(output_dir + "/map.txt");
+    map_file << map_to_string() << std::endl;
+
+    if (test_locations.rows() > 0 && test_locations.cols() > 0) {
+      Eigen::write_binary((output_dir + "/test_locations.bin").c_str(), test_locations);
     }
-    map_file.flush();
-    */
+
+    if (reward.rows() > 0 && reward.cols() > 0) {
+      Eigen::write_binary((output_dir + "/reward.bin").c_str(), reward);
+    }
+
+    std::ofstream reward_file(output_dir + "/reward.txt");
+    reward_file << reward_to_string() << std::endl;
   }
 
 
@@ -832,12 +850,14 @@ public:
 
     add_FV(0, 0);
     add_AHV(0, 0);
+
+    WorldT::embed_agent(*this);
   }
 
   void prepare() {
     if (prepared) return;
 
-    WorldT::prepare(*this);
+    WorldT::prepare();
 
     object_bearings.resize(this->num_objects);
     object_bearings = EigenVector::Zero(this->num_objects);
@@ -915,7 +935,7 @@ public:
     this->t += dt;
     this->timesteps += 1;
 
-    WorldT::update_per_dt(*this, dt);
+    WorldT::update_per_dt(dt);
     TrainPolicyT::update_per_dt(*this, dt);
     TestPolicyT::update_per_dt(*this, dt);
 
