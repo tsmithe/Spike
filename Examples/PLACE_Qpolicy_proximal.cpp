@@ -26,9 +26,9 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 6000; // 300
+  FloatT train_time = 2*timestep; // 300
   if (read_weights) train_time = 0;
-  FloatT test_on_time = 1000; // 800
+  FloatT test_on_time = 0; // 800
   FloatT test_off_time = 0; // 200
   FloatT start_recording_time = 0;
   if (read_weights) start_recording_time = 0;
@@ -42,14 +42,15 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<RandomWalkPolicy, HDTestPolicy> agent;
+  class NullPolicy2 : public virtual NullActionPolicy {};
+  Agent<NullActionPolicy, NullPolicy2, MazeWorld> agent;
   // agent.seed(123);
 
   FloatT radius = 1.0;
   FloatT bound_y = 1.0;
   FloatT bound_x = bound_y;
 
-  agent.set_boundary(0.6*bound_x, 0.6*bound_y);
+  //agent.set_boundary(0.6*bound_x, 0.6*bound_y);
 
   // ScanWalkPolicy:---
   // agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
@@ -65,8 +66,8 @@ int main(int argc, char *argv[]) {
 
   for (unsigned i = 0; i < n_objs_x; ++i) {
     for (unsigned j = 0; j < n_objs_y; ++j) {
-      agent.add_proximal_object(start_x + (stop_x-start_x)*(FloatT)i/(n_objs_x-1),
-                                start_y + (stop_y-start_y)*(FloatT)j/(n_objs_y-1));
+      // agent.add_proximal_object(start_x + (stop_x-start_x)*(FloatT)i/(n_objs_x-1),
+      //                           start_y + (stop_y-start_y)*(FloatT)j/(n_objs_y-1));
     }
   }
 

@@ -242,8 +242,8 @@ struct AgentBase {
 
 class WorldBase {
 protected:
-  inline void prepare(AgentBase&) {}
-  inline void update_per_dt(AgentBase&, FloatT) {}
+  virtual void prepare(AgentBase&) {}
+  virtual void update_per_dt(AgentBase&, FloatT) {}
 
 public:
   FloatT bound_x = 10, bound_y = 10;
@@ -289,12 +289,162 @@ public:
 
 
 class MazeWorld : public virtual WorldBase {
+  /* It is assumed that every line in map is of the same length */
+
+  Eigen::Vector2i world_size; // {rows, cols}
+
+  /* ray_t: {start_pos, stop_pos} */
+  using ray_t = std::pair<Eigen::Vector2i, Eigen::Vector2i>;
+  std::vector<ray_t> barriers;
+
+protected:
+  void prepare(AgentBase&) override {
+    load_map(
+"xxxxxxxxxxxxxxx\n"
+"x    x   x    x\n"
+"*    x   x    *\n"
+"x    xx*xx    x\n"
+"*             *\n"
+"x    x*x*x    x\n"
+"*    x   x    *\n"
+"x    x   x    x\n"
+"xxxxxxxxxxxxxxx");
+
+    print_map();
+  }
+
+  static Eigen::Vector2i compute_size(std::string const& map) {
+    std::string::size_type pos = 0;
+    int rows = 0;
+    int cols = 0;
+    while(pos < map.size()) {
+      ++rows;
+      std::string::size_type new_pos = map.find('\n', pos);
+      if (std::string::npos == new_pos) new_pos = map.size();
+      int row_len = new_pos - pos;
+      if (0 == row_len) break;
+      if (cols > 0) assert(cols == row_len);
+      cols = row_len;
+      pos = new_pos + 1;
+    }
+    return {rows, cols};
+  }
+
+  static auto get_map_index(Eigen::Vector2i world_size) {
+    return [world_size](Eigen::Vector2i coord) -> std::string::size_type {
+      const unsigned row_len = world_size(1) + 1; // + 1 for the newlines
+      return coord(0) * row_len + coord(1);
+    };
+  }
+
+  static auto get_map_coord(Eigen::Vector2i world_size) {
+    return [world_size](std::string::size_type pos) -> Eigen::Vector2i {
+      const unsigned row_len = world_size(1) + 1; // + 1 for the newlines
+      int row, col;
+      col = pos % row_len;
+      row = (pos - col) / row_len;
+      return {row, col};
+    };
+  }
+
+  static std::vector<ray_t> extract_barriers(std::string map, Eigen::Vector2i world_size) {
+    const std::vector<Eigen::Vector2i> steps{{1, 0}, {0, 1}, {1, 1}};
+
+    auto map_coord = get_map_coord(world_size);
+    auto map_index = get_map_index(world_size);
+
+    std::vector<ray_t> barriers;
+    std::string::size_type idx = 0;
+    while (true) {
+      idx = map.find_first_of("x*");
+      if (std::string::npos == idx) break;
+
+      auto barrier_start = map_coord(idx);
+
+      std::vector<std::pair<ray_t, Eigen::Vector2i> > candidates; // {ray, step}
+      FloatT best_length = -1;
+      std::size_t best_candidate = 0;
+      for (auto const& step : steps) {
+        auto barrier_stop = barrier_start;
+        while (true) {
+          barrier_stop += step;
+          if (barrier_stop(0) >= world_size(0) || barrier_stop(1) >= world_size(1)) {
+            barrier_stop -= step;
+            break;
+          }
+          auto new_idx = map_index(barrier_stop);
+          if (map[new_idx] != 'x' && map[new_idx] != '*') { // TODO: barrier symbols elsewhere
+            barrier_stop -= step;
+            break;
+          }
+        }
+        EigenVector ray = (barrier_stop - barrier_start).cast<FloatT>();
+        FloatT barrier_length = ray.norm();
+        if (barrier_length > best_length) {
+          best_candidate = candidates.size();
+          best_length = barrier_length;
+          candidates.push_back({{barrier_start, barrier_stop}, step});
+        }
+      }
+
+      if (best_length >= -1) {
+        barriers.push_back(candidates[best_candidate].first);
+
+        // Now erase barrier from map copy:
+        auto const& step = candidates[best_candidate].second;
+        auto const& barrier_stop = candidates[best_candidate].first.second;
+        while (barrier_start != barrier_stop + step) {
+          idx = map_index(barrier_start);
+          map[idx] = ' ';
+          barrier_start += step;
+        }
+      }
+    }
+
+    return barriers;
+  }
+
 public:
   // void load_map(std::string filename);
-  void load_map(std::string map);
+
+  void load_map(std::string map) {
+    trim(map);
+    world_size = compute_size(map);
+    barriers = extract_barriers(map, world_size);
+  }
+
   void load_rewards(std::string map);
 
-  void print_map();
+  void print_map() {
+    std::string map((world_size(0)+1) * (world_size(1)+1), ' ');
+    auto map_index = get_map_index(world_size);
+
+    for (unsigned i = 0; i <= world_size(0); ++i) {
+      map[map_index({i, world_size(1)})] = '\n';
+    }
+
+    for (auto const& barrier : barriers) {
+      Eigen::Vector2i barrier_start = barrier.first;
+      Eigen::Vector2i barrier_stop = barrier.second;
+      auto ray = barrier_stop - barrier_start;
+      Eigen::Vector2i step;
+      if (ray(0) == 0) {
+        step << 0, 1;
+      } else if (ray(1) == 0) {
+        step << 1, 0;
+      } else {
+        step << 1, 1;
+      }
+      while (barrier_start != barrier_stop + step) {
+        auto idx = map_index(barrier_start);
+        map[idx] = 'x';
+        barrier_start += step;
+      }
+    }
+
+    trim(map);
+    std::cout << "\n" << map << std::endl;;
+  }
 
   /*
 
@@ -496,8 +646,8 @@ template<typename TrainPolicyT, typename TestPolicyT, typename WorldT>
 class Agent : public virtual AgentBase,
               public virtual WorldT,
               public virtual WorldAgentBase<WorldT>,
-              public TrainPolicyT,
-              public TestPolicyT {
+              public virtual TrainPolicyT,
+              public virtual TestPolicyT {
   bool prepared = false;
 
 public:
