@@ -638,6 +638,10 @@ public:
     reward_file << reward_to_string() << std::endl;
   }
 
+  bool intersects_barrier(EigenVector2D P, EigenVector2D Q); /* {
+    TODO
+  }*/
+
 
   /*
 
@@ -706,7 +710,7 @@ class QMazePolicy {
    * - need a mechanism!
    */
 
-  std::vector<std::tuple<FloatT, FloatT, FloatT> > actions;
+  std::vector<std::pair<FloatT, FloatT> > actions; // {r, theta}
   std::uniform_real_distribution<FloatT> action_die;
 
   EigenMatrix Q;
@@ -721,7 +725,11 @@ class QMazePolicy {
   bool prepared = false;
   bool started = false;
   unsigned prev_state;
+  unsigned curr_action;
   int action_stage = 0;
+
+  FloatT t = 0;
+  unsigned timesteps = 0;
 
   unsigned state_index(FloatT x, FloatT y) {
     /* given state coordinates, return state index into Q
@@ -735,23 +743,30 @@ class QMazePolicy {
 protected:
   void prepare(AgentBase& a) {
     if (prepared) return;
+    assert(!a.smooth_AHV); // for now...
     prepared = true;
+    timesteps = 0;
     t = 0;
     auto w = dynamic_cast<MazeWorld&>(a);
     Q = q0 * EigenMatrix::Ones(w.world_size(0) * w.world_size(1), actions.size());
   }
 
   void update_per_dt(AgentBase& agent, FloatT dt) {
-    update_visible_objects(agent, dt);
+    // TODO: update_visible_objects(agent, dt);
 
-    // TODO: and buffer Q to disk
+    /*
+    if (buffer_Q_timesteps > 0 && !(timesteps % buffer_Q_timesteps)) {
+      buffer_Q();
+    }
+    */
 
     t += dt;
+    ++timesteps;
   }
 
   void update_Q(AgentBase& a, FloatT dt) {
     /* standard q learning, given world reward structure */
-    auto q = Q(previous_state, current_action);
+    auto q = Q(prev_state, curr_action);
 
     // rows are along y axis; columns along x
     FloatT x = a.position(0);
@@ -759,14 +774,13 @@ protected:
     unsigned i = std::round(y);
     unsigned j = std::round(x);
 
-    Q(prev_state, current_action)
+    Q(prev_state, curr_action)
       = (1 - alpha) * q
       + alpha * (reward(i, j) + gamma * Q.row(state_index(x, y)).maxCoeff());
   }
 
-  void update_visible_objects(AgentBase& agent, FloatT dt) {
-    /* check intersections of rays from self to objects, and barriers */
-  }
+  /* check intersections of rays from self to objects, and barriers */
+  void update_visible_objects(AgentBase& agent, FloatT dt); // TODO
 
   void choose_new_action(AgentBase& a, FloatT dt) {
     if (0 == action_stage) {
@@ -789,30 +803,105 @@ protected:
           if (action_choice < 0) break;
         }
 
+        FloatT const& r = actions[action_i].first;
+        FloatT const& theta = actions[action_i].second;
+        FloatT delta_x = r * std::cos(theta);
+        FloatT delta_y = r * std::sin(theta);
+
+        EigenVector2D target_position = a.position + EigenVector2D{delta_x, delta_y};
+        auto w = dynamic_cast<MazeWorld&>(a);
+
         // check action validity:
-        // TODO ...
-        bool action_valid = true;
-
-        // got a valid action:
-        if (action_valid) {
-          break;
+        if (!w.intersects_barrier(position, target_position)) {
+          // valid, so update info
+          prev_state = curr_state;
+          curr_action = action_i;
+          break; // and stop trying here
         } else {
-          // update Q matrix accordingly
-          // TODO ...
+          // invalid, so update Q matrix accordingly and then try again
+          Q(curr_state, action_i)
+            = (1 - alpha) * Q(curr_state, action_i)
+            + alpha * (invalid_act_reward + gamma * Q.row(curr_state).maxCoeff());
         }
-
-        prev_state = curr_state;
       }
 
       // now sequence actions accordingly
-      ++action_stage;
-
       // first of all, do rotation:
-      // ...
+      {
+        FloatT const& theta = actions[action_i].second;
+        FloatT delta = theta - a.head_direction;
+        if (delta < -M_PI) delta += 2 * M_PI;
+        if (delta > M_PI) delta -= 2 * M_PI; // just to be safe
+
+        // choose AHV that will lead to closest to the user-intended action duration:
+        int AHV_i = -1; unsigned i = 0;
+        FloatT delta_delta = infinity<FloatT>();
+        for (auto const& AHV : a.AHVs) {
+          FloatT intended_duration = AHV.second <= 0 ? 1 : AHV.second;
+          FloatT d = delta - AHV.first * intended_duration;
+          if (std::abs(d) < std::abs(delta_delta)
+              && !(std::abs(delta) > 0 && AHV.first == 0)) { // ignore 0 AHV
+            delta_delta = d;
+            AHV_i = i;
+          }
+          ++i;
+        }
+        assert(AHV_i >= 0);
+
+        // if best AHV is in wrong direction, adjust delta accordingly: ...
+        if (std::signbit(a.AHVs[AHV_i].first) != std::signbit(delta)) {
+          if (delta < 0) delta += 2 * M_PI;
+          else if (delta > 0) delta -= 2 * M_PI;
+        }
+
+        // finally, set agent parameters:
+        a.curr_action = AgentBase::actions_t::AHV;
+        a.curr_AHV = AHV_i;
+        a.curr_FV = 0;
+
+        a.target_head_direction = theta;
+
+        FloatT duration = delta / a.AHVs[AHV_i].first;
+        a.change_action_ts = 0;
+        a.choose_next_action_ts = a.timesteps + round(duration / dt);
+      }
+
+      ++action_stage;
     } else {
       // finish currently sequenced action
       // do forward motion:
-      // ...
+      FloatT const& r = actions[curr_action].first;
+
+      // choose FV that will lead to closest to the user-intended action duration:
+      int FV_i = -1; unsigned i = 0;
+      FloatT delta = infinity<FloatT>();
+      for (auto const& FV : a.FVs) {
+        FloatT intended_duration = FV.second <= 0 ? 1 : FV.second;
+        FloatT d = r - FV.first * intended_duration;
+        if (std::abs(d) < std::abs(delta)
+            && !(std::abs(r) > 0 && FV.first == 0)) { // ignore 0 FV
+          delta = d;
+          FV_i = i;
+        }
+        ++i;
+      }
+      assert(FV_i >= 0);
+
+      // if best FV is in the wrong direction, panic!
+      assert(std::signbit(a.FVs[FV_i].first) == std::signbit(r));
+
+      // finally, set agent parameters
+      a.curr_action = AgentBase::actions_t::FV;
+      a.curr_FV = FV_i;
+      a.curr_AHV = 0;
+
+      a.target_position = a.position;
+      a.target_position(0) += r * cos(a.head_direction);
+      a.target_position(1) += r * sin(a.head_direction);
+
+      FloatT duration = r / a.FVs[FV_i].first;
+      a.change_action_ts = 0;
+      a.choose_next_action_ts = a.timesteps + round(duration / dt);
 
       // next time, choose new action
       action_stage = 0;
@@ -824,8 +913,9 @@ public:
     action_die = std::uniform_real_distribution<FloatT>(0, 1);
   }
 
-  void add_velocity(FloatT theta, FloatT r, FloatT duration) {
-    actions.push_back({theta, r, duration});
+  void add_velocity(FloatT r, FloatT theta) {
+    assert(r > 0 && theta >= -M_PI && theta < 2 * M_PI);
+    actions.push_back({r, theta});
   }
 
   void buffer_q_interval(int timesteps) {
