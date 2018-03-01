@@ -638,9 +638,60 @@ public:
     reward_file << reward_to_string() << std::endl;
   }
 
-  bool intersects_barrier(EigenVector2D P, EigenVector2D Q); /* {
-    TODO
-  }*/
+  static bool line_segments_intersect(EigenVector2D P1, EigenVector2D Q1,
+                                      EigenVector2D P2, EigenVector2D Q2) {
+
+    FloatT const& x1 = P1(0);
+    FloatT const& y1 = P1(1);
+
+    FloatT const& x2 = Q1(0);
+    FloatT const& y2 = Q1(1);
+
+    FloatT const& x3 = P2(0);
+    FloatT const& y3 = P2(1);
+
+    FloatT const& x4 = Q2(0);
+    FloatT const& y4 = Q2(1);
+
+    // below from https://stackoverflow.com/a/385355
+
+    FloatT x12 = x1 - x2;
+    FloatT x34 = x3 - x4;
+    FloatT y12 = y1 - y2;
+    FloatT y34 = y3 - y4;
+
+    FloatT c = x12 * y34 - y12 * x34;
+
+    if (std::abs(c) < 0.001) {
+      // No intersection
+      return false;
+    } else {
+      // Intersection
+      FloatT a = x1 * y2 - y1 * x2;
+      FloatT b = x3 * y4 - y3 * x4;
+
+      FloatT x = (a * x34 - b * x12) / c;
+      FloatT y = (a * y34 - b * y12) / c;
+
+      // Now check if intersection is within the segments:
+      return ((std::min(x1,x2) < x && x < std::max(x1,x2)
+               && std::min(x3,x4) < x && x < std::max(x3,x4))
+              || (std::min(y1,y2) < y && y < std::max(y1,y2)
+                  && std::min(y3,y4) < y && y < std::max(y3,y4));
+    }
+  }
+
+  bool intersects_barrier(EigenVector2D P, EigenVector2D Q) {
+    for (auto const& b : barriers) {
+      // barriers are represented in {row, col} indices, not {x, y}:
+      EigenVector2D Pb{b.first.cast<FloatT>()(1), b.first.cast<FloatT>()(0)};
+      EigenVector2D Qb{b.second.cast<FloatT>()(1), b.second.cast<FloatT>()(0)};
+      if (line_segments_intersect(P, Q, Pb, Qb)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
 
   /*
