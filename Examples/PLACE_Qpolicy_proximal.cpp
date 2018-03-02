@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 2*timestep; // 300
+  FloatT train_time = 3000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 0; // 800
   FloatT test_off_time = 0; // 200
@@ -42,8 +42,45 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  class NullPolicy2 : public virtual NullActionPolicy {};
-  Agent<NullActionPolicy, NullPolicy2, MazeWorld> agent;
+  Agent<QMazePolicy, NullActionPolicy, MazeWorld> agent;
+  agent.episode_length(100);
+
+  for (unsigned i = 0; i < 6; ++i) {
+    agent.add_velocity(1.25, (1.0/3.0)*i*M_PI);
+  }
+
+  agent.load_map(
+"xxxxxxxxxxxxxxxxxxx\n"
+"x      x   x      x\n"
+"*      x   x      *\n"
+"x      x   x      x\n"
+"*      x   x      *\n"
+"x      xx*xx      x\n"
+"*         s       *\n"
+"x      x*x*x      x\n"
+"*      x   x      *\n"
+"x      x   x      x\n"
+"*      x   x      *\n"
+"x      x   x      x\n"
+"xxxxxxxxxxxxxxxxxxx");
+
+  agent.load_rewards(
+"xxxxxxxxxxxxxxxxxxx\n"
+"x      x   x  --  x\n"
+"*  ++  x   x ---- *\n"
+"x  ++  x   x  --  x\n"
+"*      x   x      *\n"
+"x      xx*xx      x\n"
+"*         s       *\n"
+"x      x*x*x      x\n"
+"*      x   x      *\n"
+"x      x   x  --  x\n"
+"*      x   x ---- *\n"
+"x      x   x  --  x\n"
+"xxxxxxxxxxxxxxxxxxx",
+{{'+', 10.0}, {'-', -10.0}});
+
+
   // agent.seed(123);
 
   FloatT radius = 1.0;
@@ -71,11 +108,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  FloatT fwd_move_dist = 0.05;
+  FloatT fwd_move_dist = 0.04;
   FloatT rot_angle = M_PI / 8;
 
-  FloatT fwd_move_time = 0.05; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.05; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.02; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.02; ///6.0; // seconds per angular move
 
   /* RandomWalkPolicy::
   agent.p_fwd = 1.0/2.0;
@@ -658,6 +695,7 @@ int main(int argc, char *argv[]) {
   model.add(&agent);
 
   model.add(&VIS);
+  /*
 #ifdef VIS2
   model.add(&VIS2);
   model.add(&VIS2_INH);
@@ -672,8 +710,9 @@ int main(int argc, char *argv[]) {
   model.add(&GRIDxFVxHD);
   model.add(&GRID);
   model.add(&PLACE);
-
+  */
   model.add(&VIS_elecs);
+  /*
 #ifdef VIS2
   model.add(&VIS2_elecs);
 #endif
@@ -684,7 +723,7 @@ int main(int argc, char *argv[]) {
   model.add(&GRIDxFVxHD_elecs);
   model.add(&GRID_elecs);
   model.add(&PLACE_elecs);
-
+  */
 
   // Set simulation time parameters:
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
