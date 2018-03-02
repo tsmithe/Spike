@@ -336,16 +336,20 @@ public:
 class MazeWorld : public virtual WorldBase {
   /* It is assumed that every line in map is of the same length */
 
+  std::default_random_engine rand_engine;
+
   bool prepared = false;
 
 public:
-  Eigen::Vector2i world_size; // {rows, cols}
+  /* Coordinates in the following data are in the map frame {row, col}: */
+  Eigen::Vector2i world_size;
 
   /* ray_t: {start_pos, stop_pos} */
   using ray_t = std::pair<Eigen::Vector2i, Eigen::Vector2i>;
 
   std::vector<ray_t> barriers;
   EigenMatrix2D test_locations;
+  EigenMatrix2D start_locations;
 
   EigenMatrix reward;
   std::unordered_map<char, FloatT> reward_legend;
@@ -355,31 +359,8 @@ protected:
     if (prepared) return;
     prepared = true;
 
-    load_map(
-"xxxxxxxxxxxxxxx\n"
-"x    x   x    x\n"
-"*    x   x    *\n"
-"x    xx*xx    x\n"
-"*             *\n"
-"x    x*x*x    x\n"
-"*    x   x    *\n"
-"x    x   x    x\n"
-"xxxxxxxxxxxxxxx");
-
-    load_rewards(
-"xxxxxxxxxxxxxxx\n"
-"x    x   x    x\n"
-"* ++ x   x    *\n"
-"x    xx*xx    x\n"
-"*             *\n"
-"x    x*x*x    x\n"
-"*    x   x -- *\n"
-"x    x   x    x\n"
-"xxxxxxxxxxxxxxx",
-{{'+', 1.0}, {'-', -1.1}});
-
-    std::cout << "\n" << map_to_string() << "\n"
-              << "\n" << reward_to_string() << std::endl;
+    // std::cout << "\n" << map_to_string() << "\n"
+    //           << "\n" << reward_to_string() << "\n" << std::endl;
   }
 
   static Eigen::Vector2i compute_size(std::string const& map) {
@@ -417,7 +398,7 @@ protected:
   }
 
   static std::vector<ray_t> extract_barriers(std::string map, Eigen::Vector2i world_size) {
-    const std::vector<Eigen::Vector2i> steps{{1, 0}, {0, 1}, {1, 1}};
+    const std::vector<Eigen::Vector2i> steps{{1, 0}, {0, 1}/*, {1, 1}*/};
 
     auto map_coord = get_map_coord(world_size);
     auto map_index = get_map_index(world_size);
@@ -464,7 +445,28 @@ protected:
         auto const& barrier_stop = candidates[best_candidate].first.second;
         while (barrier_start != barrier_stop + step) {
           idx = map_index(barrier_start);
-          map[idx] = ' ';
+          bool is_vertex = false;
+          for (auto const& other_step : steps) {
+            if (other_step == step) {
+              continue;
+            }
+            unsigned new_idx = map_index(barrier_start + other_step);
+            if (new_idx < map.size()) {
+              if ('x' == map[new_idx] || '*' == map[new_idx]) { // TODO: barrier symbols elsewhere
+                is_vertex = true;
+                break;
+              }
+            }
+            // and the other way:
+            new_idx = map_index(barrier_start - other_step);
+            if (new_idx < map.size()) {
+              if ('x' == map[new_idx] || '*' == map[new_idx]) { // TODO: barrier symbols elsewhere
+                is_vertex = true;
+                break;
+              }
+            }
+          }
+          if (!is_vertex) map[idx] = ' ';
           barrier_start += step;
         }
       }
@@ -502,17 +504,40 @@ protected:
   }
 
 public:
+  EigenVector2D ij_to_xy(EigenVector2D ij) {
+    return {ij(1), static_cast<float>(world_size(0)) - ij(0)};
+  }
+
+  EigenVector2D xy_to_ij(EigenVector2D xy) {
+    return {static_cast<float>(world_size(0)) - xy(1), xy(0)};
+  }
+
   void load_map(std::string map) {
     trim(map);
     world_size = compute_size(map);
 
     // In the old code, the origin is at the centre of the map:
-    bound_x = 1 + world_size.cast<FloatT>()(0) / 2;
-    bound_y = 1 + world_size.cast<FloatT>()(1) / 2;
+    bound_y = world_size.cast<FloatT>()(0) + 1; // nb axes are swapped
+    bound_x = world_size.cast<FloatT>()(1) + 1;
 
     barriers = extract_barriers(map, world_size);
-    proximal_objects = extract_objects(map, world_size, "*o");
     test_locations = extract_objects(map, world_size, "t");
+    start_locations = extract_objects(map, world_size, "s");
+    if (0 == start_locations.cols()) {
+      start_locations.resize(Eigen::NoChange, 1);
+      start_locations(0) = world_size.cast<FloatT>()(0) / 2;
+      start_locations(1) = world_size.cast<FloatT>()(1) / 2;
+    }
+
+    proximal_objects = extract_objects(map, world_size, "*o");
+    // Now, proximal_objects should be in xy basis:
+    for (unsigned j = 0; j < proximal_objects.cols(); ++j) {
+      proximal_objects.col(j) = ij_to_xy(proximal_objects.col(j));
+    }
+
+    num_proximal_objects = proximal_objects.cols();
+    num_distal_objects = 0;
+    num_objects = num_proximal_objects + num_distal_objects;
   }
 
   void load_rewards(std::string map, std::unordered_map<char, FloatT> legend) {
@@ -532,6 +557,14 @@ public:
         map[idx] = ' ';
       }
     }
+  }
+
+  EigenVector2D propose_start_location_ij() {
+    return start_locations.col(std::uniform_int_distribution<unsigned>{0, start_locations.cols()-1}(rand_engine));
+  }
+
+  EigenVector2D propose_start_location_xy() {
+    return ij_to_xy(propose_start_location_ij());
   }
 
   std::string barriers_to_string() {
@@ -569,7 +602,7 @@ public:
     auto map_index = get_map_index(world_size);
 
     for (unsigned i = 0; i < proximal_objects.cols(); ++i) {
-      Eigen::Vector2i coord = proximal_objects.col(i).cast<int>();
+      Eigen::Vector2i coord = xy_to_ij(proximal_objects.col(i).array().floor().matrix()).cast<int>();
       auto idx = map_index(coord);
       if ('x' == map[idx]) {
         map[idx] = '*';
@@ -582,6 +615,12 @@ public:
       Eigen::Vector2i coord = test_locations.col(i).cast<int>();
       auto idx = map_index(coord);
       map[idx] = 't';
+    }
+
+    for (unsigned i = 0; i < start_locations.cols(); ++i) {
+      Eigen::Vector2i coord = start_locations.col(i).cast<int>();
+      auto idx = map_index(coord);
+      map[idx] = 's';
     }
 
     trim(map);
@@ -616,15 +655,20 @@ public:
 
     std::string output_dir = output_prefix + "/Agent";
 
-    std::ofstream barrier_file(output_dir + "/barriers.info");
+    std::ofstream barrier_file(output_dir + "/barriers_xy.info");
     for (auto const& b : barriers) {
-      barrier_file << b.first(0) << "," << b.first(1) << ","
-                   << b.second(0) << "," << b.second(1) << "\n";
+      // nb in xy, cols are x and rows y (and rows count from bottom of map)
+      auto b_first_xy = ij_to_xy(b.first.cast<float>()).cast<int>();
+      auto b_second_xy = ij_to_xy(b.second.cast<float>()).cast<int>();
+      barrier_file << b_first_xy(0) << "," << b_first_xy(1) << ","
+                   << b_second_xy(0) << "," << b_second_xy(1) << "\n";
     }
     barrier_file.flush();
 
     std::ofstream map_file(output_dir + "/map.txt");
     map_file << map_to_string() << std::endl;
+
+    Eigen::write_binary((output_dir + "/start_locations.bin").c_str(), start_locations);
 
     if (test_locations.rows() > 0 && test_locations.cols() > 0) {
       Eigen::write_binary((output_dir + "/test_locations.bin").c_str(), test_locations);
@@ -641,52 +685,58 @@ public:
   static bool line_segments_intersect(EigenVector2D P1, EigenVector2D Q1,
                                       EigenVector2D P2, EigenVector2D Q2) {
 
-    FloatT const& x1 = P1(0);
-    FloatT const& y1 = P1(1);
+    FloatT const& x0 = P1(0);
+    FloatT const& y0 = P1(1);
 
-    FloatT const& x2 = Q1(0);
-    FloatT const& y2 = Q1(1);
+    FloatT const& x1 = Q1(0);
+    FloatT const& y1 = Q1(1);
 
-    FloatT const& x3 = P2(0);
-    FloatT const& y3 = P2(1);
+    FloatT const& a0 = P2(0);
+    FloatT const& b0 = P2(1);
 
-    FloatT const& x4 = Q2(0);
-    FloatT const& y4 = Q2(1);
+    FloatT const& a1 = Q2(0);
+    FloatT const& b1 = Q2(1);
 
-    // below from https://stackoverflow.com/a/385355
+    // below from https://stackoverflow.com/a/14143738
+    //
+    // four endpoints are x0, y0 & x1,y1 & a0,b0 & a1,b1
+    // returned values xy and ab are the fractional distance along xy and ab
+    // and are only defined when the result is true
 
-    FloatT x12 = x1 - x2;
-    FloatT x34 = x3 - x4;
-    FloatT y12 = y1 - y2;
-    FloatT y34 = y3 - y4;
+    auto IsBetween = [](const FloatT& x0, const FloatT& x, const FloatT& x1){
+      return (x >= x0) && (x <= x1);
+    };
 
-    FloatT c = x12 * y34 - y12 * x34;
+    FloatT ab, xy;
 
-    if (std::abs(c) < 0.001) {
-      // No intersection
-      return false;
+    bool partial = false;
+    FloatT denom = (b0 - b1) * (x0 - x1) - (y0 - y1) * (a0 - a1);
+    if (denom == 0) {
+      xy = -1;
+      ab = -1;
     } else {
-      // Intersection
-      FloatT a = x1 * y2 - y1 * x2;
-      FloatT b = x3 * y4 - y3 * x4;
-
-      FloatT x = (a * x34 - b * x12) / c;
-      FloatT y = (a * y34 - b * y12) / c;
-
-      // Now check if intersection is within the segments:
-      return ((std::min(x1,x2) < x && x < std::max(x1,x2)
-               && std::min(x3,x4) < x && x < std::max(x3,x4))
-              || (std::min(y1,y2) < y && y < std::max(y1,y2)
-                  && std::min(y3,y4) < y && y < std::max(y3,y4));
+      xy = (a0 * (y1 - b1) + a1 * (b0 - y1) + x1 * (b1 - b0)) / denom;
+      partial = IsBetween(0, xy, 1);
+      if (partial) {
+        // no point calculating this unless xy is between 0 & 1
+        ab = (y1 * (x0 - a1) + b1 * (x1 - x0) + y0 * (a1 - x1)) / denom;
+      }
     }
+    if ( partial && IsBetween(0, ab, 1)) {
+      ab = 1-ab;
+      xy = 1-xy;
+      return true;
+    }  else return false;
   }
 
-  bool intersects_barrier(EigenVector2D P, EigenVector2D Q) {
+  bool intersects_barrier_xy(EigenVector2D Pxy, EigenVector2D Qxy) {
     for (auto const& b : barriers) {
       // barriers are represented in {row, col} indices, not {x, y}:
-      EigenVector2D Pb{b.first.cast<FloatT>()(1), b.first.cast<FloatT>()(0)};
-      EigenVector2D Qb{b.second.cast<FloatT>()(1), b.second.cast<FloatT>()(0)};
-      if (line_segments_intersect(P, Q, Pb, Qb)) {
+
+      auto b_first_xy = ij_to_xy(b.first.cast<FloatT>());
+      auto b_second_xy = ij_to_xy(b.second.cast<FloatT>());
+
+      if (line_segments_intersect(Pxy, Qxy, b_first_xy, b_second_xy)) {
         return true;
       }
     }
@@ -702,6 +752,7 @@ public:
          "*" -> barrier with visible object
          "o" -> visible object (no barrier)
               - else passable
+      +  "s" for start locations
       +  "t" for test locations
 
     rewards:
@@ -761,6 +812,8 @@ class QMazePolicy {
    * - need a mechanism!
    */
 
+  std::default_random_engine rand_engine;
+
   std::vector<std::pair<FloatT, FloatT> > actions; // {r, theta}
   std::uniform_real_distribution<FloatT> action_die;
 
@@ -769,9 +822,11 @@ class QMazePolicy {
 
   FloatT q0 = 10;                 // initial Q values: larger encourages exploration
   FloatT beta = 0.5;              // softmax inverse temperature
-  FloatT invalid_act_reward = -1; // 'reward' for taking an invalid action
-  FloatT alpha = 0.1;             // Q learning rate
+  FloatT invalid_act_reward = -5; // 'reward' for taking an invalid action
+  FloatT alpha = 0.2;             // Q learning rate
   FloatT gamma = 0.85;            // Q learning discount factor
+
+  FloatT ep_length = infinity<FloatT>();
 
   bool prepared = false;
   bool started = false;
@@ -779,55 +834,73 @@ class QMazePolicy {
   unsigned curr_action;
   int action_stage = 0;
 
-  FloatT t = 0;
-  unsigned timesteps = 0;
+  FloatT t_episode = 0;
+  unsigned _timesteps = 0;
 
   unsigned state_index(FloatT x, FloatT y) {
     /* given state coordinates, return state index into Q
-       + nb: x is horizontal, which means along columns of map */
-    int i = std::round(y);
-    int j = std::round(x);
-    assert(i > 0 && j > 0);
+       + nb: x is horizontal, which means along columns of map
+             - also nb this gives rows upside down */
+    int i = std::floor(y);
+    int j = std::floor(x);
+    assert(i >= 0 && j >= 0);
     return i * Q.cols() + j;
   }
 
 protected:
+  void reset_start_location(AgentBase& a) {
+    auto& w = dynamic_cast<MazeWorld&>(a);
+    started = false;
+    action_stage = 0;
+    a.change_action_ts = 0;
+    a.choose_next_action_ts = 0;
+    a.position = w.propose_start_location_xy();
+  }
+
   void prepare(AgentBase& a) {
     if (prepared) return;
     assert(!a.smooth_AHV); // for now...
     prepared = true;
-    timesteps = 0;
-    t = 0;
-    auto w = dynamic_cast<MazeWorld&>(a);
+    _timesteps = 0;
+    t_episode = 0;
+    reset_start_location(a);
+    auto& w = dynamic_cast<MazeWorld&>(a);
     Q = q0 * EigenMatrix::Ones(w.world_size(0) * w.world_size(1), actions.size());
+    // std::cout << "\nQ: " << Q.rows() << "," << Q.cols() << "\n";
   }
 
   void update_per_dt(AgentBase& agent, FloatT dt) {
     // TODO: update_visible_objects(agent, dt);
 
     /*
-    if (buffer_Q_timesteps > 0 && !(timesteps % buffer_Q_timesteps)) {
+    if (buffer_Q_timesteps > 0 && !(_timesteps % buffer_Q_timesteps)) {
       buffer_Q();
     }
     */
 
-    t += dt;
-    ++timesteps;
+    t_episode += dt;
+    ++_timesteps;
+
+    if (t_episode > ep_length) {
+      t_episode = 0;
+      reset_start_location(agent);
+    }
   }
 
   void update_Q(AgentBase& a, FloatT dt) {
     /* standard q learning, given world reward structure */
-    auto q = Q(prev_state, curr_action);
+    auto& w = dynamic_cast<MazeWorld&>(a);
 
     // rows are along y axis; columns along x
+    auto ij = w.xy_to_ij(a.position.array().floor().matrix()).cast<unsigned>();
     FloatT x = a.position(0);
     FloatT y = a.position(1);
-    unsigned i = std::round(y);
-    unsigned j = std::round(x);
 
-    Q(prev_state, curr_action)
-      = (1 - alpha) * q
-      + alpha * (reward(i, j) + gamma * Q.row(state_index(x, y)).maxCoeff());
+    auto const& r = w.reward(ij(0), ij(1));
+    auto q_max = Q.row(state_index(x, y)).maxCoeff();
+    auto& q = Q(prev_state, curr_action);
+
+    q = (1 - alpha) * q + alpha * (r + gamma * q_max);
   }
 
   /* check intersections of rays from self to objects, and barriers */
@@ -850,8 +923,13 @@ protected:
         FloatT action_choice = action_die(rand_engine);
         unsigned action_i = 0;
         for (; action_i < p_action.size(); ++action_i) {
-          action_choice -= p_action(i);
-          if (action_choice < 0) break;
+          action_choice -= p_action(action_i);
+          if (action_choice <= 0) break;
+        }
+
+        // Handle the rare case where rounding means we go off the end of the action vector:
+        if (action_i >= p_action.size()) {
+          action_i = p_action.size() - 1;
         }
 
         FloatT const& r = actions[action_i].first;
@@ -860,26 +938,29 @@ protected:
         FloatT delta_y = r * std::sin(theta);
 
         EigenVector2D target_position = a.position + EigenVector2D{delta_x, delta_y};
-        auto w = dynamic_cast<MazeWorld&>(a);
+        auto& w = dynamic_cast<MazeWorld&>(a);
 
         // check action validity:
-        if (!w.intersects_barrier(position, target_position)) {
+        if (!w.intersects_barrier_xy(a.position, target_position)) {
           // valid, so update info
+          // std::cout << "\nSELECT " << action_i << "(" << p_action.size() << "," << p_action.sum() << "," << action_choice << "): " << a.position.transpose() << " -> " << target_position.transpose() << "\n";
           prev_state = curr_state;
           curr_action = action_i;
           break; // and stop trying here
         } else {
           // invalid, so update Q matrix accordingly and then try again
+          // std::cout << "\nINVALID " << action_i << "; " << r << ", " << theta << ": " << a.position.transpose() << " -> " << target_position.transpose() << "\n";
           Q(curr_state, action_i)
             = (1 - alpha) * Q(curr_state, action_i)
             + alpha * (invalid_act_reward + gamma * Q.row(curr_state).maxCoeff());
+          // std::cout << Q.row(curr_state) << "\n";
         }
       }
 
       // now sequence actions accordingly
       // first of all, do rotation:
       {
-        FloatT const& theta = actions[action_i].second;
+        FloatT const& theta = actions[curr_action].second;
         FloatT delta = theta - a.head_direction;
         if (delta < -M_PI) delta += 2 * M_PI;
         if (delta > M_PI) delta -= 2 * M_PI; // just to be safe
@@ -971,6 +1052,10 @@ public:
 
   void buffer_q_interval(int timesteps) {
     buffer_Q_timesteps = timesteps;
+  }
+
+  void episode_length(FloatT ep_len) {
+    ep_length = ep_len;
   }
 
   void set_rl_params(FloatT _q0, FloatT _beta, FloatT _invalid_act_reward,
