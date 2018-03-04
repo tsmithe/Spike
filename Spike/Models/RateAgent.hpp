@@ -205,6 +205,7 @@ struct AgentBase {
   FloatT head_direction = 0;
 
   EigenVector object_bearings;
+  EigenVector object_visibility;
 
   bool smooth_AHV = false;
   FloatT AHV_speed = 0;
@@ -263,6 +264,10 @@ public:
 
   EigenMatrix2D proximal_objects;
   std::vector<FloatT> distal_objects;
+
+  virtual FloatT occlusion(EigenVector2D from, EigenVector2D to) {
+    return 0;
+  }
 
   void save_map(std::string output_prefix) {
     {
@@ -348,11 +353,12 @@ public:
   using ray_t = std::pair<Eigen::Vector2i, Eigen::Vector2i>;
 
   std::vector<ray_t> barriers;
-  EigenMatrix2D test_locations;
   EigenMatrix2D start_locations;
 
   EigenMatrix reward;
   std::unordered_map<char, FloatT> reward_legend;
+
+  std::unordered_map<char, EigenMatrix2D> test_locations;
 
 protected:
   void prepare() override {
@@ -521,7 +527,6 @@ public:
     bound_x = world_size.cast<FloatT>()(1) + 1;
 
     barriers = extract_barriers(map, world_size);
-    test_locations = extract_objects(map, world_size, "t");
     start_locations = extract_objects(map, world_size, "s");
     if (0 == start_locations.cols()) {
       start_locations.resize(Eigen::NoChange, 1);
@@ -555,6 +560,27 @@ public:
         auto coord = map_coord(idx);
         reward(coord(0), coord(1)) = r.second;
         map[idx] = ' ';
+      }
+    }
+  }
+
+  void load_tests(std::string map) {
+    assert(compute_size(map) == world_size);
+    trim(map);
+
+    std::unordered_map<char, std::vector<unsigned> > test_indices;
+    for (unsigned idx = 0; idx < map.size(); ++idx) {
+      char c = map[idx];
+      if (c != 'x' && c != '*') {
+        test_indices[c].push_back(idx);
+      }
+    }
+
+    auto map_coord = get_map_coord(world_size);
+    for (auto const& i : test_indices) {
+      test_locations[i.first].resize(Eigen::NoChange, i.second.size());
+      for (unsigned j = 0; j < i.second.size(); ++j) {
+        test_locations[i.first].col(j) = map_coord(i.second[j]).cast<FloatT>();
       }
     }
   }
@@ -611,12 +637,6 @@ public:
       }
     }
 
-    for (unsigned i = 0; i < test_locations.cols(); ++i) {
-      Eigen::Vector2i coord = test_locations.col(i).cast<int>();
-      auto idx = map_index(coord);
-      map[idx] = 't';
-    }
-
     for (unsigned i = 0; i < start_locations.cols(); ++i) {
       Eigen::Vector2i coord = start_locations.col(i).cast<int>();
       auto idx = map_index(coord);
@@ -648,6 +668,18 @@ public:
     return map;
   }
 
+  std::string tests_to_string() {
+    std::string map = barriers_to_string();
+    auto map_index = get_map_index(world_size);
+    for (auto const& t : test_locations) {
+      for (unsigned c = 0; c < t.second.cols(); ++c) {
+        map[map_index(t.second.col(c).cast<int>())] = t.first;
+      }
+    }
+    trim(map);
+    return map;
+  }
+
   void save_map(std::string output_prefix) {
     prepare();
 
@@ -670,8 +702,11 @@ public:
 
     Eigen::write_binary((output_dir + "/start_locations.bin").c_str(), start_locations);
 
-    if (test_locations.rows() > 0 && test_locations.cols() > 0) {
-      Eigen::write_binary((output_dir + "/test_locations.bin").c_str(), test_locations);
+    for (auto const& t : test_locations) {
+      if (t.second.rows() > 0 && t.second.cols() > 0) {
+        Eigen::write_binary((output_dir + "/test_locations_" + t.first + ".bin").c_str(),
+                            t.second);
+      }
     }
 
     if (reward.rows() > 0 && reward.cols() > 0) {
@@ -683,7 +718,8 @@ public:
   }
 
   static bool line_segments_intersect(EigenVector2D P1, EigenVector2D Q1,
-                                      EigenVector2D P2, EigenVector2D Q2) {
+                                      EigenVector2D P2, EigenVector2D Q2,
+                                      EigenVector2D* X = nullptr) {
 
     FloatT const& x0 = P1(0);
     FloatT const& y0 = P1(1);
@@ -722,25 +758,40 @@ public:
         ab = (y1 * (x0 - a1) + b1 * (x1 - x0) + y0 * (a1 - x1)) / denom;
       }
     }
-    if ( partial && IsBetween(0, ab, 1)) {
+    if (partial && IsBetween(0, ab, 1)) {
       ab = 1-ab;
       xy = 1-xy;
+      if (nullptr != X) {
+        *X = P1 + xy*(Q1 - P1);
+      }
       return true;
     }  else return false;
   }
 
-  bool intersects_barrier_xy(EigenVector2D Pxy, EigenVector2D Qxy) {
+  bool intersects_barrier_xy(EigenVector2D Pxy, EigenVector2D Qxy, FloatT end_tol=0) {
+    EigenVector2D X;
+
     for (auto const& b : barriers) {
       // barriers are represented in {row, col} indices, not {x, y}:
 
       auto b_first_xy = ij_to_xy(b.first.cast<FloatT>());
       auto b_second_xy = ij_to_xy(b.second.cast<FloatT>());
 
-      if (line_segments_intersect(Pxy, Qxy, b_first_xy, b_second_xy)) {
-        return true;
+      if (line_segments_intersect(Pxy, Qxy, b_first_xy, b_second_xy, &X)) {
+        if (0 == end_tol) {
+          return true;
+        } else if ((X-Pxy).norm() > end_tol && (X-Qxy).norm() > end_tol) {
+          // std::cout << "  !! " << X.transpose() << " !! ";
+          // std::cout.flush();
+          return true;
+        }
       }
     }
     return false;
+  }
+
+  FloatT occlusion(EigenVector2D from, EigenVector2D to) override {
+    return intersects_barrier_xy(from, to, 1e-3) ? 1 : 0;
   }
 
 
@@ -848,15 +899,6 @@ class QMazePolicy {
   }
 
 protected:
-  void reset_start_location(AgentBase& a) {
-    auto& w = dynamic_cast<MazeWorld&>(a);
-    started = false;
-    action_stage = 0;
-    a.change_action_ts = 0;
-    a.choose_next_action_ts = 0;
-    a.position = w.propose_start_location_xy();
-  }
-
   void prepare(AgentBase& a) {
     if (prepared) return;
     assert(!a.smooth_AHV); // for now...
@@ -870,8 +912,6 @@ protected:
   }
 
   void update_per_dt(AgentBase& agent, FloatT dt) {
-    // TODO: update_visible_objects(agent, dt);
-
     /*
     if (buffer_Q_timesteps > 0 && !(_timesteps % buffer_Q_timesteps)) {
       buffer_Q();
@@ -903,8 +943,20 @@ protected:
     q = (1 - alpha) * q + alpha * (r + gamma * q_max);
   }
 
-  /* check intersections of rays from self to objects, and barriers */
-  void update_visible_objects(AgentBase& agent, FloatT dt); // TODO
+  /*
+  /* check intersections of rays from self to objects, and barriers * /
+  void update_visible_objects(AgentBase& a, FloatT dt) {
+    auto& w = dynamic_cast<MazeWorld&>(a);
+
+    for (unsigned j = 0; j < w.proximal_objects.cols(); ++j) {
+      if (w.intersects_barrier_xy(a.position, w.proximal_objects.col(j))) {
+        w.object_visibility(j) = 0;
+      } else {
+        w.object_visibility(j) = 1;
+      }
+    }
+  }
+  */
 
   void choose_new_action(AgentBase& a, FloatT dt) {
     if (0 == action_stage) {
@@ -1045,6 +1097,15 @@ public:
     action_die = std::uniform_real_distribution<FloatT>(0, 1);
   }
 
+  void reset_start_location(AgentBase& a) {
+    auto& w = dynamic_cast<MazeWorld&>(a);
+    started = false;
+    action_stage = 0;
+    a.change_action_ts = 0;
+    a.choose_next_action_ts = 0;
+    a.position = w.propose_start_location_xy();
+  }
+
   void add_velocity(FloatT r, FloatT theta) {
     assert(r > 0 && theta >= -M_PI && theta < 2 * M_PI);
     actions.push_back({r, theta});
@@ -1066,6 +1127,54 @@ public:
     alpha = _alpha;
     gamma = _gamma;
   }
+};
+
+
+class MazePlaceTestPolicy {
+  int curr_place = -1;
+  int curr_AHV = -1;
+
+protected:
+  inline void prepare(AgentBase&) {}
+
+  inline void choose_new_action(AgentBase& a, FloatT dt) {
+    auto& w = dynamic_cast<MazeWorld&>(a);
+    auto& place_test_locations = w.test_locations['p'];
+
+    if (curr_AHV < 0) {
+      ++curr_AHV;
+      ++curr_place;
+
+      if (place_test_locations.cols() == curr_place) {
+        curr_place = -1;
+        a.test_times.pop();
+        // TODO: neaten following line up by generalising:
+        dynamic_cast<QMazePolicy&>(a).reset_start_location(a);
+        return;
+      }
+
+      a.position = w.ij_to_xy(place_test_locations.col(curr_place));
+      a.target_position = a.position;
+      a.head_direction = 0;
+      a.target_head_direction = 0;
+    }
+
+    a.curr_action = AgentBase::actions_t::AHV;
+    a.curr_AHV = curr_AHV;
+    a.curr_FV = 0;
+    a.target_head_direction = 0;
+    a.target_position = a.position;
+    FloatT v = a.AHVs[curr_AHV].first;
+    FloatT duration = std::abs(v) > 0 ? (2 * M_PI / std::abs(v)) : 1;
+    a.choose_next_action_ts = a.timesteps + round(duration / dt);
+
+    ++curr_AHV;
+    if (a.AHVs.size() == curr_AHV) {
+      curr_AHV = -1;
+    }
+  }
+
+  inline void update_per_dt(AgentBase&, FloatT) {}
 };
 
 
@@ -1174,6 +1283,7 @@ public:
 
     object_bearings.resize(this->num_objects);
     object_bearings = EigenVector::Zero(this->num_objects);
+    object_visibility = EigenVector::Ones(this->num_objects);
 
     TrainPolicyT::prepare(*this);
     TestPolicyT::prepare(*this);
@@ -1202,6 +1312,19 @@ public:
   void add_AHV(FloatT AHV, FloatT duration) {
     this->AHVs.push_back({AHV, duration});
     this->num_AHV_states += 1;
+  }
+
+  void update_visibility() {
+    int i = 0;
+    for (; i < this->num_distal_objects; ++i) {
+      object_visibility(i) = 1;
+    }
+    for (int j = 0; j < this->num_proximal_objects; ++i, ++j) {
+      FloatT o = this->occlusion(position, this->proximal_objects.col(j));
+      // std::cout << "\n  " << j << ":\t" << o << " " << position.transpose() << " -> " << this->proximal_objects.col(j).transpose() << "\n";
+      // std::cout.flush();
+      object_visibility(i) = 1.0 - o;
+    }
   }
 
   void update_bearings() {
@@ -1273,6 +1396,7 @@ public:
     assert(!(this->curr_AHV && this->curr_FV));
     perform_action(dt);
     update_bearings();
+    update_visibility();
   }
 
   void update_action(FloatT dt) {

@@ -33,8 +33,12 @@ namespace Backend {
       t += dt;
       dt_ = dt;
 
-      if (t > frontend()->t_stop_after)
+      if (t > frontend()->t_stop_after) {
+        if (_rate.norm() > 0) {
+          _rate = EigenVector::Zero(frontend()->size);
+        }
         return true;
+      }
 
       for (int i = 0; i < dynamic_cast<WorldBase*>(agent)->num_objects; ++i) {
         FloatT theta = agent->object_bearings(i);
@@ -49,6 +53,15 @@ namespace Backend {
         d_i = (theta_pref.array() - theta).abs().matrix();
         d_i = d_i.array().min(2*M_PI - d_i.array());
       }
+
+      _rate = frontend()->lambda *
+        (-d.cwiseProduct(d).cwiseQuotient(2*sigma_IN_sqr)).array().exp().matrix();
+
+      for (int i = 0; i < dynamic_cast<WorldBase*>(agent)->num_objects; ++i) {
+        _rate.segment(frontend()->neurons_per_object * i,
+                      frontend()->neurons_per_object) *= agent->object_visibility(i);
+      }
+
       return true;
     }
 
@@ -60,13 +73,6 @@ namespace Backend {
       if (n_back)
         assert("Delays not yet supported here" && false);
 
-      if (t > frontend()->t_stop_after) {
-        _rate = EigenVector::Zero(frontend()->size); 
-        return _rate;
-      }
-
-      _rate = frontend()->lambda *
-        (-d.cwiseProduct(d).cwiseQuotient(2*sigma_IN_sqr)).array().exp().matrix();
       return _rate;
     }
 
