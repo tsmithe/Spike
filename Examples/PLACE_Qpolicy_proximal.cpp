@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
   FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 3000;
+  FloatT train_time = 4500;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 0; // 800
   FloatT test_off_time = 0; // 200
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT fwd_move_dist = 0.2;
-  FloatT rot_angle = M_PI / 8;
+  FloatT rot_angle = M_PI / 4;
 
   FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
   FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
@@ -139,31 +139,12 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  // ///* PLACETESTPOLICY:
-  agent.add_test_time(100);
-  // agent.add_test_time(500);
-  // agent.add_test_time(1000);
-  // agent.add_test_time(2000);
-  // agent.add_test_time(3000);
-  // agent.add_test_time(4000);
-  // agent.add_test_time(5000);
-  // agent.add_test_time(6000);
-  // //agent.set_place_test_params(0.2*radius, 20);
+  std::vector<FloatT> test_times{120, 955, 1910, 2865, 3820};
+  FloatT test_duration = 355; // turns off plasticity during testing for this duration
 
-  // agent.add_test_position(-0.5*bound_x, 0.5*bound_y);
-  // agent.add_test_position(-0.5*bound_x, -0.5*bound_y);
-  // agent.add_test_position(0.5*bound_x, 0.5*bound_y);
-  // agent.add_test_position(0.5*bound_x, -0.5*bound_y);
-  // agent.add_test_position(0, 0);
-
-  // // agent.add_test_position(0.75*bound_x, 0.75*bound_x);
-  // // agent.add_test_position(-0.75*bound_x, -0.75*bound_x);
-  // // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
-  // // agent.add_test_position(0.4*bound_x, 0.4*bound_x);
-  // // agent.add_test_position(0.4*bound_x, -0.4*bound_x);
-  // // agent.add_test_position(-0.4*bound_x, 0.4*bound_y);
-  // // agent.add_test_position(-0.4*bound_x, -0.4*bound_y);
-  // //*/
+  for (auto const& t : test_times) {
+    agent.add_test_time(t);
+  }
  
   int N_per_obj = 60;
   FloatT sigma_VIS = M_PI / 9;
@@ -227,26 +208,25 @@ int main(int argc, char *argv[]) {
 
   // FVxHD -> PLACExFVxHD connectivity:
   FloatT FVxHD_PLACExFVxHD_sparsity = 0.05;
-  FloatT FVxHD_PLACExFVxHD_scaling = 700.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
+  FloatT FVxHD_PLACExFVxHD_scaling = 800.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
-  FloatT PLACE_PLACExFVxHD_scaling = 600.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+  FloatT PLACE_PLACExFVxHD_scaling = 700.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -100.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_inhibition = -180.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = 0.05;
-  FloatT VIS_PLACE_scaling = 2900.0 / (n_vis_tmp*VIS_PLACE_sparsity); // 6x6: 2000
-  FloatT VIS_PLACE_INH_scaling = -0.5 / (n_vis_tmp*VIS_PLACE_sparsity);
-  FloatT eps_VIS_PLACE = eps;
+  FloatT VIS_PLACE_scaling = 1500.0 / (n_vis_tmp*VIS_PLACE_sparsity); // 6x6: 2000
+  FloatT VIS_PLACE_INH_scaling = -10.0 / (n_vis_tmp*VIS_PLACE_sparsity);
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 6000.0 / N_PLACExFVxHD; // ???14000
+  FloatT PLACExFVxHD_PLACE_scaling = 3600.0 / N_PLACExFVxHD; // ???14000
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -2000.0 / N_PLACE;
+  FloatT PLACE_inhibition = -420.0 / N_PLACE;
 
 
   // FV -> FVxHD connectivity:
@@ -401,7 +381,6 @@ int main(int argc, char *argv[]) {
   RateSynapses PLACE_PLACE_INH(ctx, &PLACE, &PLACE,
                              PLACE_inhibition, "PLACE_PLACE_INH");
   PLACE_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_PLACE));
-  // PLACE_PLACE_INH.delay(ceil(0.5*axonal_delay / timestep)); // ?
 
   BCMPlasticity plast_PLACE_PLACE_INH(ctx, &PLACE_PLACE_INH);
 
@@ -418,20 +397,30 @@ int main(int argc, char *argv[]) {
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
-  plast_VIS_PLACE.add_schedule(train_time, eps_VIS_PLACE);
-  plast_PLACExFVxHD_PLACE.add_schedule(train_time, eps);
-  plast_PLACE_PLACExFVxHD.add_schedule(train_time, eps);
-  plast_FVxHD_PLACExFVxHD.add_schedule(train_time, eps);
-  plast_FV_FVxHD.add_schedule(train_time, eps);
-  plast_HD_FVxHD.add_schedule(train_time, eps);
+  auto add_plast_schedule = [&](FloatT dur, FloatT rate) {
+    plast_VIS_PLACE.add_schedule(dur, rate);
+    plast_PLACExFVxHD_PLACE.add_schedule(dur, rate);
+    plast_PLACE_PLACExFVxHD.add_schedule(dur, rate);
+    plast_FVxHD_PLACExFVxHD.add_schedule(dur, rate);
+    plast_FV_FVxHD.add_schedule(dur, rate);
+    plast_HD_FVxHD.add_schedule(dur, rate);
+  };
 
-  plast_VIS_PLACE.add_schedule(infinity<FloatT>(), 0);
-  plast_PLACExFVxHD_PLACE.add_schedule(infinity<FloatT>(), 0);
-  plast_PLACE_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_FVxHD_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_FV_FVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_HD_FVxHD.add_schedule(infinity<FloatT>(), 0);
+  FloatT total_time = 0;
+  for (unsigned i = 0; i < test_times.size(); ++i) {
+    FloatT this_test_start = test_times[i];
+    FloatT prev_test_end = 0 == i ? 0 : (test_times[i-1] + test_duration);
+    FloatT train_duration = this_test_start - prev_test_end;
+    total_time += train_duration;
 
+    add_plast_schedule(train_duration, eps);
+    add_plast_schedule(test_duration, 0);
+  }
+  total_time += test_duration;
+  FloatT remaining_train_time = train_time - total_time;
+
+  add_plast_schedule(remaining_train_time, eps);
+  add_plast_schedule(infinity<FloatT>(), 0);
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs(OUTPUT_PATH, &VIS);
