@@ -571,7 +571,7 @@ public:
     std::unordered_map<char, std::vector<unsigned> > test_indices;
     for (unsigned idx = 0; idx < map.size(); ++idx) {
       char c = map[idx];
-      if (c != 'x' && c != '*') {
+      if (c != 'x' && c != '*' && !std::isspace(c)) {
         test_indices[c].push_back(idx);
       }
     }
