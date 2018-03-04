@@ -11,8 +11,8 @@
 
 int main(int argc, char *argv[]) {
   Eigen::initParallel();
-  omp_set_num_threads(32);
-  Eigen::setNbThreads(8);
+  omp_set_num_threads(20);
+  Eigen::setNbThreads(20);
   std::cout << Eigen::nbThreads() << std::endl;
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   ctx->backend = "Eigen";
 
   // Create Agent
-  Agent<QMazePolicy, NullActionPolicy, MazeWorld> agent;
+  Agent<QMazePolicy, MazePlaceTestPolicy, MazeWorld> agent;
   agent.episode_length(100);
 
   for (unsigned i = 0; i < 6; ++i) {
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   }
 
   agent.load_map(
-"xxxxxxxxxxxxxxxxxxx\n"
+"xxxxxxxx   xxxxxxxx\n"
 "x      x   x      x\n"
 "*      x   x      *\n"
 "x      x   x      x\n"
@@ -62,10 +62,10 @@ int main(int argc, char *argv[]) {
 "x      x   x      x\n"
 "*      x   x      *\n"
 "x      x   x      x\n"
-"xxxxxxxxxxxxxxxxxxx");
+"xxxxxxxx   xxxxxxxx");
 
   agent.load_rewards(
-"xxxxxxxxxxxxxxxxxxx\n"
+"xxxxxxxx   xxxxxxxx\n"
 "x      x   x  --  x\n"
 "*  ++  x   x ---- *\n"
 "x  ++  x   x  --  x\n"
@@ -77,8 +77,23 @@ int main(int argc, char *argv[]) {
 "x      x   x  --  x\n"
 "*      x   x ---- *\n"
 "x      x   x  --  x\n"
-"xxxxxxxxxxxxxxxxxxx",
+"xxxxxxxx   xxxxxxxx",
 {{'+', 10.0}, {'-', -10.0}});
+
+  agent.load_tests(
+"xxxxxxxx   xxxxxxxx\n"
+"xppppppx   xppppppx\n"
+"*ppppppx   xpppppp*\n"
+"xppppppx   xppppppx\n"
+"*ppppppx   xpppppp*\n"
+"xppppppxx*xxppppppx\n"
+"*ppppppppppppppppp*\n"
+"xppppppx*x*xppppppx\n"
+"*ppppppx   xpppppp*\n"
+"xppppppx   xppppppx\n"
+"*ppppppx   xpppppp*\n"
+"xppppppx   xppppppx\n"
+"xxxxxxxx   xxxxxxxx");
 
 
   // agent.seed(123);
@@ -108,11 +123,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  FloatT fwd_move_dist = 0.04;
+  FloatT fwd_move_dist = 0.2;
   FloatT rot_angle = M_PI / 8;
 
-  FloatT fwd_move_time = 0.02; ///6.0; // seconds per forward move
-  FloatT angle_move_time = 0.02; ///6.0; // seconds per angular move
+  FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
+  FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
 
   /* RandomWalkPolicy::
   agent.p_fwd = 1.0/2.0;
@@ -125,7 +140,7 @@ int main(int argc, char *argv[]) {
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
   // ///* PLACETESTPOLICY:
-  // agent.add_test_time(100);
+  agent.add_test_time(100);
   // agent.add_test_time(500);
   // agent.add_test_time(1000);
   // agent.add_test_time(2000);
@@ -165,40 +180,20 @@ int main(int argc, char *argv[]) {
   int N_VIS = VIS.size;
   int N_FV = FV.size;
 
-#ifdef VIS2
-  // VIS2 neurons:
-  int N_VIS2 = 500;
-  FloatT alpha_VIS2 = 20.0;
-  FloatT beta_VIS2 = 0.2;
-  FloatT tau_VIS2 = 1e-2;
-  RateNeurons VIS2(ctx, N_VIS2, "VIS2", alpha_VIS2, beta_VIS2, tau_VIS2);
-
-  EigenVector VIS2_INH_on = EigenVector::Ones(N_VIS2);
-  EigenVector VIS2_INH_off = EigenVector::Zero(N_VIS2);
-  DummyRateNeurons VIS2_INH(ctx, N_VIS2, "VIS2_INH");
-
-  const int n_vis_tmp = N_VIS2;
-#else
+  /*
   EigenVector VIS_INH_on = EigenVector::Ones(N_VIS);
   EigenVector VIS_INH_off = EigenVector::Zero(N_VIS);
   DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
+  */
 
   const int n_vis_tmp = N_VIS;
-#endif
 
   // PLACE neurons:
-  int N_PLACE = 200;
+  int N_PLACE = 400;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 0.6;
+  FloatT beta_PLACE = 0.3;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
-
-  // GRID neurons:
-  int N_GRID = 100;
-  FloatT alpha_GRID = 20.0;
-  FloatT beta_GRID = 0.5;
-  FloatT tau_GRID = 1e-2;
-  RateNeurons GRID(ctx, N_GRID, "GRID", alpha_GRID, beta_GRID, tau_GRID);
 
   // FVxHD neurons:
   int N_FVxHD = N_HD * agent.num_FV_states;
@@ -207,108 +202,51 @@ int main(int argc, char *argv[]) {
   FloatT tau_FVxHD = 1e-2;
   RateNeurons FVxHD(ctx, N_FVxHD, "FVxHD", alpha_FVxHD, beta_FVxHD, tau_FVxHD);
 
-  // GRIDxFVxHD neurons:
-  int N_GRIDxFVxHD = 200 * 2 * agent.num_FV_states;
-  FloatT alpha_GRIDxFVxHD = 20.0;
-  FloatT beta_GRIDxFVxHD = 0.3;
-  FloatT tau_GRIDxFVxHD = 1e-2;
-  RateNeurons GRIDxFVxHD(ctx, N_GRIDxFVxHD, "GRIDxFVxHD",
-                         alpha_GRIDxFVxHD, beta_GRIDxFVxHD,
-                         tau_GRIDxFVxHD);
+  // PLACExFVxHD neurons:
+  int N_PLACExFVxHD = 200 * 2 * agent.num_FV_states;
+  FloatT alpha_PLACExFVxHD = 20.0;
+  FloatT beta_PLACExFVxHD = 0.3;
+  FloatT tau_PLACExFVxHD = 1e-2;
+  RateNeurons PLACExFVxHD(ctx, N_PLACExFVxHD, "PLACExFVxHD",
+                         alpha_PLACExFVxHD, beta_PLACExFVxHD,
+                         tau_PLACExFVxHD);
 
   // General parameters:
   FloatT axonal_delay = pow(2, -5); // seconds (TODO units)
   FloatT eps = 0.02;
-
-#ifdef VIS2
-  // VIS -> VIS2 connectivity:
-  FloatT VIS_VIS2_sparsity = 0.05;
-  FloatT VIS_VIS2_scaling = 3200.0 / (N_VIS*VIS_VIS2_sparsity);
-
-  // VIS2 -> VIS2 connectivity:
-  FloatT VIS2_inhibition = -500.0 / N_VIS2;
-#endif
 
   // FV -> FVxHD connectivity:
   FloatT FV_FVxHD_scaling = 270.0 / N_FV;
 
   // HD -> FVxHD connectivity:
   FloatT HD_FVxHD_sparsity = 0.05;
-  FloatT HD_FVxHD_scaling = 450.0 / (HD_FVxHD_sparsity*N_HD);
+  FloatT HD_FVxHD_scaling = 480.0 / (HD_FVxHD_sparsity*N_HD);
 
   // FVxHD -> FVxHD connectivity:
   FloatT FVxHD_inhibition = -360.0 / N_FVxHD;
 
-  // FVxHD -> GRIDxFVxHD connectivity:
-  FloatT FVxHD_GRIDxFVxHD_sparsity = 0.05;
-  FloatT FVxHD_GRIDxFVxHD_scaling = 700.0 / (FVxHD_GRIDxFVxHD_sparsity*N_FVxHD);
+  // FVxHD -> PLACExFVxHD connectivity:
+  FloatT FVxHD_PLACExFVxHD_sparsity = 0.05;
+  FloatT FVxHD_PLACExFVxHD_scaling = 700.0 / (FVxHD_PLACExFVxHD_sparsity*N_FVxHD);
 
-  // GRID -> GRIDxFVxHD connectivity:
-  FloatT GRID_GRIDxFVxHD_sparsity = 0.05;
-  FloatT GRID_GRIDxFVxHD_scaling = 400.0 / (N_GRID*GRID_GRIDxFVxHD_sparsity);
+  // PLACE -> PLACExFVxHD connectivity:
+  FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
+  FloatT PLACE_PLACExFVxHD_scaling = 600.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
-  // GRIDxFVxHD -> GRIDxFVxHD connectivity:
-  FloatT GRIDxFVxHD_inhibition = -600.0 / N_GRIDxFVxHD;
-
-  // VIS -> GRID connectivity:
-  FloatT VIS_GRID_sparsity = 0.05;
-  FloatT VIS_GRID_scaling = 2900.0 / (n_vis_tmp*VIS_GRID_sparsity); // 6x6: 2000
-  FloatT VIS_GRID_INH_scaling = -0.5 / (n_vis_tmp*VIS_GRID_sparsity);
-  FloatT eps_VIS_GRID = eps;
-
-  // GRIDxFVxHD -> GRID connectivity:
-  FloatT GRIDxFVxHD_GRID_scaling = 800.0 / N_GRIDxFVxHD; // ???14000
-
-  // GRID -> GRID connectivity:
-  FloatT GRID_inhibition = -50.0 / N_GRID;
-
-  // GRID -> PLACE connectivity
-  FloatT GRID_PLACE_sparsity = 0.05;
-  FloatT GRID_PLACE_scaling = 500.0 / (N_GRID*GRID_PLACE_sparsity);
-
-  // PLACE -> PLACE connectivity:
-  FloatT PLACE_PLACE_sparsity = 0.25;
-  FloatT PLACE_PLACE_scaling = 0.0; // 3000.0 / (N_PLACE*PLACE_PLACE_sparsity);
-  FloatT PLACE_inhibition = -2000.0 / N_PLACE;
-
-  // PLACE -> GRID connectivity
-  FloatT PLACE_GRID_sparsity = 0.1;
-  FloatT PLACE_GRID_scaling = 0; //300.0 / (N_PLACE*PLACE_GRID_sparsity);
+  // PLACExFVxHD -> PLACExFVxHD connectivity:
+  FloatT PLACExFVxHD_inhibition = -100.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = 0.05;
-  FloatT VIS_PLACE_scaling = 0; // 800.0 / (n_vis_tmp*VIS_PLACE_sparsity);
-  // FloatT VIS_PLACE_INH_scaling = -1.05 / (n_vis_tmp*VIS_PLACE_sparsity);
+  FloatT VIS_PLACE_scaling = 2900.0 / (n_vis_tmp*VIS_PLACE_sparsity); // 6x6: 2000
+  FloatT VIS_PLACE_INH_scaling = -0.5 / (n_vis_tmp*VIS_PLACE_sparsity);
   FloatT eps_VIS_PLACE = eps;
 
+  // PLACExFVxHD -> PLACE connectivity:
+  FloatT PLACExFVxHD_PLACE_scaling = 6000.0 / N_PLACExFVxHD; // ???14000
 
-#ifdef VIS2
-  // VIS -> VIS2 connectivity:
-  RateSynapses VIS_VIS2(ctx, &VIS, &VIS2, VIS_VIS2_scaling, "VIS_VIS2");
-  EigenMatrix W_VIS_VIS2
-    = Eigen::make_random_matrix(N_VIS2, N_VIS, 1.0, true,
-                                1.0-VIS_VIS2_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS_VIS2.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS_VIS2, N_VIS2, N_VIS);
-  }
-  VIS_VIS2.weights(W_VIS_VIS2);
-  VIS_VIS2.make_sparse();
-
-  BCMPlasticity plast_VIS_VIS2(ctx, &VIS_VIS2);
-
-  VIS2.connect_input(&VIS_VIS2, &plast_VIS_VIS2);
-
-
-  // VIS2 -> VIS2 connectivity:
-  RateSynapses VIS2_VIS2_INH(ctx, &VIS2, &VIS2,
-                             VIS2_inhibition, "VIS2_VIS2_INH");
-  VIS2_VIS2_INH.weights(EigenMatrix::Ones(N_VIS2, N_VIS2));
-
-  BCMPlasticity plast_VIS2_VIS2_INH(ctx, &VIS2_VIS2_INH);
-
-  VIS2.connect_input(&VIS2_VIS2_INH, &plast_VIS2_VIS2_INH);
-#endif
+  // PLACE -> PLACE connectivity:
+  FloatT PLACE_inhibition = -2000.0 / N_PLACE;
 
 
   // FV -> FVxHD connectivity:
@@ -359,242 +297,62 @@ int main(int argc, char *argv[]) {
                       &plast_FVxHD_FVxHD_INH);
 
 
-  // FVxHD -> GRIDxFVxHD connectivity:
-  RateSynapses FVxHD_GRIDxFVxHD(ctx, &FVxHD, &GRIDxFVxHD,
-                                 FVxHD_GRIDxFVxHD_scaling,
-                                 "FVxHD_GRIDxFVxHD");
-  // FVxHD_GRIDxFVxHD.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_FVxHD_GRIDxFVxHD
-    = Eigen::make_random_matrix(N_GRIDxFVxHD, N_FVxHD,
-                                1.0, true, 1.0-FVxHD_GRIDxFVxHD_sparsity, 0, false);
+  // FVxHD -> PLACExFVxHD connectivity:
+  RateSynapses FVxHD_PLACExFVxHD(ctx, &FVxHD, &PLACExFVxHD,
+                                 FVxHD_PLACExFVxHD_scaling,
+                                 "FVxHD_PLACExFVxHD");
+  // FVxHD_PLACExFVxHD.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_FVxHD_PLACExFVxHD
+    = Eigen::make_random_matrix(N_PLACExFVxHD, N_FVxHD,
+                                1.0, true, 1.0-FVxHD_PLACExFVxHD_sparsity, 0, false);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_FVxHD_GRIDxFVxHD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_FVxHD_GRIDxFVxHD,
-                       N_GRIDxFVxHD, N_GRID);
+    std::string tmp_path = weights_path + "/W_FVxHD_PLACExFVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_FVxHD_PLACExFVxHD,
+                       N_PLACExFVxHD, N_PLACE);
   }
-  FVxHD_GRIDxFVxHD.weights(W_FVxHD_GRIDxFVxHD);
-  FVxHD_GRIDxFVxHD.make_sparse();
+  FVxHD_PLACExFVxHD.weights(W_FVxHD_PLACExFVxHD);
+  FVxHD_PLACExFVxHD.make_sparse();
 
-  BCMPlasticity plast_FVxHD_GRIDxFVxHD(ctx, &FVxHD_GRIDxFVxHD);
+  BCMPlasticity plast_FVxHD_PLACExFVxHD(ctx, &FVxHD_PLACExFVxHD);
 
-  GRIDxFVxHD.connect_input(&FVxHD_GRIDxFVxHD, &plast_FVxHD_GRIDxFVxHD);
+  PLACExFVxHD.connect_input(&FVxHD_PLACExFVxHD, &plast_FVxHD_PLACExFVxHD);
 
 
-  // GRID -> GRIDxFVxHD connectivity:
-  RateSynapses GRID_GRIDxFVxHD(ctx, &GRID, &GRIDxFVxHD,
-                                 GRID_GRIDxFVxHD_scaling,
-                                 "GRID_GRIDxFVxHD");
-  GRID_GRIDxFVxHD.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_GRID_GRIDxFVxHD
-    = Eigen::make_random_matrix(N_GRIDxFVxHD, N_GRID,
-                                1.0, true, 1.0-GRID_GRIDxFVxHD_sparsity, 0, false);
+  // PLACE -> PLACExFVxHD connectivity:
+  RateSynapses PLACE_PLACExFVxHD(ctx, &PLACE, &PLACExFVxHD,
+                                 PLACE_PLACExFVxHD_scaling,
+                                 "PLACE_PLACExFVxHD");
+  PLACE_PLACExFVxHD.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_PLACE_PLACExFVxHD
+    = Eigen::make_random_matrix(N_PLACExFVxHD, N_PLACE,
+                                1.0, true, 1.0-PLACE_PLACExFVxHD_sparsity, 0, false);
   if (read_weights) {
-    std::string tmp_path = weights_path + "/W_GRID_GRIDxFVxHD.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_GRID_GRIDxFVxHD,
-                       N_GRIDxFVxHD, N_GRID);
+    std::string tmp_path = weights_path + "/W_PLACE_PLACExFVxHD.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_PLACE_PLACExFVxHD,
+                       N_PLACExFVxHD, N_PLACE);
   }
-  GRID_GRIDxFVxHD.weights(W_GRID_GRIDxFVxHD);
-  GRID_GRIDxFVxHD.make_sparse();
+  PLACE_PLACExFVxHD.weights(W_PLACE_PLACExFVxHD);
+  PLACE_PLACExFVxHD.make_sparse();
 
-  BCMPlasticity plast_GRID_GRIDxFVxHD(ctx, &GRID_GRIDxFVxHD);
+  BCMPlasticity plast_PLACE_PLACExFVxHD(ctx, &PLACE_PLACExFVxHD);
 
-  GRIDxFVxHD.connect_input(&GRID_GRIDxFVxHD, &plast_GRID_GRIDxFVxHD);
-
-
-  // GRIDxFVxHD -> GRIDxFVxHD connectivity:
-  RateSynapses GRIDxFVxHD_GRIDxFVxHD_INH(ctx, &GRIDxFVxHD, &GRIDxFVxHD,
-                                           GRIDxFVxHD_inhibition,
-                                           "GRIDxFVxHD_GRIDxFVxHD_INH");
-  GRIDxFVxHD_GRIDxFVxHD_INH.weights
-    (EigenMatrix::Ones(N_GRIDxFVxHD, N_GRIDxFVxHD));
-
-  BCMPlasticity plast_GRIDxFVxHD_GRIDxFVxHD_INH
-    (ctx, &GRIDxFVxHD_GRIDxFVxHD_INH);
-
-  GRIDxFVxHD.connect_input(&GRIDxFVxHD_GRIDxFVxHD_INH,
-                            &plast_GRIDxFVxHD_GRIDxFVxHD_INH);
+  PLACExFVxHD.connect_input(&PLACE_PLACExFVxHD, &plast_PLACE_PLACExFVxHD);
 
 
-#ifdef VIS2
-  // VIS2 -> GRID connectivity:
-  RateSynapses VIS2_GRID(ctx, &VIS2, &GRID, VIS_GRID_scaling, "VIS2_GRID");
-  EigenMatrix W_VIS2_GRID
-    = Eigen::make_random_matrix(N_GRID, N_VIS2, 1.0, true,
-                                1.0-VIS_GRID_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS2_GRID.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS2_GRID, N_GRID, N_VIS2);
-  }
-  VIS2_GRID.weights(W_VIS2_GRID);
-  VIS2_GRID.make_sparse();
+  // PLACExFVxHD -> PLACExFVxHD connectivity:
+  RateSynapses PLACExFVxHD_PLACExFVxHD_INH(ctx, &PLACExFVxHD, &PLACExFVxHD,
+                                           PLACExFVxHD_inhibition,
+                                           "PLACExFVxHD_PLACExFVxHD_INH");
+  PLACExFVxHD_PLACExFVxHD_INH.weights
+    (EigenMatrix::Ones(N_PLACExFVxHD, N_PLACExFVxHD));
 
-  BCMPlasticity plast_VIS2_GRID(ctx, &VIS2_GRID);
+  BCMPlasticity plast_PLACExFVxHD_PLACExFVxHD_INH
+    (ctx, &PLACExFVxHD_PLACExFVxHD_INH);
 
-  GRID.connect_input(&VIS2_GRID, &plast_VIS2_GRID);
-
-  RateSynapses VIS2_GRID_INH(ctx, &VIS2_INH, &GRID,
-                             VIS_GRID_INH_scaling, "VIS2_GRID_INH");
-  VIS2_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_VIS2));
-
-  BCMPlasticity plast_VIS2_GRID_INH(ctx, &VIS2_GRID_INH);
-
-  GRID.connect_input(&VIS2_GRID_INH, &plast_VIS2_GRID_INH);
-#else
-  // VIS -> GRID connectivity:
-  RateSynapses VIS_GRID(ctx, &VIS, &GRID, VIS_GRID_scaling, "VIS_GRID");
-  EigenMatrix W_VIS_GRID
-    = Eigen::make_random_matrix(N_GRID, N_VIS, 1.0, true,
-                                1.0-VIS_GRID_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS_GRID.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS_GRID, N_GRID, N_VIS);
-  }
-  VIS_GRID.weights(W_VIS_GRID);
-  VIS_GRID.make_sparse();
-
-  BCMPlasticity plast_VIS_GRID(ctx, &VIS_GRID);
-
-  GRID.connect_input(&VIS_GRID, &plast_VIS_GRID);
-
-  RateSynapses VIS_GRID_INH(ctx, &VIS_INH, &GRID,
-                             VIS_GRID_INH_scaling, "VIS_GRID_INH");
-  VIS_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_VIS));
-
-  BCMPlasticity plast_VIS_GRID_INH(ctx, &VIS_GRID_INH);
-
-  GRID.connect_input(&VIS_GRID_INH, &plast_VIS_GRID_INH);
-#endif
+  PLACExFVxHD.connect_input(&PLACExFVxHD_PLACExFVxHD_INH,
+                            &plast_PLACExFVxHD_PLACExFVxHD_INH);
 
 
-  // GRIDxFVxHD -> GRID connectivity:
-  RateSynapses GRIDxFVxHD_GRID(ctx, &GRIDxFVxHD, &GRID,
-                                 GRIDxFVxHD_GRID_scaling,
-                                 "GRIDxFVxHD_GRID");
-  GRIDxFVxHD_GRID.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_GRIDxFVxHD_GRID
-    = Eigen::make_random_matrix(N_GRID, N_GRIDxFVxHD);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_GRIDxFVxHD_GRID.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_GRIDxFVxHD_GRID,
-                       N_GRID, N_GRIDxFVxHD);
-  }
-  GRIDxFVxHD_GRID.weights(W_GRIDxFVxHD_GRID);
-
-  BCMPlasticity plast_GRIDxFVxHD_GRID(ctx, &GRIDxFVxHD_GRID);
-
-  GRID.connect_input(&GRIDxFVxHD_GRID, &plast_GRIDxFVxHD_GRID);
-
-
-  // GRID -> GRID connectivity:
-  RateSynapses GRID_GRID_INH(ctx, &GRID, &GRID,
-                             GRID_inhibition, "GRID_GRID_INH");
-  GRID_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_GRID));
-  GRID_GRID_INH.delay(ceil(0.5*axonal_delay / timestep)); // ?
-
-  BCMPlasticity plast_GRID_GRID_INH(ctx, &GRID_GRID_INH);
-
-  GRID.connect_input(&GRID_GRID_INH, &plast_GRID_GRID_INH);
-
-
-  // GRID -> PLACE connectivity:
-  RateSynapses GRID_PLACE(ctx, &GRID, &PLACE,
-                          GRID_PLACE_scaling,
-                          "GRID_PLACE");
-  // GRID_PLACE.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_GRID_PLACE
-    = Eigen::make_random_matrix(N_PLACE, N_GRID,
-                                1.0, true, 1.0-GRID_PLACE_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_GRID_PLACE.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_GRID_PLACE,
-                       N_PLACE, N_GRID);
-  }
-  GRID_PLACE.weights(W_GRID_PLACE);
-  GRID_PLACE.make_sparse();
-
-  BCMPlasticity plast_GRID_PLACE(ctx, &GRID_PLACE);
-
-  PLACE.connect_input(&GRID_PLACE, &plast_GRID_PLACE);
-
-
-  // PLACE -> PLACE connectivity:
-  RateSynapses PLACE_PLACE(ctx, &PLACE, &PLACE,
-                           PLACE_PLACE_scaling,
-                           "PLACE_PLACE");
-  // PLACE_PLACE.delay(ceil(pow(2.0, -5.0) / timestep));
-  EigenMatrix W_PLACE_PLACE
-    = Eigen::make_random_matrix(N_PLACE, N_PLACE,
-                                1.0, true, 1.0-PLACE_PLACE_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_PLACE_PLACE.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_PLACE_PLACE,
-                       N_PLACE, N_PLACE);
-  }
-  PLACE_PLACE.weights(W_PLACE_PLACE);
-  if (PLACE_PLACE_sparsity < 1.0)
-    PLACE_PLACE.make_sparse();
-
-  BCMPlasticity plast_PLACE_PLACE(ctx, &PLACE_PLACE);
-
-  if (PLACE_PLACE_scaling > 0)
-    PLACE.connect_input(&PLACE_PLACE, &plast_PLACE_PLACE);
-
-  RateSynapses PLACE_PLACE_INH(ctx, &PLACE, &PLACE,
-                               PLACE_inhibition, "PLACE_PLACE_INH");
-  PLACE_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_PLACE));
-
-  BCMPlasticity plast_PLACE_PLACE_INH(ctx, &PLACE_PLACE_INH);
-
-  PLACE.connect_input(&PLACE_PLACE_INH, &plast_PLACE_PLACE_INH);
-
-
-  // PLACE -> GRID connectivity:
-  RateSynapses PLACE_GRID(ctx, &PLACE, &GRID,
-                          PLACE_GRID_scaling,
-                          "PLACE_GRID");
-  // PLACE_GRID.delay(ceil(axonal_delay / timestep));
-  EigenMatrix W_PLACE_GRID
-    = Eigen::make_random_matrix(N_GRID, N_PLACE,
-                                1.0, true, 1.0-PLACE_GRID_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_PLACE_GRID.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_PLACE_GRID,
-                       N_GRID, N_PLACE);
-  }
-  PLACE_GRID.weights(W_PLACE_GRID);
-  PLACE_GRID.make_sparse();
-
-  BCMPlasticity plast_PLACE_GRID(ctx, &PLACE_GRID);
-
-  if (PLACE_GRID_scaling > 0)
-    GRID.connect_input(&PLACE_GRID, &plast_PLACE_GRID);
-
-#ifdef VIS2
-  // VIS2 -> PLACE connectivity:
-  RateSynapses VIS2_PLACE(ctx, &VIS2, &PLACE, VIS_PLACE_scaling, "VIS2_PLACE");
-  EigenMatrix W_VIS2_PLACE
-    = Eigen::make_random_matrix(N_PLACE, N_VIS2, 1.0, true,
-                                1.0-VIS_PLACE_sparsity, 0, false);
-  if (read_weights) {
-    std::string tmp_path = weights_path + "/W_VIS2_PLACE.bin";
-    Eigen::read_binary(tmp_path.c_str(), W_VIS2_PLACE, N_PLACE, N_VIS2);
-  }
-  VIS2_PLACE.weights(W_VIS2_PLACE);
-  VIS2_PLACE.make_sparse();
-
-  BCMPlasticity plast_VIS2_PLACE(ctx, &VIS2_PLACE);
-
-  if (VIS2_PLACE_scaling > 0)
-    PLACE.connect_input(&VIS2_PLACE, &plast_VIS2_PLACE);
-
-  // RateSynapses VIS2_PLACE_INH(ctx, &VIS2_INH, &PLACE,
-  //                            VIS_PLACE_INH_scaling, "VIS2_PLACE_INH");
-  // VIS2_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_VIS2));
-
-  // BCMPlasticity plast_VIS2_PLACE_INH(ctx, &VIS2_PLACE_INH);
-
-  // PLACE.connect_input(&VIS2_PLACE_INH, &plast_VIS2_PLACE_INH);
-#else
   // VIS -> PLACE connectivity:
   RateSynapses VIS_PLACE(ctx, &VIS, &PLACE, VIS_PLACE_scaling, "VIS_PLACE");
   EigenMatrix W_VIS_PLACE
@@ -609,85 +367,78 @@ int main(int argc, char *argv[]) {
 
   BCMPlasticity plast_VIS_PLACE(ctx, &VIS_PLACE);
 
-  if (VIS_PLACE_scaling > 0)
-    PLACE.connect_input(&VIS_PLACE, &plast_VIS_PLACE);
+  PLACE.connect_input(&VIS_PLACE, &plast_VIS_PLACE);
 
-  // RateSynapses VIS_PLACE_INH(ctx, &VIS_INH, &PLACE,
-  //                            VIS_PLACE_INH_scaling, "VIS_PLACE_INH");
-  // VIS_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_VIS));
+  RateSynapses VIS_PLACE_INH(ctx, &VIS, &PLACE,
+                             VIS_PLACE_INH_scaling, "VIS_PLACE_INH");
+  VIS_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_VIS));
 
-  // BCMPlasticity plast_VIS_PLACE_INH(ctx, &VIS_PLACE_INH);
+  BCMPlasticity plast_VIS_PLACE_INH(ctx, &VIS_PLACE_INH);
 
-  // PLACE.connect_input(&VIS_PLACE_INH, &plast_VIS_PLACE_INH);
-#endif
+  PLACE.connect_input(&VIS_PLACE_INH, &plast_VIS_PLACE_INH);
+
+
+  // PLACExFVxHD -> PLACE connectivity:
+  RateSynapses PLACExFVxHD_PLACE(ctx, &PLACExFVxHD, &PLACE,
+                                 PLACExFVxHD_PLACE_scaling,
+                                 "PLACExFVxHD_PLACE");
+  PLACExFVxHD_PLACE.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_PLACExFVxHD_PLACE
+    = Eigen::make_random_matrix(N_PLACE, N_PLACExFVxHD);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_PLACExFVxHD_PLACE.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_PLACExFVxHD_PLACE,
+                       N_PLACE, N_PLACExFVxHD);
+  }
+  PLACExFVxHD_PLACE.weights(W_PLACExFVxHD_PLACE);
+
+  BCMPlasticity plast_PLACExFVxHD_PLACE(ctx, &PLACExFVxHD_PLACE);
+
+  PLACE.connect_input(&PLACExFVxHD_PLACE, &plast_PLACExFVxHD_PLACE);
+
+
+  // PLACE -> PLACE connectivity:
+  RateSynapses PLACE_PLACE_INH(ctx, &PLACE, &PLACE,
+                             PLACE_inhibition, "PLACE_PLACE_INH");
+  PLACE_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_PLACE));
+  // PLACE_PLACE_INH.delay(ceil(0.5*axonal_delay / timestep)); // ?
+
+  BCMPlasticity plast_PLACE_PLACE_INH(ctx, &PLACE_PLACE_INH);
+
+  PLACE.connect_input(&PLACE_PLACE_INH, &plast_PLACE_PLACE_INH);
 
   // Set simulation schedule:
   VIS.t_stop_after = train_time + test_on_time;
-#ifdef VIS2
-  VIS2_INH.add_schedule(VIS.t_stop_after, VIS2_INH_on);
-  VIS2_INH.add_schedule(infinity<FloatT>(), VIS2_INH_off);
-#else
-  VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
-  VIS_INH.add_schedule(infinity<FloatT>(), VIS_INH_off);
-#endif
+  // VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
+  // VIS_INH.add_schedule(infinity<FloatT>(), VIS_INH_off);
 
   // No inhibitory plasticity:
-#ifdef VIS2
-  plast_VIS2_VIS2_INH.add_schedule(infinity<FloatT>(), 0);
-#endif
-  plast_GRID_GRID_INH.add_schedule(infinity<FloatT>(), 0);
   plast_FVxHD_FVxHD_INH.add_schedule(infinity<FloatT>(), 0);
-  plast_GRIDxFVxHD_GRIDxFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_PLACExFVxHD_PLACExFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
-#ifdef VIS2
-  plast_VIS_VIS2.add_schedule(train_time, eps);
-  plast_VIS2_GRID.add_schedule(train_time, eps_VIS2_GRID);
-  plast_VIS2_PLACE.add_schedule(train_time, eps_VIS2_PLACE);
-#else
-  plast_VIS_GRID.add_schedule(train_time, eps_VIS_GRID);
   plast_VIS_PLACE.add_schedule(train_time, eps_VIS_PLACE);
-#endif
-  plast_GRIDxFVxHD_GRID.add_schedule(train_time, eps);
-  plast_GRID_GRIDxFVxHD.add_schedule(train_time, eps);
-  plast_FVxHD_GRIDxFVxHD.add_schedule(train_time, eps);
-  plast_PLACE_PLACE.add_schedule(train_time, eps);
-  plast_GRID_PLACE.add_schedule(train_time, eps);
-  plast_PLACE_GRID.add_schedule(train_time, eps);
+  plast_PLACExFVxHD_PLACE.add_schedule(train_time, eps);
+  plast_PLACE_PLACExFVxHD.add_schedule(train_time, eps);
+  plast_FVxHD_PLACExFVxHD.add_schedule(train_time, eps);
   plast_FV_FVxHD.add_schedule(train_time, eps);
   plast_HD_FVxHD.add_schedule(train_time, eps);
 
-#ifdef VIS2
-  plast_VIS_VIS2.add_schedule(infinity<FloatT>(), 0);
-  plast_VIS2_GRID.add_schedule(infinity<FloatT>(), 0);
-  plast_VIS2_PLACE.add_schedule(infinity<FloatT>(), 0);
-#else
-  plast_VIS_GRID.add_schedule(infinity<FloatT>(), 0);
   plast_VIS_PLACE.add_schedule(infinity<FloatT>(), 0);
-#endif
-  plast_GRIDxFVxHD_GRID.add_schedule(infinity<FloatT>(), 0);
-  plast_GRID_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_FVxHD_GRIDxFVxHD.add_schedule(infinity<FloatT>(), 0);
-  plast_PLACE_PLACE.add_schedule(infinity<FloatT>(), 0);
-  plast_GRID_PLACE.add_schedule(infinity<FloatT>(), 0);
-  plast_PLACE_GRID.add_schedule(infinity<FloatT>(), 0);
+  plast_PLACExFVxHD_PLACE.add_schedule(infinity<FloatT>(), 0);
+  plast_PLACE_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
+  plast_FVxHD_PLACExFVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_FV_FVxHD.add_schedule(infinity<FloatT>(), 0);
   plast_HD_FVxHD.add_schedule(infinity<FloatT>(), 0);
 
 
   // Have to construct electrodes after neurons:
   RateElectrodes VIS_elecs(OUTPUT_PATH, &VIS);
-#ifdef VIS2
-  RateElectrodes VIS2_elecs(OUTPUT_PATH, &VIS2);
-#endif
   RateElectrodes HD_elecs(OUTPUT_PATH, &HD);
   RateElectrodes FV_elecs(OUTPUT_PATH, &FV);
   RateElectrodes FVxHD_elecs(OUTPUT_PATH, &FVxHD);
-
-  RateElectrodes GRID_elecs(OUTPUT_PATH, &GRID);
-  RateElectrodes GRIDxFVxHD_elecs(OUTPUT_PATH, &GRIDxFVxHD);
-
+  RateElectrodes PLACExFVxHD_elecs(OUTPUT_PATH, &PLACExFVxHD);
   RateElectrodes PLACE_elecs(OUTPUT_PATH, &PLACE);
 
 
@@ -695,35 +446,19 @@ int main(int argc, char *argv[]) {
   model.add(&agent);
 
   model.add(&VIS);
-  /*
-#ifdef VIS2
-  model.add(&VIS2);
-  model.add(&VIS2_INH);
-#else
-  model.add(&VIS_INH);
-#endif
-
-
+  // model.add(&VIS_INH);
   model.add(&HD);
   model.add(&FV);
   model.add(&FVxHD);
-  model.add(&GRIDxFVxHD);
-  model.add(&GRID);
+  model.add(&PLACExFVxHD);
   model.add(&PLACE);
-  */
-  model.add(&VIS_elecs);
-  /*
-#ifdef VIS2
-  model.add(&VIS2_elecs);
-#endif
 
+  model.add(&VIS_elecs);
   model.add(&HD_elecs);
   model.add(&FV_elecs);
   model.add(&FVxHD_elecs);
-  model.add(&GRIDxFVxHD_elecs);
-  model.add(&GRID_elecs);
+  model.add(&PLACExFVxHD_elecs);
   model.add(&PLACE_elecs);
-  */
 
   // Set simulation time parameters:
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
