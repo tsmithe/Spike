@@ -7,6 +7,7 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, RandomDummyRateNeurons);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RateSynapses);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, RatePlasticity);
 SPIKE_EXPORT_BACKEND_TYPE(Eigen, BCMPlasticity);
+SPIKE_EXPORT_BACKEND_TYPE(Eigen, GHAPlasticity);
 
 namespace Backend {
   namespace Eigen {
@@ -414,6 +415,48 @@ namespace Backend {
       } else {
         synapses->_weights.noalias() += dW;
         normalize_matrix_rows(synapses->_weights);
+      }
+    }
+
+    void GHAPlasticity::prepare() {
+      synapses = dynamic_cast<::Backend::Eigen::RateSynapses*>
+        (frontend()->synapses->backend());
+      reset_state();
+    }
+
+    void GHAPlasticity::reset_state() {
+    }
+
+    void GHAPlasticity::apply_plasticity(FloatT dt) {
+      if (!(frontend()->plasticity_schedule.size()))
+        return;
+
+      _curr_rate_t += dt;
+      if (_curr_rate_t > frontend()->plasticity_schedule[_schedule_idx].first) {
+        _curr_rate_t = _curr_rate_t - frontend()->plasticity_schedule[_schedule_idx].first;
+        ++_schedule_idx;
+        if (_schedule_idx >= frontend()->plasticity_schedule.size())
+          _schedule_idx = 0;
+      }
+
+      epsilon = frontend()->plasticity_schedule[_schedule_idx].second;
+
+      if (epsilon == 0)
+        return;
+
+      unsigned int delay = synapses->delay();
+
+      auto y = synapses->neurons_post->rate();
+      auto x = synapses->neurons_pre->rate(delay);
+
+      if (synapses->is_sparse) {
+        assert("Sparse not supported for GHAPlasticity yet" && false);
+        // auto dW = dt * epsilon * (y * x.transpose() - (y * y.transpose()).triangularView<Eigen::UpLowType::Lower>() * synapses->_sp_weights);
+        // synapses->_sp_weights += synapses->_sparsity.cwiseProduct(dW);
+        // // normalize_matrix_rows(synapses->_sp_weights);
+      } else {
+        synapses->_weights += dt * epsilon * (y * x.transpose() - (y * y.transpose()).triangularView<::Eigen::Lower>() * synapses->_weights);
+        // normalize_matrix_rows(synapses->_weights);
       }
     }
   }

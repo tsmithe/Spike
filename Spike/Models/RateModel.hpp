@@ -28,6 +28,7 @@ class RandomDummyRateNeurons;
 class RateSynapses;
 class RatePlasticity;
 class BCMPlasticity;
+class GHAPlasticity;
 class RateElectrodes;
 class RateModel;
 // ---|
@@ -68,6 +69,16 @@ namespace Backend {
   public:
     ~BCMPlasticity() override = default;
     SPIKE_ADD_BACKEND_FACTORY(BCMPlasticity);
+    void prepare() override = 0;
+    void reset_state() override = 0;
+
+    void apply_plasticity(FloatT dt) override = 0;
+  };
+
+  class GHAPlasticity : public virtual RatePlasticity {
+  public:
+    ~GHAPlasticity() override = default;
+    SPIKE_ADD_BACKEND_FACTORY(GHAPlasticity);
     void prepare() override = 0;
     void reset_state() override = 0;
 
@@ -301,6 +312,20 @@ public:
 
 private:
   std::shared_ptr<::Backend::BCMPlasticity> _backend;
+};
+
+class GHAPlasticity : public virtual RatePlasticity {
+public:
+  GHAPlasticity(Context* ctx, RateSynapses* syns);
+  ~GHAPlasticity() override;
+
+  void init_backend(Context* ctx) override;
+  SPIKE_ADD_BACKEND_GETSET(GHAPlasticity, RatePlasticity);
+
+  // void apply_plasticity(FloatT dt) override;
+
+private:
+  std::shared_ptr<::Backend::GHAPlasticity> _backend;
 };
 
 class RateElectrodes {

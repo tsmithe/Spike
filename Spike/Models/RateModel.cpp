@@ -278,6 +278,20 @@ void BCMPlasticity::apply_plasticity(FloatT dt) {
 }
 */
 
+GHAPlasticity::GHAPlasticity(Context* ctx, RateSynapses* syns)
+  : RatePlasticity(ctx, syns) {
+
+  init_backend(ctx);
+  // reset_state();
+
+  if (ctx->verbose) {
+    std::cout << "Spike: Created GHA plasticity for " << syns->label << ".\n";
+  }
+}
+
+GHAPlasticity::~GHAPlasticity() {
+}
+
 RateElectrodes::RateElectrodes(std::string prefix, RateNeurons* neurons_)
   : output_prefix(prefix), neurons(neurons_) {
 
@@ -741,3 +755,4 @@ SPIKE_MAKE_INIT_BACKEND(RandomDummyRateNeurons);
 SPIKE_MAKE_INIT_BACKEND(RateSynapses);
 SPIKE_MAKE_INIT_BACKEND(RatePlasticity);
 SPIKE_MAKE_INIT_BACKEND(BCMPlasticity);
+SPIKE_MAKE_INIT_BACKEND(GHAPlasticity);

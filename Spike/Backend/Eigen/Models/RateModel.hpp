@@ -10,6 +10,7 @@ namespace Backend {
       friend class RateNeurons;
       friend class RatePlasticity;
       friend class BCMPlasticity;
+      friend class GHAPlasticity;
     public:
       RateSynapses() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateSynapses);
@@ -79,10 +80,23 @@ namespace Backend {
       EigenVector _thresh;
     };
 
+    class GHAPlasticity : public virtual ::Backend::GHAPlasticity,
+                          public virtual ::Backend::Eigen::RatePlasticity {
+    public:
+      SPIKE_MAKE_BACKEND_CONSTRUCTOR(GHAPlasticity);
+      ~GHAPlasticity() override = default;
+
+      void prepare() override;
+      void reset_state() override;
+
+      void apply_plasticity(FloatT dt) override;
+    };
+
     class RateNeurons : public virtual ::Backend::RateNeurons {
       friend class RateSynapses;
       friend class RatePlasticity;
       friend class BCMPlasticity;
+      friend class GHAPlasticity;
     public:
       RateNeurons() = default;
       SPIKE_MAKE_BACKEND_CONSTRUCTOR(RateNeurons);
