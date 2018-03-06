@@ -44,7 +44,7 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
         FloatT AHV_change_timesteps = AHV_change_time / dt;
 
         a.AHV_change = total_AHV_change / AHV_change_timesteps;
-        a.change_action_ts = a.timesteps + AHV_change_timesteps;
+        a.change_action_ts = a.timesteps() + AHV_change_timesteps;
         a.target_head_direction += AHV_change_time * a.AHV + 0.5 * std::pow(AHV_change_time, 2.0f) * new_AHV_speed;
         duration += AHV_change_time;
       }
@@ -82,7 +82,7 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.target_head_direction -= 2 * M_PI;
   }
   int timesteps_per_action = round(duration / dt);
-  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+  a.choose_next_action_ts = a.timesteps() + timesteps_per_action;
 }
 
 void ScanWalkPolicy::prepare(AgentBase& a) {
@@ -132,7 +132,7 @@ void ScanWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
   FloatT duration = 2*bound_x / FV;
   int timesteps_per_action = round(duration / dt);
-  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+  a.choose_next_action_ts = a.timesteps() + timesteps_per_action;
 }
 
 void ScanWalkPolicy::set_scan_bounds(FloatT x, FloatT y) {
@@ -176,7 +176,7 @@ void ScanWalkTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     a.curr_action = AgentBase::actions_t::STAY;
     a.curr_AHV = 0;
     a.curr_FV = 0;
-    a.choose_next_action_ts = a.timesteps + 1;
+    a.choose_next_action_ts = a.timesteps() + 1;
 
     return;
   }
@@ -198,7 +198,7 @@ void ScanWalkTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
 
   FloatT duration = 2*bound_x / FV;
   int timesteps_per_action = round(duration / dt);
-  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+  a.choose_next_action_ts = a.timesteps() + timesteps_per_action;
 }
 
 
@@ -241,7 +241,7 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.target_head_direction = 0;
       a.target_position = a.position;
       FloatT duration = 4 * M_PI / fabs(a.AHVs[1].first);
-      a.choose_next_action_ts = a.timesteps + round(duration / dt);
+      a.choose_next_action_ts = a.timesteps() + round(duration / dt);
     } else if (curr_test_position < 2*test_positions.size()) {
       // then we are on the PLACE test, and have just finished
       // an equilibration
@@ -262,7 +262,7 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
         + new_radial_position;
       a.target_head_direction = a.head_direction;
       FloatT duration = 2.0 * test_approach_radius / a.FVs[1].first;
-      a.choose_next_action_ts = a.timesteps + round(duration / dt);
+      a.choose_next_action_ts = a.timesteps() + round(duration / dt);
 
       // printf("\n@@@@@ STAY -> FV : %d, %d\n", curr_test_position, curr_test_approach_angle);
     } else {
@@ -303,7 +303,7 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.curr_FV = 0; a.curr_AHV = 0;
       a.target_position = a.position;
       a.target_head_direction = a.head_direction;
-      a.choose_next_action_ts = a.timesteps + round(t_equilibration / dt);
+      a.choose_next_action_ts = a.timesteps() + round(t_equilibration / dt);
     } else if (AgentBase::actions_t::FV == a.curr_action
                && !finished_place_test) {
       // then we are part-way through the PLACE test:
@@ -385,7 +385,7 @@ void PlaceTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.curr_action = AgentBase::actions_t::STAY;
       a.curr_FV = 0; a.curr_AHV = 0;
       // TODO: Best equilibration time? Or use 'clever' algorithm?
-      a.choose_next_action_ts = a.timesteps + round(0.2 * t_equilibration / dt);
+      a.choose_next_action_ts = a.timesteps() + round(0.2 * t_equilibration / dt);
     } else {
       // WHAT HAPPENS HERE? SHOULD NEVER REACH ...
       assert(false && "how did I get here?");
@@ -477,7 +477,7 @@ void HDTestPolicy::choose_new_action(AgentBase& a, FloatT dt) {
     duration = 2 * M_PI / fabs(AHV);
   }
   int timesteps_per_action = round(duration / dt);
-  a.choose_next_action_ts = a.timesteps + timesteps_per_action;
+  a.choose_next_action_ts = a.timesteps() + timesteps_per_action;
 }
 
 

@@ -328,7 +328,7 @@ protected:
 };
 
 
-class RateModel {
+class RateModel : public BetterTimer<FloatT> {
 public:
   RateModel(Context* ctx=nullptr);
   ~RateModel();
@@ -337,11 +337,8 @@ public:
 
   void reset_state();
 
-  FloatT t = 0;
   FloatT dt = 0;
   FloatT t_stop = infinity<FloatT>();
-
-  int timesteps = 0;
 
   AgentBase* agent = nullptr;
 

@@ -170,6 +170,36 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
 } // namespace Eigen
 
 
+template<typename FloatT>
+class BetterTimer {
+  unsigned _steps = 0;
+  unsigned _seconds = 0;
+  FloatT _fraction = 0;
+
+public:
+  void reset_timer() {
+    _steps = 0; _seconds = 0; _fraction = 0;
+  }
+
+  void increment_time(FloatT dt) {
+    _fraction += dt;
+    if (_fraction > static_cast<FloatT>(1.0)) {
+      ++_seconds;
+      _fraction -= static_cast<FloatT>(1.0);
+    }
+    ++_steps;
+  }
+
+  FloatT current_time() const {
+    return static_cast<FloatT>(_seconds) + _fraction;
+  }
+
+  unsigned const& timesteps() const {
+    return _steps;
+  }
+};
+
+
 struct EigenBuffer {
   std::ofstream file;
 

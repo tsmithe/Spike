@@ -569,26 +569,30 @@ void RateModel::set_stop_trigger(bool* trigger) {
 void RateModel::reset_state() {
   for (auto& n : neuron_groups)
     n->reset_state();
-  t = 0;
+  reset_timer();
 }
 
 void RateModel::simulation_loop() {
+  auto t = current_time();
   while (running && t < t_stop) {
-    update_model_per_dt();
-
     // Print simulation time every 0.05s:
-    if (!((timesteps * 20) % timesteps_per_second)) {
+    if (!((timesteps() * 20) % timesteps_per_second)) {
       if (agent) {
         // FloatT next_test = -1;
         // if (!agent->test_times.empty()) next_test = agent->test_times.top();
-        printf("\r%.2f (%d) : %f, %f, %f\t %d",
-               t, timesteps, agent->position(0), agent->position(1),
-               (180/M_PI)*(agent->head_direction), agent->choose_next_action_ts); //, next_test);
+        printf("\r                                                                                ");
+        printf("\r%.2f (%d; %d; %d) : %6.2f\t%6.2f\t%6.2f",
+               t, timesteps(), agent->timesteps() - timesteps(), agent->choose_next_action_ts,
+               agent->position(0), agent->position(1),
+               (180/M_PI)*(agent->head_direction)); //, next_test);
       } else {
         printf("\r%.2f", t);
       }
       std::cout.flush();
     }
+
+    update_model_per_dt();
+    t = current_time();
 
     if (stop_trigger) {
       if (*stop_trigger) {
@@ -658,8 +662,7 @@ void RateModel::update_model_per_dt() {
     n->apply_plasticity(dt);
   }
 
-  t += dt;
-  timesteps += 1;
+  increment_time(dt);
 }
 
 void RateModel::set_simulation_time(FloatT t_stop_, FloatT dt_) {
@@ -679,7 +682,7 @@ void RateModel::start(bool block) {
   if (running)
     return;
 
-  if (t == 0) {
+  if (current_time() == 0) {
     if (context->verbose) {
       std::cout << "Spike: Starting simulation...\n";
     }

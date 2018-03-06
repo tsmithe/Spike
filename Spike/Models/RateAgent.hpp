@@ -195,7 +195,7 @@ typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
 typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
 
-struct AgentBase {
+struct AgentBase : public BetterTimer<FloatT> {
   // FloatT velocity_scaling = 1;
 
   int num_AHV_states = 0;
@@ -218,21 +218,21 @@ struct AgentBase {
 
   enum struct actions_t { AHV, FV, STAY };
   actions_t curr_action = actions_t::FV;
-  int choose_next_action_ts = 0;
-  int change_action_ts = 0;
+  unsigned choose_next_action_ts = 0;
+  unsigned change_action_ts = 0;
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
 
   std::priority_queue<FloatT, std::vector<FloatT>, std::greater<FloatT> > test_times;
 
-  FloatT t = 0;
-  int timesteps = 0;
-
-  int agent_buffer_interval = 0;
-  int agent_buffer_start = 0;
+  unsigned agent_buffer_interval = 0;
+  unsigned agent_buffer_start = 0;
   EigenBuffer agent_history;
   std::unique_ptr<BufferWriter> history_writer;
 
+  virtual void prepare() {
+    reset_timer();
+  }
   virtual void update_per_dt(FloatT dt) = 0;
 
   // RateNeurons* actor;
@@ -523,8 +523,8 @@ public:
     world_size = compute_size(map);
 
     // In the old code, the origin is at the centre of the map:
-    bound_y = world_size.cast<FloatT>()(0) + 1; // nb axes are swapped
-    bound_x = world_size.cast<FloatT>()(1) + 1;
+    bound_y = world_size.cast<FloatT>()(0); // nb axes are swapped
+    bound_x = world_size.cast<FloatT>()(1);
 
     barriers = extract_barriers(map, world_size);
     start_locations = extract_objects(map, world_size, "s");
@@ -874,7 +874,7 @@ class QMazePolicy {
   FloatT q0 = 10;                 // initial Q values: larger encourages exploration
   FloatT beta = 0.5;              // softmax inverse temperature
   FloatT invalid_act_reward = -5; // 'reward' for taking an invalid action
-  FloatT alpha = 0.2;             // Q learning rate
+  FloatT alpha = 0.04;            // Q learning rate
   FloatT gamma = 0.85;            // Q learning discount factor
 
   FloatT ep_length = infinity<FloatT>();
@@ -885,7 +885,8 @@ class QMazePolicy {
   unsigned curr_action;
   int action_stage = 0;
 
-  FloatT t_episode = 0;
+  unsigned t_episode_secs = 0;
+  FloatT t_episode_frac = 0;
   unsigned _timesteps = 0;
 
   unsigned state_index(FloatT x, FloatT y) {
@@ -895,6 +896,8 @@ class QMazePolicy {
     int i = std::floor(y);
     int j = std::floor(x);
     assert(i >= 0 && j >= 0);
+    // if (i < 0) i = 0;
+    // if (j < 0) j = 0;
     return i * Q.cols() + j;
   }
 
@@ -904,26 +907,35 @@ protected:
     assert(!a.smooth_AHV); // for now...
     prepared = true;
     _timesteps = 0;
-    t_episode = 0;
+    t_episode_secs = 0;
+    t_episode_frac = 0;
     reset_start_location(a);
     auto& w = dynamic_cast<MazeWorld&>(a);
     Q = q0 * EigenMatrix::Ones(w.world_size(0) * w.world_size(1), actions.size());
     // std::cout << "\nQ: " << Q.rows() << "," << Q.cols() << "\n";
   }
 
-  void update_per_dt(AgentBase& agent, FloatT dt) {
+  void update_per_dt(AgentBase& a, FloatT dt) {
     /*
     if (buffer_Q_timesteps > 0 && !(_timesteps % buffer_Q_timesteps)) {
       buffer_Q();
     }
     */
 
-    t_episode += dt;
+    t_episode_frac += dt;
+    if (t_episode_frac > 1.0) {
+      ++t_episode_secs;
+      t_episode_frac -= 1.0;
+    }
     ++_timesteps;
 
-    if (t_episode > ep_length) {
-      t_episode = 0;
-      reset_start_location(agent);
+    auto& w = dynamic_cast<MazeWorld&>(a);
+    if (a.position(0) < 0 || a.position(1) < 0 ||
+        a.position(0) > w.bound_x || a.position(1) > w.bound_y) {
+      printf("!!! OUT OF BOUNDS AT TIMESTEP %d !!!\n", _timesteps - 1);
+      reset_start_location(a);
+      a.choose_next_action_ts = 0;
+      t_episode_secs = 0; t_episode_frac = 0;
     }
   }
 
@@ -959,6 +971,11 @@ protected:
   */
 
   void choose_new_action(AgentBase& a, FloatT dt) {
+    if (static_cast<FloatT>(t_episode_secs) + t_episode_frac > ep_length) {
+      t_episode_secs = 0; t_episode_frac = 0;
+      reset_start_location(a);
+    }
+
     if (0 == action_stage) {
       /* We only update Q when we choose a new action,
          thereby simplifying the problem through discretisation.
@@ -1021,12 +1038,13 @@ protected:
         int AHV_i = -1; unsigned i = 0;
         FloatT delta_delta = infinity<FloatT>();
         for (auto const& AHV : a.AHVs) {
-          FloatT intended_duration = AHV.second <= 0 ? 1 : AHV.second;
-          FloatT d = delta - AHV.first * intended_duration;
-          if (std::abs(d) < std::abs(delta_delta)
-              && !(std::abs(delta) > 0 && AHV.first == 0)) { // ignore 0 AHV
-            delta_delta = d;
-            AHV_i = i;
+          if (AHV.first != 0) {
+            FloatT intended_duration = AHV.second <= 0 ? 1 : AHV.second;
+            FloatT d = delta - AHV.first * intended_duration;
+            if (std::abs(d) < std::abs(delta_delta)) {
+              delta_delta = d;
+              AHV_i = i;
+            }
           }
           ++i;
         }
@@ -1047,7 +1065,7 @@ protected:
 
         FloatT duration = delta / a.AHVs[AHV_i].first;
         a.change_action_ts = 0;
-        a.choose_next_action_ts = a.timesteps + round(duration / dt);
+        a.choose_next_action_ts = a.timesteps() + round(duration / dt);
       }
 
       ++action_stage;
@@ -1060,12 +1078,13 @@ protected:
       int FV_i = -1; unsigned i = 0;
       FloatT delta = infinity<FloatT>();
       for (auto const& FV : a.FVs) {
-        FloatT intended_duration = FV.second <= 0 ? 1 : FV.second;
-        FloatT d = r - FV.first * intended_duration;
-        if (std::abs(d) < std::abs(delta)
-            && !(std::abs(r) > 0 && FV.first == 0)) { // ignore 0 FV
-          delta = d;
-          FV_i = i;
+        if (FV.first > 0) {
+          FloatT intended_duration = FV.second <= 0 ? 1 : FV.second;
+          FloatT d = r - FV.first * intended_duration;
+          if (std::abs(d) < std::abs(delta)) {
+            delta = d;
+            FV_i = i;
+          }
         }
         ++i;
       }
@@ -1085,7 +1104,7 @@ protected:
 
       FloatT duration = r / a.FVs[FV_i].first;
       a.change_action_ts = 0;
-      a.choose_next_action_ts = a.timesteps + round(duration / dt);
+      a.choose_next_action_ts = a.timesteps() + round(duration / dt);
 
       // next time, choose new action
       action_stage = 0;
@@ -1166,7 +1185,7 @@ protected:
     a.target_position = a.position;
     FloatT v = a.AHVs[curr_AHV].first;
     FloatT duration = std::abs(v) > 0 ? (2 * M_PI / std::abs(v)) : 1;
-    a.choose_next_action_ts = a.timesteps + round(duration / dt);
+    a.choose_next_action_ts = a.timesteps() + round(duration / dt);
 
     ++curr_AHV;
     if (a.AHVs.size() == curr_AHV) {
@@ -1276,9 +1295,10 @@ public:
     WorldT::embed_agent(*this);
   }
 
-  void prepare() {
+  void prepare() override {
     if (prepared) return;
 
+    AgentBase::prepare();
     WorldT::prepare();
 
     object_bearings.resize(this->num_objects);
@@ -1356,39 +1376,38 @@ public:
 
     // buffer position & head_direction if necessary
     if (this->agent_buffer_interval
-        && (this->timesteps >= this->agent_buffer_start)
-        && !(this->timesteps % this->agent_buffer_interval)) {
+        && (this->timesteps() >= this->agent_buffer_start)
+        && !(this->timesteps() % this->agent_buffer_interval)) {
       EigenVector agent_buf = EigenVector::Zero(6);
       agent_buf(0) = this->position(0);
       agent_buf(1) = this->position(1);
       agent_buf(2) = this->head_direction;
       agent_buf(3) = this->FV;
       agent_buf(4) = this->AHV;
-      agent_buf(5) = this->t;
-      this->agent_history.push_back(this->timesteps, agent_buf);
+      agent_buf(5) = this->current_time();
+      this->agent_history.push_back(this->timesteps(), agent_buf);
     }
 
-    this->t += dt;
-    this->timesteps += 1;
+    this->increment_time(dt);
 
     WorldT::update_per_dt(dt);
     TrainPolicyT::update_per_dt(*this, dt);
     TestPolicyT::update_per_dt(*this, dt);
 
-    if (this->timesteps >= this->choose_next_action_ts) {
-      if (this->test_times.empty() || this->t < this->test_times.top()) {
+    if (this->timesteps() >= this->choose_next_action_ts) {
+      if (this->test_times.empty() || this->current_time() < this->test_times.top()) {
         TrainPolicyT::choose_new_action(*this, dt);
       } else {
         TestPolicyT::choose_new_action(*this, dt);
       }
       // In case the policy hasn't updated change_action_ts
       // (which is new, to support continuous changes in action):
-      if (this->change_action_ts <= this->timesteps) {
-        this->change_action_ts = this->timesteps + 1;
+      if (this->change_action_ts <= this->timesteps()) {
+        this->change_action_ts = this->timesteps() + 1;
       }
     }
 
-    if (this->timesteps < this->change_action_ts) {
+    if (this->timesteps() < this->change_action_ts) {
       update_action(dt);
     }
 
@@ -1400,7 +1419,7 @@ public:
   }
 
   void update_action(FloatT dt) {
-    if (timesteps == change_action_ts - 1) {
+    if (this->timesteps() == change_action_ts - 1) {
       // then set action to target action
       if (curr_action == actions_t::AHV) {
         AHV = AHVs[curr_AHV].first;
@@ -1430,7 +1449,7 @@ public:
     if (curr_action == actions_t::STAY)
       return;
 
-    if (timesteps == choose_next_action_ts - 1) {
+    if (this->timesteps() == choose_next_action_ts - 1) {
       // if last timestep of action, just set angle / position to target
       //
       // TODO: SMOOTH TRANSITIONS BETWEEN ACTIONS
