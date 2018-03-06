@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
   }
 
   FloatT timestep = pow(2, -9); // seconds (TODO units)
-  FloatT buffer_timestep = pow(2, -6);
-  FloatT train_time = 4500;
+  FloatT buffer_timestep = pow(2, -4);
+  FloatT train_time = 40000;
   if (read_weights) train_time = 0;
   FloatT test_on_time = 0; // 800
   FloatT test_off_time = 0; // 200
@@ -43,57 +43,224 @@ int main(int argc, char *argv[]) {
 
   // Create Agent
   Agent<QMazePolicy, MazePlaceTestPolicy, MazeWorld> agent;
-  agent.episode_length(100);
 
   for (unsigned i = 0; i < 6; ++i) {
-    agent.add_velocity(1.25, (1.0/3.0)*i*M_PI);
+    agent.add_velocity(5.5, (1.0/3.0)*i*M_PI);
   }
 
   agent.load_map(
-"xxxxxxxx   xxxxxxxx\n"
-"x      x   x      x\n"
-"*      x   x      *\n"
-"x      x   x      x\n"
-"*      x   x      *\n"
-"x      xx*xx      x\n"
-"*         s       *\n"
-"x      x*x*x      x\n"
-"*      x   x      *\n"
-"x      x   x      x\n"
-"*      x   x      *\n"
-"x      x   x      x\n"
-"xxxxxxxx   xxxxxxxx");
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"*                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x       o               *                    *               o       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
+"x                                                                    x\n"
+"x                                                                    x\n"
+"*           s               o     s     o                s           *\n"
+"x                                                                    x\n"
+"x                                                                    x\n"
+"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"*             o         *                    *         o             x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
 
   agent.load_rewards(
-"xxxxxxxx   xxxxxxxx\n"
-"x      x   x  --  x\n"
-"*  ++  x   x ---- *\n"
-"x  ++  x   x  --  x\n"
-"*      x   x      *\n"
-"x      xx*xx      x\n"
-"*         s       *\n"
-"x      x*x*x      x\n"
-"*      x   x      *\n"
-"x      x   x  --  x\n"
-"*      x   x ---- *\n"
-"x      x   x  --  x\n"
-"xxxxxxxx   xxxxxxxx",
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x            -          x\n"
+"x                       x                    x           ---         x\n"
+"x                       x                    x          -----        x\n"
+"x       ++++++++        x                    x         -------       x\n"
+"x       ++++++++        x                    x        ---------      x\n"
+"x       ++++++++        x                    x         -------       x\n"
+"*       ++++++++        x                    x          -----        x\n"
+"x       ++++++++        x                    x           ---         x\n"
+"x       ++++++++        x                    x            -          x\n"
+"x       ++++++++        x                    x                       x\n"
+"x       ++++++++        *                    *               o       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
+"x                                                                    x\n"
+"x                                                                    x\n"
+"*                           o     s     o                            *\n"
+"x                                                                    x\n"
+"x                                                                    x\n"
+"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x            -          x\n"
+"x                       x                    x           ---         x\n"
+"*             o         *                    *          -----        x\n"
+"x                       x                    x         -------       x\n"
+"x                       x                    x        ---------      x\n"
+"x                       x                    x         -------       x\n"
+"x                       x                    x          -----        x\n"
+"x                       x                    x           ---         x\n"
+"x                       x                    x            -          x\n"
+"x                       x                    x                       x\n"
+"x                       x                    x                       x\n"
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx",
 {{'+', 10.0}, {'-', -10.0}});
+  /*
+  agent.load_tests(
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"*pppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppp*                    *pppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppxxxxxxxxxxxxxxxxxxxxxxpppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"*pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp*\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppxxxxxxxxxxxxxxxxxxxxxxpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"*ppppppppppppppppppppppp*                    *pppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
+  */
 
   agent.load_tests(
-"xxxxxxxx   xxxxxxxx\n"
-"xppppppx   xppppppx\n"
-"*ppppppx   xpppppp*\n"
-"xppppppx   xppppppx\n"
-"*ppppppx   xpppppp*\n"
-"xppppppxx*xxppppppx\n"
-"*ppppppppppppppppp*\n"
-"xppppppx*x*xppppppx\n"
-"*ppppppx   xpppppp*\n"
-"xppppppx   xppppppx\n"
-"*ppppppx   xpppppp*\n"
-"xppppppx   xppppppx\n"
-"xxxxxxxx   xxxxxxxx");
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"*p p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p p*                    * p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p xxxxxxxxxxxxxxxxxxxxxxp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p px\n"
+"*p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p *\n"
+"x p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p px\n"
+"xp p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p xxxxxxxxxxxxxxxxxxxxxxp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"*p p p p p p p p p p p p*                    * p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
+"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
+"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
 
 
   // agent.seed(123);
@@ -123,8 +290,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  FloatT fwd_move_dist = 0.2;
-  FloatT rot_angle = M_PI / 4;
+  FloatT fwd_move_dist = 0.4;
+  FloatT rot_angle = M_PI / 8;
 
   FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
   FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
@@ -139,12 +306,20 @@ int main(int argc, char *argv[]) {
 
   agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
 
-  std::vector<FloatT> test_times{120, 955, 1910, 2865, 3820};
-  FloatT test_duration = 355; // turns off plasticity during testing for this duration
+  agent.episode_length(150);
 
+  FloatT test_duration = 4964; // turns off plasticity during testing for this duration
+  FloatT test_interval = 1200; // time between tests (s)
+  std::vector<FloatT> test_times{300};
+  for (unsigned i = 0; i < 5; ++i) {
+    test_times.push_back(test_times[i] + test_duration + test_interval);
+  }
+  std::cout << "Test times: ";
   for (auto const& t : test_times) {
+    std::cout << t << " ";
     agent.add_test_time(t);
   }
+  std::cout << std::endl;
  
   int N_per_obj = 60;
   FloatT sigma_VIS = M_PI / 9;
@@ -161,20 +336,27 @@ int main(int argc, char *argv[]) {
   int N_VIS = VIS.size;
   int N_FV = FV.size;
 
+  printf("VIS: %d; FV: %d\n", N_VIS, N_FV);
+
   /*
   EigenVector VIS_INH_on = EigenVector::Ones(N_VIS);
   EigenVector VIS_INH_off = EigenVector::Zero(N_VIS);
   DummyRateNeurons VIS_INH(ctx, N_VIS, "VIS_INH");
   */
 
-  const int n_vis_tmp = N_VIS;
-
   // PLACE neurons:
   int N_PLACE = 400;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 0.3;
+  FloatT beta_PLACE = 0.6;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
+
+  // GRID neurons:
+  int N_GRID = 20;
+  FloatT alpha_GRID = 20.0;
+  FloatT beta_GRID = 0.3;
+  FloatT tau_GRID = 1e-2;
+  RateNeurons GRID(ctx, N_GRID, "GRID", alpha_GRID, beta_GRID, tau_GRID);
 
   // FVxHD neurons:
   int N_FVxHD = N_HD * agent.num_FV_states;
@@ -192,9 +374,11 @@ int main(int argc, char *argv[]) {
                          alpha_PLACExFVxHD, beta_PLACExFVxHD,
                          tau_PLACExFVxHD);
 
+
   // General parameters:
   FloatT axonal_delay = pow(2, -5); // seconds (TODO units)
-  FloatT eps = 0.02;
+  FloatT eps = 0.03;
+
 
   // FV -> FVxHD connectivity:
   FloatT FV_FVxHD_scaling = 270.0 / N_FV;
@@ -212,21 +396,34 @@ int main(int argc, char *argv[]) {
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
-  FloatT PLACE_PLACExFVxHD_scaling = 700.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+  FloatT PLACE_PLACExFVxHD_scaling = 900.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
-  FloatT PLACExFVxHD_inhibition = -180.0 / N_PLACExFVxHD;
+  FloatT PLACExFVxHD_inhibition = -500.0 / N_PLACExFVxHD;
 
   // VIS -> PLACE connectivity:
   FloatT VIS_PLACE_sparsity = 0.05;
-  FloatT VIS_PLACE_scaling = 1500.0 / (n_vis_tmp*VIS_PLACE_sparsity); // 6x6: 2000
-  FloatT VIS_PLACE_INH_scaling = -10.0 / (n_vis_tmp*VIS_PLACE_sparsity);
+  FloatT VIS_PLACE_scaling = 1600.0 / (N_VIS*VIS_PLACE_sparsity); // 6x6: 2000
+  FloatT VIS_PLACE_INH_scaling = -10.0 / (N_VIS*VIS_PLACE_sparsity);
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 3600.0 / N_PLACExFVxHD; // ???14000
+  FloatT PLACExFVxHD_PLACE_scaling = 6000.0 / N_PLACExFVxHD; // ???14000
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -420.0 / N_PLACE;
+  FloatT PLACE_inhibition = -800.0 / N_PLACE;
+
+  // PLACE -> GRID connectivity:
+  FloatT PLACE_GRID_sparsity = 0.1;
+  FloatT PLACE_GRID_scaling = 2000.0 / (N_PLACE*PLACE_GRID_sparsity);
+
+  // VIS -> GRID connectivity:
+  FloatT VIS_GRID_sparsity = 0.05;
+  FloatT VIS_GRID_scaling = 300.0 / (N_VIS*VIS_PLACE_sparsity); // 6x6: 2000
+
+  // GRID -> GRID connectivity:
+  // FloatT GRID_GRID_sparsity = 1;
+  // FloatT GRID_GRID_scaling = 100.0 / (N_GRID*GRID_GRID_sparsity);
+  FloatT GRID_inhibition = -2000.0 / N_GRID;
 
 
   // FV -> FVxHD connectivity:
@@ -379,12 +576,77 @@ int main(int argc, char *argv[]) {
 
   // PLACE -> PLACE connectivity:
   RateSynapses PLACE_PLACE_INH(ctx, &PLACE, &PLACE,
-                             PLACE_inhibition, "PLACE_PLACE_INH");
+                               PLACE_inhibition, "PLACE_PLACE_INH");
   PLACE_PLACE_INH.weights(EigenMatrix::Ones(N_PLACE, N_PLACE));
 
   BCMPlasticity plast_PLACE_PLACE_INH(ctx, &PLACE_PLACE_INH);
 
   PLACE.connect_input(&PLACE_PLACE_INH, &plast_PLACE_PLACE_INH);
+
+
+  // PLACE -> GRID connectivity:
+  RateSynapses PLACE_GRID(ctx, &PLACE, &GRID,
+                          PLACE_GRID_scaling, "PLACE_GRID");
+  PLACE_GRID.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_PLACE_GRID
+    = Eigen::make_random_matrix(N_GRID, N_PLACE);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_PLACE_GRID.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_PLACE_GRID,
+                       N_GRID, N_PLACE);
+  }
+  PLACE_GRID.weights(W_PLACE_GRID);
+
+  BCMPlasticity plast_PLACE_GRID(ctx, &PLACE_GRID);
+
+  GRID.connect_input(&PLACE_GRID, &plast_PLACE_GRID);
+
+
+  // VIS -> GRID connectivity:
+  RateSynapses VIS_GRID(ctx, &VIS, &GRID, VIS_GRID_scaling, "VIS_GRID");
+  EigenMatrix W_VIS_GRID
+    = Eigen::make_random_matrix(N_GRID, N_VIS, 1.0, true,
+                                1.0-VIS_GRID_sparsity, 0, false);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_VIS_GRID.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_VIS_GRID, N_GRID, N_VIS);
+  }
+  VIS_GRID.weights(W_VIS_GRID);
+  VIS_GRID.make_sparse();
+
+  BCMPlasticity plast_VIS_GRID(ctx, &VIS_GRID);
+
+  GRID.connect_input(&VIS_GRID, &plast_VIS_GRID);
+
+
+  // GRID -> GRID connectivity:
+  /*
+  RateSynapses GRID_GRID(ctx, &GRID, &GRID,
+                         GRID_GRID_scaling, "GRID_GRID");
+  GRID_GRID.delay(ceil(axonal_delay / timestep));
+  EigenMatrix W_GRID_GRID
+    = Eigen::make_random_matrix(N_GRID, N_GRID);
+  if (read_weights) {
+    std::string tmp_path = weights_path + "/W_GRID_GRID.bin";
+    Eigen::read_binary(tmp_path.c_str(), W_GRID_GRID,
+                       N_GRID, N_GRID);
+  }
+  GRID_GRID.weights(W_GRID_GRID);
+
+  BCMPlasticity plast_GRID_GRID(ctx, &GRID_GRID);
+
+  GRID.connect_input(&GRID_GRID, &plast_GRID_GRID);
+  */
+
+  RateSynapses GRID_GRID_INH(ctx, &GRID, &GRID,
+                             GRID_inhibition, "GRID_GRID_INH");
+  GRID_GRID_INH.weights(EigenMatrix::Ones(N_GRID, N_GRID));
+
+  BCMPlasticity plast_GRID_GRID_INH(ctx, &GRID_GRID_INH);
+
+  GRID.connect_input(&GRID_GRID_INH, &plast_GRID_GRID_INH);
+
+
 
   // Set simulation schedule:
   VIS.t_stop_after = train_time + test_on_time;
@@ -395,6 +657,7 @@ int main(int argc, char *argv[]) {
   plast_FVxHD_FVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACExFVxHD_PLACExFVxHD_INH.add_schedule(infinity<FloatT>(), 0);
   plast_PLACE_PLACE_INH.add_schedule(infinity<FloatT>(), 0);
+  plast_GRID_GRID_INH.add_schedule(infinity<FloatT>(), 0);
 
   // Rest have plasticity on only during training, with params above:
   auto add_plast_schedule = [&](FloatT dur, FloatT rate) {
@@ -404,6 +667,9 @@ int main(int argc, char *argv[]) {
     plast_FVxHD_PLACExFVxHD.add_schedule(dur, rate);
     plast_FV_FVxHD.add_schedule(dur, rate);
     plast_HD_FVxHD.add_schedule(dur, rate);
+    plast_PLACE_GRID.add_schedule(dur, rate);
+    plast_VIS_GRID.add_schedule(dur, rate);
+    // plast_GRID_GRID.add_schedule(dur, rate);
   };
 
   FloatT total_time = 0;
@@ -429,6 +695,7 @@ int main(int argc, char *argv[]) {
   RateElectrodes FVxHD_elecs(OUTPUT_PATH, &FVxHD);
   RateElectrodes PLACExFVxHD_elecs(OUTPUT_PATH, &PLACExFVxHD);
   RateElectrodes PLACE_elecs(OUTPUT_PATH, &PLACE);
+  RateElectrodes GRID_elecs(OUTPUT_PATH, &GRID);
 
 
   // Add Agent, Neurons and Electrodes to Model
@@ -441,6 +708,7 @@ int main(int argc, char *argv[]) {
   model.add(&FVxHD);
   model.add(&PLACExFVxHD);
   model.add(&PLACE);
+  model.add(&GRID);
 
   model.add(&VIS_elecs);
   model.add(&HD_elecs);
@@ -448,11 +716,12 @@ int main(int argc, char *argv[]) {
   model.add(&FVxHD_elecs);
   model.add(&PLACExFVxHD_elecs);
   model.add(&PLACE_elecs);
+  model.add(&GRID_elecs);
 
   // Set simulation time parameters:
   model.set_simulation_time(train_time + test_on_time + test_off_time, timestep);
   model.set_buffer_intervals((float)buffer_timestep); // TODO: Use proper units
-  model.set_weights_buffer_interval(ceil(10.0/timestep));
+  model.set_weights_buffer_interval(ceil(120.0/timestep));
   model.set_buffer_start(start_recording_time);
 
   agent.save_map(OUTPUT_PATH);
@@ -463,5 +732,5 @@ int main(int argc, char *argv[]) {
   // Run!
   model.start();
 
-  printf("%f, %f, %f; %d\n", model.t, model.dt, model.t_stop, model.timesteps);
+  printf("%f, %f, %f; %d\n", model.current_time(), model.dt, model.t_stop, model.timesteps());
 }
