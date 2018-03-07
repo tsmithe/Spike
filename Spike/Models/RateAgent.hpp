@@ -352,7 +352,8 @@ public:
   /* ray_t: {start_pos, stop_pos} */
   using ray_t = std::pair<Eigen::Vector2i, Eigen::Vector2i>;
 
-  std::vector<ray_t> barriers;
+  std::vector<ray_t> opaque_barriers;
+  std::vector<ray_t> clear_barriers;
   EigenMatrix2D start_locations;
 
   EigenMatrix reward;
@@ -403,7 +404,11 @@ protected:
     };
   }
 
-  static std::vector<ray_t> extract_barriers(std::string map, Eigen::Vector2i world_size) {
+  static std::vector<ray_t> extract_barriers(std::string map, Eigen::Vector2i world_size,
+                                             char dark, char light) {
+    std::string barrier_chars;
+    barrier_chars.append(1, dark).append(1, light);
+
     const std::vector<Eigen::Vector2i> steps{{1, 0}, {0, 1}/*, {1, 1}*/};
 
     auto map_coord = get_map_coord(world_size);
@@ -412,7 +417,7 @@ protected:
     std::vector<ray_t> barriers;
     std::string::size_type idx = 0;
     while (true) {
-      idx = map.find_first_of("x*");
+      idx = map.find_first_of(barrier_chars);
       if (std::string::npos == idx) break;
 
       auto barrier_start = map_coord(idx);
@@ -429,7 +434,7 @@ protected:
             break;
           }
           auto new_idx = map_index(barrier_stop);
-          if (map[new_idx] != 'x' && map[new_idx] != '*') { // TODO: barrier symbols elsewhere
+          if (map[new_idx] != dark && map[new_idx] != light) {
             barrier_stop -= step;
             break;
           }
@@ -458,7 +463,7 @@ protected:
             }
             unsigned new_idx = map_index(barrier_start + other_step);
             if (new_idx < map.size()) {
-              if ('x' == map[new_idx] || '*' == map[new_idx]) { // TODO: barrier symbols elsewhere
+              if (dark == map[new_idx] || light == map[new_idx]) {
                 is_vertex = true;
                 break;
               }
@@ -466,7 +471,7 @@ protected:
             // and the other way:
             new_idx = map_index(barrier_start - other_step);
             if (new_idx < map.size()) {
-              if ('x' == map[new_idx] || '*' == map[new_idx]) { // TODO: barrier symbols elsewhere
+              if (dark == map[new_idx] || light == map[new_idx]) {
                 is_vertex = true;
                 break;
               }
@@ -526,7 +531,8 @@ public:
     bound_y = world_size.cast<FloatT>()(0); // nb axes are swapped
     bound_x = world_size.cast<FloatT>()(1);
 
-    barriers = extract_barriers(map, world_size);
+    opaque_barriers = extract_barriers(map, world_size, 'x', '*');
+    clear_barriers = extract_barriers(map, world_size, '.', ':');
     start_locations = extract_objects(map, world_size, "s");
     if (0 == start_locations.cols()) {
       start_locations.resize(Eigen::NoChange, 1);
@@ -534,7 +540,7 @@ public:
       start_locations(1) = world_size.cast<FloatT>()(1) / 2;
     }
 
-    proximal_objects = extract_objects(map, world_size, "*o");
+    proximal_objects = extract_objects(map, world_size, "o*:");
     // Now, proximal_objects should be in xy basis:
     for (unsigned j = 0; j < proximal_objects.cols(); ++j) {
       proximal_objects.col(j) = ij_to_xy(proximal_objects.col(j));
@@ -571,7 +577,7 @@ public:
     std::unordered_map<char, std::vector<unsigned> > test_indices;
     for (unsigned idx = 0; idx < map.size(); ++idx) {
       char c = map[idx];
-      if (c != 'x' && c != '*' && !std::isspace(c)) {
+      if (c != 'x' && c != '*' && c != '.' && c != ':' && !std::isspace(c)) {
         test_indices[c].push_back(idx);
       }
     }
@@ -601,24 +607,29 @@ public:
       map[map_index({i, world_size(1)})] = '\n';
     }
 
-    for (auto const& barrier : barriers) {
-      Eigen::Vector2i barrier_start = barrier.first;
-      Eigen::Vector2i barrier_stop = barrier.second;
-      auto ray = barrier_stop - barrier_start;
-      Eigen::Vector2i step;
-      if (ray(0) == 0) {
-        step << 0, 1;
-      } else if (ray(1) == 0) {
-        step << 1, 0;
-      } else {
-        step << 1, 1;
+    auto plot_barriers = [&](auto barriers, char barrier_char) {
+      for (auto const& barrier : barriers) {
+        Eigen::Vector2i barrier_start = barrier.first;
+        Eigen::Vector2i barrier_stop = barrier.second;
+        auto ray = barrier_stop - barrier_start;
+        Eigen::Vector2i step;
+        if (ray(0) == 0) {
+          step << 0, 1;
+        } else if (ray(1) == 0) {
+          step << 1, 0;
+        } else {
+          step << 1, 1;
+        }
+        while (barrier_start != barrier_stop + step) {
+          auto idx = map_index(barrier_start);
+          map[idx] = 'x';
+          barrier_start += step;
+        }
       }
-      while (barrier_start != barrier_stop + step) {
-        auto idx = map_index(barrier_start);
-        map[idx] = 'x';
-        barrier_start += step;
-      }
-    }
+    };
+
+    plot_barriers(opaque_barriers, 'x');
+    plot_barriers(clear_barriers, ':');
 
     return map;
   }
@@ -632,6 +643,8 @@ public:
       auto idx = map_index(coord);
       if ('x' == map[idx]) {
         map[idx] = '*';
+      } else if ('.' == map[idx]) {
+        map[idx] = ':';
       } else {
         map[idx] = 'o';
       }
@@ -687,15 +700,25 @@ public:
 
     std::string output_dir = output_prefix + "/Agent";
 
-    std::ofstream barrier_file(output_dir + "/barriers_xy.info");
-    for (auto const& b : barriers) {
+    std::ofstream opaque_barrier_file(output_dir + "/opaque_barriers_xy.info");
+    for (auto const& b : opaque_barriers) {
       // nb in xy, cols are x and rows y (and rows count from bottom of map)
       auto b_first_xy = ij_to_xy(b.first.cast<float>()).cast<int>();
       auto b_second_xy = ij_to_xy(b.second.cast<float>()).cast<int>();
-      barrier_file << b_first_xy(0) << "," << b_first_xy(1) << ","
-                   << b_second_xy(0) << "," << b_second_xy(1) << "\n";
+      opaque_barrier_file << b_first_xy(0) << "," << b_first_xy(1) << ","
+                          << b_second_xy(0) << "," << b_second_xy(1) << "\n";
     }
-    barrier_file.flush();
+    opaque_barrier_file.flush();
+
+    std::ofstream clear_barrier_file(output_dir + "/clear_barriers_xy.info");
+    for (auto const& b : clear_barriers) {
+      // nb in xy, cols are x and rows y (and rows count from bottom of map)
+      auto b_first_xy = ij_to_xy(b.first.cast<float>()).cast<int>();
+      auto b_second_xy = ij_to_xy(b.second.cast<float>()).cast<int>();
+      clear_barrier_file << b_first_xy(0) << "," << b_first_xy(1) << ","
+                         << b_second_xy(0) << "," << b_second_xy(1) << "\n";
+    }
+    clear_barrier_file.flush();
 
     std::ofstream map_file(output_dir + "/map.txt");
     map_file << map_to_string() << std::endl;
@@ -768,14 +791,16 @@ public:
     }  else return false;
   }
 
-  bool intersects_barrier_xy(EigenVector2D Pxy, EigenVector2D Qxy, FloatT end_tol=0) {
+  template<typename ContainerT>
+  bool intersects_xy(ContainerT const& objects,
+                     EigenVector2D Pxy, EigenVector2D Qxy, FloatT end_tol=0) {
     EigenVector2D X;
 
-    for (auto const& b : barriers) {
+    for (auto const& b : objects) {
       // barriers are represented in {row, col} indices, not {x, y}:
 
-      auto b_first_xy = ij_to_xy(b.first.cast<FloatT>());
-      auto b_second_xy = ij_to_xy(b.second.cast<FloatT>());
+      auto b_first_xy = ij_to_xy(b.first.template cast<FloatT>());
+      auto b_second_xy = ij_to_xy(b.second.template cast<FloatT>());
 
       if (line_segments_intersect(Pxy, Qxy, b_first_xy, b_second_xy, &X)) {
         if (0 == end_tol) {
@@ -790,8 +815,14 @@ public:
     return false;
   }
 
+  bool intersects_barrier_xy(EigenVector2D Pxy, EigenVector2D Qxy, FloatT end_tol=0) {
+    if (intersects_xy(opaque_barriers, Pxy, Qxy, end_tol)) return true;
+    if (intersects_xy(clear_barriers, Pxy, Qxy, end_tol)) return true;
+    return false;
+  }
+
   FloatT occlusion(EigenVector2D from, EigenVector2D to) override {
-    return intersects_barrier_xy(from, to, 1e-3) ? 1 : 0;
+    return intersects_xy(opaque_barriers, from, to, 1e-3) ? 1 : 0;
   }
 
 
