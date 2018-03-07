@@ -7,6 +7,7 @@ CMakeFiles
 Makefile
 Build
 cmake_install.cmake
+*/.ipynb_checkpoints*/*
 /Tests/catch.hpp
 /Tests/unittests
 /MatlabGaborFilter/Inputs*/*
