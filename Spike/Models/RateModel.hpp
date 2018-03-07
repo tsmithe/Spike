@@ -374,6 +374,11 @@ public:
   void add(RateElectrodes* elecs);
   void add(AgentBase* w);
 
+  std::vector<std::function<void(void)> > user_hooks;
+  void add_hook(std::function<void(void)> f) {
+    user_hooks.push_back(f);
+  }
+
   int rate_buffer_interval = 0;
   int activation_buffer_interval = 0;
   int weights_buffer_interval = 0;

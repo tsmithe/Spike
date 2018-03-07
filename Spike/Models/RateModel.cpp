@@ -639,6 +639,10 @@ void RateModel::wait_for_electrodes() const {
 */
 
 void RateModel::update_model_per_dt() {
+  for (auto const& f : user_hooks) {
+    f();
+  }
+
   if (agent)
     agent->update_per_dt(dt);
 

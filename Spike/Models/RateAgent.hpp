@@ -265,11 +265,21 @@ public:
   EigenMatrix2D proximal_objects;
   std::vector<FloatT> distal_objects;
 
+  virtual void clear_world() {
+    bound_x = 0;
+    bound_y = 0;
+    num_objects = 0;
+    num_proximal_objects = 0;
+    num_distal_objects = 0;
+    proximal_objects.resize(Eigen::NoChange, 0);
+    distal_objects.clear();
+  }
+
   virtual FloatT occlusion(EigenVector2D from, EigenVector2D to) {
     return 0;
   }
 
-  void save_map(std::string output_prefix) {
+  virtual void save_map(std::string output_prefix, std::string suffix="") {
     {
       const int err = mkdir(output_prefix.c_str(),
                             S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -288,7 +298,7 @@ public:
                   << output_dir << "\n";
     }
 
-    std::ofstream map_file(output_dir + "/map.info");
+    std::ofstream map_file(output_dir + "/map.info" + suffix);
     map_file << this->bound_x << "," << this->bound_y << "\n";
     for (int i = 0; i < this->num_distal_objects; ++i) {
       map_file << this->distal_objects[i];
@@ -360,6 +370,21 @@ public:
   std::unordered_map<char, FloatT> reward_legend;
 
   std::unordered_map<char, EigenMatrix2D> test_locations;
+
+  void clear_world() override {
+    WorldBase::clear_world();
+
+    world_size = Eigen::Vector2i::Zero();
+
+    opaque_barriers.clear();
+    clear_barriers.clear();
+    start_locations.resize(Eigen::NoChange, 0);
+
+    reward.resize(0, 0);
+    reward_legend.clear();
+
+    test_locations.clear();
+  }
 
 protected:
   void prepare() override {
@@ -693,14 +718,14 @@ public:
     return map;
   }
 
-  void save_map(std::string output_prefix) {
+  void save_map(std::string output_prefix, std::string suffix="") override {
     prepare();
 
-    WorldBase::save_map(output_prefix);
+    WorldBase::save_map(output_prefix, suffix);
 
     std::string output_dir = output_prefix + "/Agent";
 
-    std::ofstream opaque_barrier_file(output_dir + "/opaque_barriers_xy.info");
+    std::ofstream opaque_barrier_file(output_dir + "/opaque_barriers_xy.info" + suffix);
     for (auto const& b : opaque_barriers) {
       // nb in xy, cols are x and rows y (and rows count from bottom of map)
       auto b_first_xy = ij_to_xy(b.first.cast<float>()).cast<int>();
@@ -710,7 +735,7 @@ public:
     }
     opaque_barrier_file.flush();
 
-    std::ofstream clear_barrier_file(output_dir + "/clear_barriers_xy.info");
+    std::ofstream clear_barrier_file(output_dir + "/clear_barriers_xy.info" + suffix);
     for (auto const& b : clear_barriers) {
       // nb in xy, cols are x and rows y (and rows count from bottom of map)
       auto b_first_xy = ij_to_xy(b.first.cast<float>()).cast<int>();
@@ -720,23 +745,23 @@ public:
     }
     clear_barrier_file.flush();
 
-    std::ofstream map_file(output_dir + "/map.txt");
+    std::ofstream map_file(output_dir + "/map.txt" + suffix);
     map_file << map_to_string() << std::endl;
 
-    Eigen::write_binary((output_dir + "/start_locations.bin").c_str(), start_locations);
+    Eigen::write_binary((output_dir + "/start_locations.bin" + suffix).c_str(), start_locations);
 
     for (auto const& t : test_locations) {
       if (t.second.rows() > 0 && t.second.cols() > 0) {
-        Eigen::write_binary((output_dir + "/test_locations_" + t.first + ".bin").c_str(),
+        Eigen::write_binary((output_dir + "/test_locations_" + t.first + ".bin" + suffix).c_str(),
                             t.second);
       }
     }
 
     if (reward.rows() > 0 && reward.cols() > 0) {
-      Eigen::write_binary((output_dir + "/reward.bin").c_str(), reward);
+      Eigen::write_binary((output_dir + "/reward.bin" + suffix).c_str(), reward);
     }
 
-    std::ofstream reward_file(output_dir + "/reward.txt");
+    std::ofstream reward_file(output_dir + "/reward.txt" + suffix);
     reward_file << reward_to_string() << std::endl;
   }
 
