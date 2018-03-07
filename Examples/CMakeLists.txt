@@ -16,6 +16,9 @@ foreach(example
     PLACE_distal-only
 
     PLACE_Qpolicy_proximal
+    PLACE_detour
+    PLACE_linear
+    PLACE_compartments
     )
   add_executable(${example} ${example}.cpp)
   target_link_libraries(${example} Spike) # ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})
