@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   Agent<QMazePolicy, MazePlaceTestPolicy, MazeWorld> agent;
 
   for (unsigned i = 0; i < 6; ++i) {
-    agent.add_velocity(5.5, (1.0/3.0)*i*M_PI);
+    agent.add_velocity(7.5, (1.0/3.0)*i*M_PI);
   }
 
   agent.load_map(
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
+"x           s           x                    x           s           x\n"
 "x                       x                    x                       x\n"
 "*                       x                    x                       x\n"
 "x                       x                    x                       x\n"
@@ -72,11 +72,11 @@ int main(int argc, char *argv[]) {
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
 "x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
-"x                                                                    x\n"
-"x                                                                    x\n"
-"*           s               o     s     o                s           *\n"
-"x                                                                    x\n"
-"x                                                                    x\n"
+"x                                 .                                  x\n"
+"x                                 .                                  x\n"
+"*           s              so     .     os               s           *\n"
+"x                                 .                                  x\n"
+"x                                 .                                  x\n"
 "x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
+"x           s           x                    x            s          x\n"
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
 "x                       x                    x                       x\n"
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
 
   FloatT test_duration = 4964; // turns off plasticity during testing for this duration
   FloatT test_interval = 1200; // time between tests (s)
-  std::vector<FloatT> test_times{300};
+  std::vector<FloatT> test_times{0};
   for (unsigned i = 0; i < 5; ++i) {
     test_times.push_back(test_times[i] + test_duration + test_interval);
   }
@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
   // PLACE neurons:
   int N_PLACE = 400;
   FloatT alpha_PLACE = 20.0;
-  FloatT beta_PLACE = 0.6;
+  FloatT beta_PLACE = 0.8;
   FloatT tau_PLACE = 1e-2;
   RateNeurons PLACE(ctx, N_PLACE, "PLACE", alpha_PLACE, beta_PLACE, tau_PLACE);
 
@@ -407,23 +407,23 @@ int main(int argc, char *argv[]) {
   FloatT VIS_PLACE_INH_scaling = -10.0 / (N_VIS*VIS_PLACE_sparsity);
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 6000.0 / N_PLACExFVxHD; // ???14000
+  FloatT PLACExFVxHD_PLACE_scaling = 6400.0 / N_PLACExFVxHD; // ???14000
 
   // PLACE -> PLACE connectivity:
   FloatT PLACE_inhibition = -800.0 / N_PLACE;
 
   // PLACE -> GRID connectivity:
-  FloatT PLACE_GRID_sparsity = 0.1;
-  FloatT PLACE_GRID_scaling = 2000.0 / (N_PLACE*PLACE_GRID_sparsity);
+  FloatT PLACE_GRID_sparsity = 1;
+  FloatT PLACE_GRID_scaling = 12000.0 / (N_PLACE*PLACE_GRID_sparsity);
 
   // VIS -> GRID connectivity:
-  FloatT VIS_GRID_sparsity = 0.05;
-  FloatT VIS_GRID_scaling = 300.0 / (N_VIS*VIS_PLACE_sparsity); // 6x6: 2000
+  FloatT VIS_GRID_sparsity = 0.3;
+  FloatT VIS_GRID_scaling = 400.0 / (N_VIS*VIS_PLACE_sparsity); // 6x6: 2000
 
   // GRID -> GRID connectivity:
   // FloatT GRID_GRID_sparsity = 1;
   // FloatT GRID_GRID_scaling = 100.0 / (N_GRID*GRID_GRID_sparsity);
-  FloatT GRID_inhibition = -2000.0 / N_GRID;
+  FloatT GRID_inhibition = -1000.0 / N_GRID;
 
 
   // FV -> FVxHD connectivity:
@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
   }
   PLACE_GRID.weights(W_PLACE_GRID);
 
-  BCMPlasticity plast_PLACE_GRID(ctx, &PLACE_GRID);
+  GHAPlasticity plast_PLACE_GRID(ctx, &PLACE_GRID);
 
   GRID.connect_input(&PLACE_GRID, &plast_PLACE_GRID);
 
