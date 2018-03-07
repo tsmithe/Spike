@@ -920,6 +920,11 @@ class QMazePolicy {
   FloatT t_episode_frac = 0;
   unsigned _timesteps = 0;
 
+  EigenVector2D mean_pos;
+  FloatT restart_tau = 1;
+  FloatT restart_bound = infinity<FloatT>();
+  FloatT restart_reward = NAN;
+
   unsigned state_index(FloatT x, FloatT y) {
     /* given state coordinates, return state index into Q
        + nb: x is horizontal, which means along columns of map
@@ -944,6 +949,7 @@ protected:
     auto& w = dynamic_cast<MazeWorld&>(a);
     Q = q0 * EigenMatrix::Ones(w.world_size(0) * w.world_size(1), actions.size());
     // std::cout << "\nQ: " << Q.rows() << "," << Q.cols() << "\n";
+    mean_pos = EigenVector2D{-restart_bound, -restart_bound};
   }
 
   void update_per_dt(AgentBase& a, FloatT dt) {
@@ -970,7 +976,7 @@ protected:
     }
   }
 
-  void update_Q(AgentBase& a, FloatT dt) {
+  void update_Q(AgentBase& a, FloatT dt, FloatT r=NAN) {
     /* standard q learning, given world reward structure */
     auto& w = dynamic_cast<MazeWorld&>(a);
 
@@ -979,7 +985,10 @@ protected:
     FloatT x = a.position(0);
     FloatT y = a.position(1);
 
-    auto const& r = w.reward(ij(0), ij(1));
+    if (std::isnan(r)) {
+      r = w.reward(ij(0), ij(1));
+    }
+
     auto q_max = Q.row(state_index(x, y)).maxCoeff();
     auto& q = Q(prev_state, curr_action);
 
@@ -1005,6 +1014,16 @@ protected:
     if (static_cast<FloatT>(t_episode_secs) + t_episode_frac > ep_length) {
       t_episode_secs = 0; t_episode_frac = 0;
       reset_start_location(a);
+    }
+
+    mean_pos = restart_tau * a.position + (1 - restart_tau) * mean_pos;
+    FloatT dispersion = (a.position - mean_pos).norm();
+    if (dispersion < restart_bound) {
+      printf(" !! Within restart bound @ %d : %.2f\n", _timesteps - 1, dispersion);
+      t_episode_secs = 0; t_episode_frac = 0;
+      mean_pos = EigenVector2D{-restart_bound, -restart_bound};
+      reset_start_location(a);
+      if (!std::isnan(restart_reward)) update_Q(a, dt, restart_reward);
     }
 
     if (0 == action_stage) {
@@ -1176,6 +1195,12 @@ public:
     invalid_act_reward = _invalid_act_reward;
     alpha = _alpha;
     gamma = _gamma;
+  }
+
+  void set_restart_bound(FloatT _tau, FloatT _bound, FloatT _reward=NAN) {
+    restart_tau = _tau;
+    restart_bound = _bound;
+    restart_reward = _reward;
   }
 };
 
