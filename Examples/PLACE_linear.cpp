@@ -5,7 +5,7 @@
 
 #define ENABLE_PLACE
 
-#define OUTPUT_PATH "PLACE_Qpolicy_proximal"
+#define OUTPUT_PATH "PLACE_linear"
 
 // TODO: Add signal handlers
 
@@ -44,262 +44,57 @@ int main(int argc, char *argv[]) {
   // Create Agent
   Agent<QMazePolicy, MazePlaceTestPolicy, MazeWorld> agent;
 
-  for (unsigned i = 0; i < 6; ++i) {
-    agent.add_velocity(7.5, (1.0/3.0)*i*M_PI);
+  for (unsigned i = 0; i < 2; ++i) {
+    agent.add_velocity(5.0, (1.0/1.0)*i*M_PI);
   }
 
   agent.load_map(
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x           s           x                    x           s           x\n"
-"x                       x                    x                       x\n"
-"*                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x       o               *                    *               o       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
-"x                                 .                                  x\n"
-"x                                 .                                  x\n"
-"*           s              so     .     os               s           *\n"
-"x                                 .                                  x\n"
-"x                                 .                                  x\n"
-"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"*             o         *                    *         o             x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x           s           x                    x            s          x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
-
-  agent.load_rewards(
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x            -          x\n"
-"x                       x                    x           ---         x\n"
-"x                       x                    x          -----        x\n"
-"x       ++++++++        x                    x         -------       x\n"
-"x       ++++++++        x                    x        ---------      x\n"
-"x       ++++++++        x                    x         -------       x\n"
-"*       ++++++++        x                    x          -----        x\n"
-"x       ++++++++        x                    x           ---         x\n"
-"x       ++++++++        x                    x            -          x\n"
-"x       ++++++++        x                    x                       x\n"
-"x       ++++++++        *                    *               o       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
-"x                                                                    x\n"
-"x                                                                    x\n"
-"*                           o     s     o                            *\n"
-"x                                                                    x\n"
-"x                                                                    x\n"
-"x                       xxxxxxxxxxxxxxxxxxxxxx                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x            -          x\n"
-"x                       x                    x           ---         x\n"
-"*             o         *                    *          -----        x\n"
-"x                       x                    x         -------       x\n"
-"x                       x                    x        ---------      x\n"
-"x                       x                    x         -------       x\n"
-"x                       x                    x          -----        x\n"
-"x                       x                    x           ---         x\n"
-"x                       x                    x            -          x\n"
-"x                       x                    x                       x\n"
-"x                       x                    x                       x\n"
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx",
-{{'+', 10.0}, {'-', -10.0}});
-  /*
-  agent.load_tests(
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"*pppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xppppppppppppppppppppppp*                    *pppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppxxxxxxxxxxxxxxxxxxxxxxpppppppppppppppppppppppx\n"
-"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
-"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
-"*pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp*\n"
-"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
-"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppxxxxxxxxxxxxxxxxxxxxxxpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"*ppppppppppppppppppppppp*                    *pppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xpppppppppppppppppppppppx                    xpppppppppppppppppppppppx\n"
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
-  */
+"xxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxx\n"
+"x                                                                                x\n"
+"x                                        s                                       x\n"
+"x                                                                                x\n"
+"xxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xx\n"
+);
 
   agent.load_tests(
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxxxxxxxxxxx*xxxxxxx\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"*p p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p p*                    * p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p xxxxxxxxxxxxxxxxxxxxxxp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p px\n"
-"*p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p *\n"
-"x p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p px\n"
-"xp p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p xxxxxxxxxxxxxxxxxxxxxxp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"*p p p p p p p p p p p p*                    * p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"x p p p p p p p p p p p x                    xp p p p p p p p p p p px\n"
-"xp p p p p p p p p p p px                    x p p p p p p p p p p p x\n"
-"xxxxxxxxxxxxxxxxxxxxxxxxx                    xxxxxxxx*xxxxxxxxxxxxxxxx");
+"xxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppx\n"
+"xxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xx\n"
+);
 
+  const FloatT reward_intro_time = 2400;
+  bool new_map = false;
+  model.add_hook([&]() {
+      if (new_map || agent.current_time() < reward_intro_time) return;
+      new_map = true;
+      agent.load_map(
+"xxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxx\n"
+"x                                                                                x\n"
+"x     s                                                                          x\n"
+"x                                                                                x\n"
+"xxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xx\n"
+);
+      agent.load_rewards(
+"xxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxx\n"
+"x                                                                          +++++ x\n"
+"x                                                                          +++++ x\n"
+"x                                                                          +++++ x\n"
+"xxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xxxxxxxxx*xx\n",
+{{'+', 50.0}});
+      printf("\tIntroduced reward\n");
+      agent.set_restart_bound(0.05, 4, -10);
+    });
 
-  // agent.seed(123);
+  agent.set_rl_params(10, 0.5, -5.0, 0.1, 0.85);
 
-  FloatT radius = 1.0;
-  FloatT bound_y = 1.0;
-  FloatT bound_x = bound_y;
-
-  //agent.set_boundary(0.6*bound_x, 0.6*bound_y);
-
-  // ScanWalkPolicy:---
-  // agent.set_scan_bounds(0.6*bound_x, 0.6*bound_y);
-  // agent.set_row_separation(bound_y / 8);
-  // ---/
-
-  FloatT start_x = -0.75*bound_x;
-  FloatT stop_x = 0.75*bound_x;
-  FloatT start_y = -0.75*bound_y;
-  FloatT stop_y = 0.75*bound_y;
-  unsigned n_objs_x = 4;
-  unsigned n_objs_y = 4;
-
-  for (unsigned i = 0; i < n_objs_x; ++i) {
-    for (unsigned j = 0; j < n_objs_y; ++j) {
-      // agent.add_proximal_object(start_x + (stop_x-start_x)*(FloatT)i/(n_objs_x-1),
-      //                           start_y + (stop_y-start_y)*(FloatT)j/(n_objs_y-1));
-    }
-  }
 
   FloatT fwd_move_dist = 0.4;
   FloatT rot_angle = M_PI / 8;
 
   FloatT fwd_move_time = 0.1; ///6.0; // seconds per forward move
   FloatT angle_move_time = 0.1; ///6.0; // seconds per angular move
-
-  /* RandomWalkPolicy::
-  agent.p_fwd = 1.0/2.0;
-  // agent.p_fwd = 1.0/3.0;
-  */
 
   agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
   agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
@@ -308,9 +103,9 @@ int main(int argc, char *argv[]) {
 
   agent.episode_length(150);
 
-  FloatT test_duration = 4964; // turns off plasticity during testing for this duration
+  FloatT test_duration = 1008; // turns off plasticity during testing for this duration
   FloatT test_interval = 1200; // time between tests (s)
-  std::vector<FloatT> test_times{0};
+  std::vector<FloatT> test_times{1200};
   for (unsigned i = 0; i < 5; ++i) {
     test_times.push_back(test_times[i] + test_duration + test_interval);
   }
@@ -396,7 +191,7 @@ int main(int argc, char *argv[]) {
 
   // PLACE -> PLACExFVxHD connectivity:
   FloatT PLACE_PLACExFVxHD_sparsity = 0.05;
-  FloatT PLACE_PLACExFVxHD_scaling = 900.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
+  FloatT PLACE_PLACExFVxHD_scaling = 950.0 / (N_PLACE*PLACE_PLACExFVxHD_sparsity);
 
   // PLACExFVxHD -> PLACExFVxHD connectivity:
   FloatT PLACExFVxHD_inhibition = -500.0 / N_PLACExFVxHD;
@@ -407,10 +202,10 @@ int main(int argc, char *argv[]) {
   FloatT VIS_PLACE_INH_scaling = -10.0 / (N_VIS*VIS_PLACE_sparsity);
 
   // PLACExFVxHD -> PLACE connectivity:
-  FloatT PLACExFVxHD_PLACE_scaling = 6400.0 / N_PLACExFVxHD; // ???14000
+  FloatT PLACExFVxHD_PLACE_scaling = 6800.0 / N_PLACExFVxHD; // ???14000
 
   // PLACE -> PLACE connectivity:
-  FloatT PLACE_inhibition = -800.0 / N_PLACE;
+  FloatT PLACE_inhibition = -1620.0 / N_PLACE;
 
   // PLACE -> GRID connectivity:
   FloatT PLACE_GRID_sparsity = 1;
@@ -702,7 +497,6 @@ int main(int argc, char *argv[]) {
   model.add(&agent);
 
   model.add(&VIS);
-  // model.add(&VIS_INH);
   model.add(&HD);
   model.add(&FV);
   model.add(&FVxHD);

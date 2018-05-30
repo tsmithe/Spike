@@ -1,3 +1,5 @@
+include_directories(BEFORE SYSTEM "${PROJECT_SOURCE_DIR}/Submodules/tinytoml/include")
+
 foreach(example
     AHVxHD_simple_smoothAHV
 
@@ -13,12 +15,14 @@ foreach(example
     HD_no-place
 
     PLACE_proximal-only
+    PLACE_proximal-only2
     PLACE_distal-only
 
     PLACE_Qpolicy_proximal
-    PLACE_detour
     PLACE_linear
+    PLACE_square
     PLACE_compartments
+    PLACE_detour
     )
   add_executable(${example} ${example}.cpp)
   target_link_libraries(${example} Spike) # ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})

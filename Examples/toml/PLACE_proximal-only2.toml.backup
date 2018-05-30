@@ -1,0 +1,14 @@
+PLACExFVxHD_inhibition = -0.2874026593305841
+pause_duration = 11.0
+test_on_time = 5.0
+VIS_PLACE_scaling = 1.276825542279048
+output_path = "PLACE_proximal-only2"
+PLACE_inhibition = -0.0998048850285656
+train_time = 100.0
+test_off_time = 5.0
+eps = 0.08
+pause_time = 99.9
+PLACExFVxHD_PLACE_scaling = 0.20629753920633367
+FVxHD_PLACExFVxHD_scaling = 20.0
+PLACE_PLACExFVxHD_scaling = 45.75
+VIS_PLACE_INH_scaling = -0.002864121222630128

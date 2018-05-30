@@ -1,0 +1,14 @@
+train_time = 1500.0
+test_on_time = 150.0
+test_off_time = 0.0
+eps = 0.06
+pause_time = 18400.0
+pause_duration = 10.0
+VIS_PLACE_scaling = 2.93993
+VIS_PLACE_INH_scaling = -0.005854
+PLACExFVxHD_PLACE_scaling = 0.0
+PLACE_inhibition = -0.0
+PLACE_PLACExFVxHD_scaling = 25.0
+PLACExFVxHD_inhibition = -0.48836
+FVxHD_PLACExFVxHD_scaling = 20.0
+output_path = "/home/toby/src/oftnai/Spike-experiments/Build/pandapics/PLACE_proximal-only2"
