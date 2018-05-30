@@ -5,6 +5,7 @@
 #include <list>
 #include <memory>
 #include <queue>
+#include <unordered_map>
 #include <utility>
 
 // Forward definitions:
@@ -50,9 +51,12 @@ namespace Backend {
     virtual void weights(EigenMatrix const& w) = 0;
 
     virtual void make_sparse() = 0;
+    virtual FloatT density() = 0;
 
     virtual void delay(unsigned int) = 0;
     virtual unsigned int delay() = 0;
+
+    virtual void update_scaling_homeostasis(FloatT dt) = 0;
   };
 
   class RatePlasticity : public virtual SpikeBackendBase {
@@ -94,7 +98,10 @@ namespace Backend {
     virtual void connect_input(RateSynapses* synapses,
                                RatePlasticity* plasticity) = 0;
     virtual bool staged_integrate_timestep(FloatT dt) = 0;
-    virtual const EigenVector& rate() = 0;
+    virtual EigenVector const& rate() = 0;
+    virtual EigenVector const& rate(unsigned int n_back) = 0;
+    virtual FloatT mean_rate() = 0;
+    virtual FloatT mean_rate(unsigned int n_back) = 0;
   };
 
   class DummyRateNeurons : public virtual RateNeurons {
@@ -107,7 +114,10 @@ namespace Backend {
                        RatePlasticity* plasticity) override = 0;
     virtual void add_schedule(FloatT duration, EigenVector rates) = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
-    const EigenVector& rate() override = 0;
+    EigenVector const& rate() override = 0;
+    EigenVector const& rate(unsigned int n_back) override = 0;
+    FloatT mean_rate() override = 0;
+    FloatT mean_rate(unsigned int n_back) override = 0;
   };
 
   class InputDummyRateNeurons : public virtual DummyRateNeurons {
@@ -117,7 +127,10 @@ namespace Backend {
     void prepare() override = 0;
     void reset_state() override = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
-    const EigenVector& rate() override = 0;
+    EigenVector const& rate() override = 0;
+    EigenVector const& rate(unsigned int n_back) override = 0;
+    FloatT mean_rate() override = 0;
+    FloatT mean_rate(unsigned int n_back) override = 0;
   };
 
   class RandomDummyRateNeurons : public virtual DummyRateNeurons {
@@ -127,7 +140,10 @@ namespace Backend {
     void prepare() override = 0;
     void reset_state() override = 0;
     bool staged_integrate_timestep(FloatT dt) override = 0;
-    const EigenVector& rate() override = 0;
+    EigenVector const& rate() override = 0;
+    EigenVector const& rate(unsigned int n_back) override = 0;
+    FloatT mean_rate() override = 0;
+    FloatT mean_rate(unsigned int n_back) override = 0;
   };
 }
 
@@ -153,10 +169,25 @@ public:
                                     RatePlasticity* plasticity) const;
   void assert_dendritic_consistency() const;
   void connect_input(RateSynapses* synapses,
-                     RatePlasticity* plasticity=nullptr);
+                     RatePlasticity* plasticity=nullptr,
+                     FloatT homeostatic_weight_=0);
 
   bool staged_integrate_timestep(FloatT dt);
   void apply_plasticity(FloatT dt) const;
+
+  FloatT target_rate() const { return _target_rate; }
+  FloatT homeostasis_timescale() const { return _homeostasis_timescale; }
+  FloatT homeostatic_weight(RateSynapses* s) {
+    return homeostatic_weights.count(s) ? homeostatic_weights[s] : 0;
+  }
+
+  void enable_homeostasis(FloatT target_rate_, FloatT timescale_, bool with_beta=false) {
+    _target_rate = target_rate_;
+    _homeostasis_timescale = timescale_;
+    _beta_homeostasis = with_beta;
+  }
+
+  void update_scaling_homeostasis(FloatT dt);
 
   int size = 0;
 
@@ -169,14 +200,24 @@ public:
   int timesteps = 0;
 
   const EigenVector& rate() const;
+  FloatT mean_rate() const { return backend()->mean_rate(); }
+  FloatT mean_rate(unsigned int n_back) const { return backend()->mean_rate(n_back); }
+
   int rate_buffer_interval = 0;
   int rate_buffer_start = 0;
   EigenBuffer rate_history;
 
   std::vector<std::pair<RateSynapses*, RatePlasticity*> > dendrites;
+  std::unordered_map<RateSynapses*, FloatT> homeostatic_weights;
+
+  FloatT _target_rate = -1;
+  FloatT _homeostasis_timescale = 0;
+  bool _beta_homeostasis = false;
 
 private:
   std::shared_ptr<::Backend::RateNeurons> _backend;
+
+  
 };
 
 class DummyRateNeurons : public virtual RateNeurons {
@@ -203,8 +244,8 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(InputDummyRateNeurons, DummyRateNeurons);
 
-  FloatT sigma_IN;
-  FloatT lambda;
+  FloatT sigma_IN = 0;
+  FloatT lambda = 0;
   FloatT t_stop_after = infinity<FloatT>();
 
   EigenVector theta_pref;
@@ -260,8 +301,12 @@ public:
   void weights(const EigenMatrix& w);
 
   void make_sparse();
+  FloatT density() { return _backend->density(); }
+
+  void update_scaling_homeostasis(FloatT dt) { _backend->update_scaling_homeostasis(dt); }
 
   FloatT scaling = 1;
+  FloatT scaling_sign = 1;
 
   int timesteps = 0;
 
@@ -340,7 +385,7 @@ public:
 
   void write_output_info() const;
 
-  RateNeurons* neurons;
+  RateNeurons* neurons = nullptr;
   std::vector<std::unique_ptr<BufferWriter> > writers;
 
 /*

@@ -71,9 +71,9 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentVISRateNeurons, RateNeurons);
 
-  AgentBase* agent;
-  int neurons_per_object;
-  FloatT sigma_IN, lambda;
+  AgentBase* agent = nullptr;
+  int neurons_per_object = 0;
+  FloatT sigma_IN = 0, lambda = 0;
 
   EigenVector theta_pref;
 
@@ -94,9 +94,9 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentHDRateNeurons, RateNeurons);
 
-  AgentBase* agent;
+  AgentBase* agent = nullptr;
 
-  FloatT sigma_IN, lambda;
+  FloatT sigma_IN = 0, lambda = 0;
 
   EigenVector theta_pref;
 
@@ -115,8 +115,8 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentAHVRateNeurons, RateNeurons);
 
-  AgentBase* agent;
-  int neurons_per_state;
+  AgentBase* agent = nullptr;
+  int neurons_per_state = 0;
 
   // FloatT smooth_base_rate = 0.1;
   // FloatT smooth_slope = 1.0 / (1.5*M_PI);
@@ -183,8 +183,8 @@ public:
   void init_backend(Context* ctx) override;
   SPIKE_ADD_BACKEND_GETSET(AgentFVRateNeurons, RateNeurons);
 
-  AgentBase* agent;
-  int neurons_per_state;
+  AgentBase* agent = nullptr;
+  int neurons_per_state = 0;
 
 private:
   std::shared_ptr<::Backend::AgentFVRateNeurons> _backend;
@@ -194,6 +194,13 @@ private:
 typedef Eigen::Matrix<FloatT, 2, 1> EigenVector2D;
 typedef Eigen::Matrix<FloatT, 2, Eigen::Dynamic> EigenMatrix2D;
 
+
+template<typename T>
+struct pair_greater {
+  constexpr bool operator()(T const& lhs, T const& rhs) const {
+    return lhs.first > rhs.first;
+  }
+};
 
 struct AgentBase : public BetterTimer<FloatT> {
   // FloatT velocity_scaling = 1;
@@ -209,8 +216,8 @@ struct AgentBase : public BetterTimer<FloatT> {
 
   bool smooth_AHV = false;
   FloatT AHV_speed = 0;
-  FloatT AHV, FV;
-  FloatT AHV_change, FV_change;
+  FloatT AHV = 0, FV = 0;
+  FloatT AHV_change = 0, FV_change = 0;
 
   int curr_AHV = 0;
   // FloatT curr_AHV_speed = 0;
@@ -222,6 +229,10 @@ struct AgentBase : public BetterTimer<FloatT> {
   unsigned change_action_ts = 0;
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
+
+  std::priority_queue<std::pair<FloatT, FloatT>,
+                      std::vector<std::pair<FloatT, FloatT> >,
+                      pair_greater<std::pair<FloatT, FloatT> > > pause_times;
 
   std::priority_queue<FloatT, std::vector<FloatT>, std::greater<FloatT> > test_times;
 
@@ -389,10 +400,12 @@ public:
 protected:
   void prepare() override {
     if (prepared) return;
-    prepared = true;
 
-    // std::cout << "\n" << map_to_string() << "\n"
-    //           << "\n" << reward_to_string() << "\n" << std::endl;
+    if (0 == reward.rows() || 0 == reward.cols()) {
+      reward = EigenMatrix::Zero(world_size(0), world_size(1));
+    }
+
+    prepared = true;
   }
 
   static Eigen::Vector2i compute_size(std::string const& map) {
@@ -937,8 +950,8 @@ class QMazePolicy {
 
   bool prepared = false;
   bool started = false;
-  unsigned prev_state;
-  unsigned curr_action;
+  unsigned prev_state = 0;
+  unsigned curr_action = 0;
   int action_stage = 0;
 
   unsigned t_episode_secs = 0;
@@ -1226,6 +1239,7 @@ public:
     restart_tau = _tau;
     restart_bound = _bound;
     restart_reward = _reward;
+    mean_pos = EigenVector2D{-restart_bound, -restart_bound};
   }
 };
 
@@ -1401,6 +1415,10 @@ public:
     }
   }
 
+  void add_pause_time(FloatT t_pause, FloatT duration) {
+    pause_times.push({t_pause, duration});
+  }
+
   void add_test_time(FloatT t_test) {
     test_times.push(t_test);
   }
@@ -1476,7 +1494,13 @@ public:
     TestPolicyT::update_per_dt(*this, dt);
 
     if (this->timesteps() >= this->choose_next_action_ts) {
-      if (this->test_times.empty() || this->current_time() < this->test_times.top()) {
+      if (!(this->pause_times.empty()) && this->current_time() >= this->pause_times.top().first) {
+        curr_action = AgentBase::actions_t::STAY;
+        curr_AHV = 0;
+        curr_FV = 0;
+        this->choose_next_action_ts = this->timesteps() + round(this->pause_times.top().second / dt);
+        this->pause_times.pop();
+      } else if (this->test_times.empty() || this->current_time() < this->test_times.top()) {
         TrainPolicyT::choose_new_action(*this, dt);
       } else {
         TestPolicyT::choose_new_action(*this, dt);
@@ -1508,7 +1532,7 @@ public:
       } else if (curr_action == actions_t::FV) {
         FV = FVs[curr_FV].first;
         AHV = 0;
-      } else {
+      } else if (curr_action != actions_t::STAY) {
         assert(false);
       }
       change_action_ts = 0;
@@ -1520,7 +1544,7 @@ public:
       } else if (curr_action == actions_t::FV) {
         FV += FV_change;
         AHV = 0;
-      } else {
+      } else if (curr_action != actions_t::STAY) {
         assert(false);
       }
     }

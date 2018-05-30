@@ -8,6 +8,7 @@ SPIKE_EXPORT_BACKEND_TYPE(Eigen, AgentFVRateNeurons);
 namespace Backend {
   namespace Eigen {
     void AgentVISRateNeurons::prepare() {
+      t = 0;
       theta_pref.resize(frontend()->size);
       d.resize(frontend()->size);
       _rate.resize(frontend()->size);
@@ -34,7 +35,7 @@ namespace Backend {
       dt_ = dt;
 
       if (t > frontend()->t_stop_after) {
-        if (_rate.norm() > 0) {
+        if (t < frontend()->t_stop_after + 10*dt) { // _rate.norm() > 0) {
           _rate = EigenVector::Zero(frontend()->size);
         }
         return true;

@@ -47,11 +47,16 @@ void RateNeurons::assert_dendritic_consistency() const {
 }
 
 void RateNeurons::connect_input(RateSynapses* synapses,
-                                RatePlasticity* plasticity) {
+                                RatePlasticity* plasticity,
+                                FloatT homeostatic_weight_) {
   assert_dendritic_consistency(synapses, plasticity);
+
   // Connect the synapses to the dendrites:
   dendrites.push_back({synapses, plasticity});
   backend()->connect_input(synapses->backend(), plasticity->backend());
+
+  // Set homeostatic weight for scaling factor adjustment:
+  if (fabs(homeostatic_weight_) > 0) homeostatic_weights[synapses] = homeostatic_weight_;
 }
 
 /* This returns true if the timestep update is complete,
@@ -87,6 +92,16 @@ const EigenVector& RateNeurons::rate() const {
 void RateNeurons::apply_plasticity(FloatT dt) const {
   for (auto& dendrite_pair : dendrites)
     dendrite_pair.second->apply_plasticity(dt);
+}
+
+void RateNeurons::update_scaling_homeostasis(FloatT dt) {
+  for (auto& h : homeostatic_weights) {
+    h.first->update_scaling_homeostasis(dt);
+  }
+  if (_beta_homeostasis) {
+    FloatT dBeta = homeostasis_timescale() * (target_rate() - mean_rate());
+    beta += dt * dBeta;
+  }
 }
 
 DummyRateNeurons::DummyRateNeurons(Context* ctx, int size_, std::string label_)
@@ -160,6 +175,12 @@ RateSynapses::RateSynapses(Context* ctx,
   // reset_state();
   if(!(label.length()))
     label = neurons_pre->label;
+
+  if (scaling >= 0) {
+    scaling_sign = 1;
+  } else {
+    scaling_sign = -1;
+  }
 
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label
@@ -677,6 +698,7 @@ void RateModel::update_model_per_dt() {
   // #pragma omp parallel for schedule(nonmonotonic:dynamic)
   for (int i = 0; i < num_groups; ++i) {
     auto& n = neuron_groups[i];
+    n->update_scaling_homeostasis(dt);
     n->apply_plasticity(dt);
   }
 

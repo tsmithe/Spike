@@ -25,9 +25,12 @@ namespace Backend {
       void weights(EigenMatrix const& w) override;
 
       void make_sparse() override;
+      FloatT density() override { return _density; }
 
       unsigned int delay() override;
       void delay(unsigned int d) override;
+
+      void update_scaling_homeostasis(FloatT dt) override;
 
     private:
       unsigned int _delay = 0;
@@ -36,6 +39,7 @@ namespace Backend {
       EigenMatrix _weights;    // TODO: Generalize synapse types
       EigenSpMatrix _sp_weights;
       EigenSpMatrix _sparsity;
+      FloatT _density = 1.0;
 
       bool is_sparse = false;
 
@@ -113,8 +117,11 @@ namespace Backend {
       template<typename T>
       inline T transfer(T const& total_activation);
 
-      virtual EigenVector const& rate(unsigned int n_back);
+      EigenVector const& rate(unsigned int n_back) override;
       EigenVector const& rate() override;
+
+      FloatT mean_rate(unsigned int n_back) override;
+      FloatT mean_rate() override;
 
     private:
       bool done_timestep = false;
@@ -123,6 +130,8 @@ namespace Backend {
 
       EigenMatrix _rate_history;
       int _rate_hist_idx = 0;
+
+      EigenVector _mean_rate_history;
 
       EigenVector _new_rate;
       EigenVector _rate;
@@ -150,15 +159,18 @@ namespace Backend {
 
       bool staged_integrate_timestep(FloatT dt) override;
       EigenVector const& rate() override;
-      EigenVector const& rate(unsigned int n_back=0) override;
+      EigenVector const& rate(unsigned int n_back) override;
+
+      FloatT mean_rate(unsigned int n_back) override;
+      FloatT mean_rate() override;
 
       void add_schedule(FloatT duration, EigenVector rates) override;
 
     protected:
-      FloatT t, dt_;
+      FloatT t = 0, dt_ = 0;
 
       int _schedule_idx = 0;
-      FloatT _curr_rate_t;
+      FloatT _curr_rate_t = 0;
     };
 
     class InputDummyRateNeurons
@@ -176,12 +188,15 @@ namespace Backend {
 
       bool staged_integrate_timestep(FloatT dt) override;
       EigenVector const& rate() override;
-      EigenVector const& rate(unsigned int n_back=0) override;
+      EigenVector const& rate(unsigned int n_back) override;
+
+      FloatT mean_rate(unsigned int n_back) override;
+      FloatT mean_rate() override;
 
     private:
       EigenVector _rate;
 
-      FloatT theta;
+      FloatT theta = 0;
 
       EigenVector sigma_IN_sqr;
 
@@ -204,10 +219,14 @@ namespace Backend {
 
       bool staged_integrate_timestep(FloatT dt) override;
       EigenVector const& rate() override;
-      EigenVector const& rate(unsigned int n_back=0) override;
+      EigenVector const& rate(unsigned int n_back) override;
+
+      FloatT mean_rate(unsigned int n_back) override;
+      FloatT mean_rate() override;
 
     private:
       EigenVector _rate;
+      FloatT _mean_rate = 0;
     };
   } // namespace Eigen
 } // namespace Backend

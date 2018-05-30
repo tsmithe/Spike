@@ -8,3 +8,9 @@
 [submodule "Submodules/eigen-initializer_list"]
 	path = Submodules/eigen-initializer_list
 	url = https://github.com/hauptmech/eigen-initializer_list.git
+[submodule "Submodules/tinytoml"]
+	path = Submodules/tinytoml
+	url = https://github.com/mayah/tinytoml.git
+[submodule "Python/HORD"]
+	path = Python/HORD
+	url = https://github.com/ilija139/HORD.git

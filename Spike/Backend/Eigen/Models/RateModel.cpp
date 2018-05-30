@@ -17,6 +17,7 @@ namespace Backend {
       int size = frontend()->size;
 
       _rate_history = EigenMatrix::Zero(size, 1);
+      _mean_rate_history = EigenVector::Zero(1);
 
       _total_activation = EigenVector::Zero(size);
     }
@@ -27,6 +28,8 @@ namespace Backend {
 
       _rate_history = EigenMatrix::Zero(_rate_history.rows(),
                                         _rate_history.cols());
+      _mean_rate_history = EigenVector::Zero(_mean_rate_history.size());
+
       _rate = EigenVector::Zero(size);
     }
 
@@ -41,6 +44,16 @@ namespace Backend {
       _rate = _rate_history.col(i);
       return _rate;
     }
+
+    FloatT RateNeurons::mean_rate() {
+      return mean_rate(0);
+    }
+
+    FloatT RateNeurons::mean_rate(unsigned int n_back) {
+      int i = _rate_hist_idx - n_back;
+      if (i < 0) i += _mean_rate_history.size();
+      return _mean_rate_history(i);
+    }      
 
     void RateNeurons::connect_input(::Backend::RateSynapses* synapses,
                                     ::Backend::RatePlasticity* plasticity) {
@@ -66,6 +79,7 @@ namespace Backend {
         // Update rate history:
         _rate_hist_idx = (_rate_hist_idx + 1) % _rate_history.cols();
         _rate_history.col(_rate_hist_idx).swap(_new_rate);
+        _mean_rate_history(_rate_hist_idx) = _rate_history.col(_rate_hist_idx).norm();
 
         done_timestep = false; // false for next time
         return true;
@@ -135,6 +149,14 @@ namespace Backend {
       return frontend()->rate_schedule[_schedule_idx].second;
     }
 
+    FloatT DummyRateNeurons::mean_rate() {
+      return rate().norm();
+    }
+
+    FloatT DummyRateNeurons::mean_rate(unsigned int n_back) {
+      return rate(n_back).norm();
+    }
+
     void InputDummyRateNeurons::prepare() {
       _schedule_idx = 0;
       _curr_rate_t = 0;
@@ -200,8 +222,17 @@ namespace Backend {
       return rate(0);
     }
 
+    FloatT InputDummyRateNeurons::mean_rate() {
+      return rate().norm();
+    }
+
+    FloatT InputDummyRateNeurons::mean_rate(unsigned int n_back) {
+      return rate(n_back).norm();
+    }
+
     void RandomDummyRateNeurons::prepare() {
       _rate.resize(frontend()->size);
+      _mean_rate = 0;
     }
 
     void RandomDummyRateNeurons::reset_state() {
@@ -213,6 +244,7 @@ namespace Backend {
 
       if (t > frontend()->t_stop_after) {
         _rate = EigenVector::Zero(frontend()->size);
+        _mean_rate = 0;
         return true;
       }
 
@@ -221,6 +253,7 @@ namespace Backend {
                                       false, 0, 0, true);
       // _rate += (dt/frontend()->tau)*(-_rate + transfer(rand_activ));
       _rate.swap(rand_activ);
+      _mean_rate = _rate.norm();
       // _rate = EigenVector::Random(frontend()->size);
 
       return true;
@@ -233,6 +266,15 @@ namespace Backend {
 
     EigenVector const& RandomDummyRateNeurons::rate() {
       return rate(0);
+    }
+
+    FloatT RandomDummyRateNeurons::mean_rate() {
+      return _mean_rate;
+    }
+
+    FloatT RandomDummyRateNeurons::mean_rate(unsigned int n_back) {
+      assert(n_back == 0);
+      return _mean_rate;
     }
 
 
@@ -267,6 +309,8 @@ namespace Backend {
       assert(_weights.rows() == size_post);
       assert(_weights.cols() == size_pre);
 
+      _density = 0;
+
       _sp_weights.resize(size_post, size_pre);
       _sparsity.resize(size_post, size_pre);
       std::vector<::Eigen::Triplet<FloatT> > coefficients;
@@ -277,16 +321,52 @@ namespace Backend {
           if (val != 0) {
             coefficients.push_back({i, j, val});
             sparsity_coeffs.push_back({i, j, 1});
+            _density++;
           }
         }
       }
       _sp_weights.setFromTriplets(coefficients.begin(), coefficients.end());
-      _sparsity.setFromTriplets(sparsity_coeffs.begin(),sparsity_coeffs.end());
+      _sparsity.setFromTriplets(sparsity_coeffs.begin(), sparsity_coeffs.end());
+      _density /= size_post * size_pre;
 
       _sp_weights.makeCompressed();
       _sparsity.makeCompressed();
 
       is_sparse = true;
+    }
+
+    void RateSynapses::update_scaling_homeostasis(FloatT dt) {
+      // Don't update this scaling factor if not supposed to,
+      // or if the presynaptic neurons have no activity:
+      if (frontend()->neurons_post->target_rate() < 0
+          || frontend()->neurons_post->homeostatic_weight(frontend()) == 0
+          || frontend()->neurons_pre->mean_rate(_delay) < 1e-4) {
+        return;
+      }
+
+      // Compute unnormalized change in scaling factor according to target post-synaptic rate
+      // and desired pre-synaptic contribution:
+      FloatT dS = frontend()->neurons_post->homeostasis_timescale() *
+        (frontend()->neurons_post->target_rate() - frontend()->neurons_post->mean_rate(_delay)) *
+        (frontend()->neurons_post->homeostatic_weight(frontend()) * frontend()->neurons_pre->mean_rate(_delay)
+         / _density);
+
+      // Compute normalization as sum of pre-synaptic contributions to post-synaptic activity:
+      FloatT Z = 0;
+      for (auto const& d : frontend()->neurons_post->dendrites) {
+        if (frontend()->neurons_post->homeostatic_weight(d.first) == 0) continue;
+        Z += (frontend()->neurons_post->homeostatic_weight(d.first) * d.first->neurons_pre->mean_rate(d.first->delay()) / d.first->density());
+      }
+
+      dS /= Z;
+      
+      frontend()->scaling += dt * dS;
+
+      // Don't allow sign changes:
+      if ((frontend()->scaling < 0 && frontend()->scaling_sign > 0)
+          || (frontend()->scaling > 0 && frontend()->scaling_sign < 0)) {
+        frontend()->scaling = 0;
+      }
     }
 
     const EigenVector& RateSynapses::activation() {
@@ -308,9 +388,11 @@ namespace Backend {
 
     void RateSynapses::delay(unsigned int d) {
       _delay = d;
-      if (neurons_pre->_rate_history.cols() < (d+1))
+      if (neurons_pre->_rate_history.cols() < (d+1)) {
         neurons_pre->_rate_history.resize
           (neurons_pre->_rate_history.rows(), d+1);
+        neurons_pre->_mean_rate_history.resize(d+1);
+      }
     }
 
     unsigned int RateSynapses::delay() {

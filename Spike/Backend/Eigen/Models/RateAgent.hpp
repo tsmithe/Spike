@@ -26,8 +26,16 @@ namespace Backend {
       EigenVector const& rate() override;
       EigenVector const& rate(unsigned int n_back=0) override;
 
+      FloatT mean_rate() override {
+        return rate(0).norm();
+      }
+
+      FloatT mean_rate(unsigned int) override {
+        assert("Not allowed" && false);
+      }
+
     protected:
-      FloatT t, dt_;
+      FloatT t = 0, dt_ = 0;
 
       EigenVector _rate;
 
@@ -59,7 +67,7 @@ namespace Backend {
       EigenVector const& rate(unsigned int n_back=0) override;
 
     protected:
-      FloatT t, dt_;
+      FloatT t = 0, dt_ = 0;
 
       EigenVector _rate;
 
@@ -93,7 +101,7 @@ namespace Backend {
     protected:
       EigenVector _rate;
       int curr_AHV = -2;
-      FloatT AHV;
+      FloatT AHV = 0;
 
       //::Eigen::Matrix<FloatT, Eigen::Dynamic, 2> _tuning;
     };
