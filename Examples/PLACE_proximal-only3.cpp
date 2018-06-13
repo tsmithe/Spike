@@ -93,23 +93,23 @@ int main(int argc, char *argv[]) {
 "xxxxxxxxxxxxxxxxxxxxxxx\n"
 "x                     x\n"
 "x s                 s x\n"
-"x  o    o    o    o   x\n"
+"x                     x\n"
+"x                     x\n"
+"x                     x\n"
+"x     o         o     x\n"
 "x                     x\n"
 "x                     x\n"
 "x                     x\n"
 "x                     x\n"
-"x   o    o    o    o  x\n"
-"x                     x\n"
-"x                     x\n"
-"x          s          x\n"
-"x                     x\n"
-"x                     x\n"
-"x  o    o    o    o   x\n"
+"x          o          x\n"
 "x                     x\n"
 "x                     x\n"
 "x                     x\n"
 "x                     x\n"
-"x   o    o    o    o  x\n"
+"x     o         o     x\n"
+"x                     x\n"
+"x                     x\n"
+"x                     x\n"
 "x s                 s x\n"
 "x                     x\n"
 "xxxxxxxxxxxxxxxxxxxxxxx\n");
@@ -139,12 +139,12 @@ int main(int argc, char *argv[]) {
 "xpppppppppppppppppppppx\n"
 "xxxxxxxxxxxxxxxxxxxxxxx\n");
 
-  int N_per_obj = 60;
+  int N_per_obj = 80;
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
 
   int N_HD = 180;
-  int N_per_state = 50;
+  int N_per_state = 10;
 
   // Input neurons:
   AgentVISRateNeurons VIS(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");

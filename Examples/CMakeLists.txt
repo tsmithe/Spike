@@ -17,6 +17,7 @@ foreach(example
     PLACE_proximal-only
     PLACE_proximal-only2
     PLACE_proximal-only3
+    PLACE_proximal-only4
     PLACE_distal-only
 
     PLACE_Qpolicy_proximal
