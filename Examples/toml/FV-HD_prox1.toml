@@ -1,0 +1,16 @@
+train_time = 0.0
+test_on_time = 155.0
+test_off_time = 160.0
+eps = 0.05
+pause_time = 1650.0
+pause_duration = 10.0
+VIS_S_scaling = 3.81
+VIS_S_INH_scaling = -0.021
+SA_S_scaling = 9.25
+S_inhibition = -2.03
+S_SA_scaling = 49.0
+SA_inhibition = -1.07
+A_SA_scaling = 5.0
+FV_A_scaling = 3.8
+HD_A_scaling = 18.0
+output_path = "/home/toby/src/oftnai/Spike-experiments/Build/pandapics/FV-HD_prox1"
