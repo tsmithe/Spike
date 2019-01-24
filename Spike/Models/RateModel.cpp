@@ -182,6 +182,9 @@ RateSynapses::RateSynapses(Context* ctx,
     scaling_sign = -1;
   }
 
+  EigenMatrix w = Eigen::make_random_matrix(neurons_post->size, neurons_pre->size);
+  weights(w);
+
   if (ctx->verbose) {
     std::cout << "Spike: Created synapses '" << label
               << "' (at " << this <<  ") from "
@@ -209,8 +212,21 @@ void RateSynapses::get_weights(EigenMatrix& output) const {
   return backend()->get_weights(output);
 }
 
+void RateSynapses::save_weights(std::string fname) const {
+  EigenMatrix w;
+  get_weights(w);
+  Eigen::write_binary(fname.c_str(), w);
+}
+
 void RateSynapses::weights(EigenMatrix const& w) {
   backend()->weights(w);
+}
+
+void RateSynapses::load_weights(std::string fname, bool sparse) {
+  EigenMatrix w;
+  Eigen::read_binary(fname.c_str(), w, neurons_post->size, neurons_pre->size);
+  weights(w);
+  if (sparse) make_sparse();
 }
 
 void RateSynapses::make_sparse() {

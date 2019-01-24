@@ -297,8 +297,12 @@ public:
   void delay(unsigned int d);
 
   const EigenVector& activation() const;
+
   void get_weights(EigenMatrix& output) const; // just single, instantaneous dense weights for now
   void weights(const EigenMatrix& w);
+
+  void save_weights(std::string fname) const;
+  void load_weights(std::string fname, bool sparse=false);
 
   void make_sparse();
   FloatT density() { return _backend->density(); }
