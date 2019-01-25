@@ -27,6 +27,7 @@ foreach(example
     PLACE_detour
 
     FV-HD_prox1
+    HD_dist1
     )
   add_executable(${example} ${example}.cpp)
   target_link_libraries(${example} Spike) # ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})
