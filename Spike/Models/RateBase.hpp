@@ -172,8 +172,12 @@ inline EigenMatrix make_random_matrix(int J, int N, float scale=1,
 
 template<typename FloatT>
 class BetterTimer {
-  unsigned _steps = 0;
-  unsigned _seconds = 0;
+public:
+  using counter_t = unsigned long;
+
+private:
+  counter_t _steps = 0;
+  counter_t _seconds = 0;
   FloatT _fraction = 0;
 
 public:
@@ -194,7 +198,7 @@ public:
     return static_cast<FloatT>(_seconds) + _fraction;
   }
 
-  unsigned const& timesteps() const {
+  counter_t const& timesteps() const {
     return _steps;
   }
 };

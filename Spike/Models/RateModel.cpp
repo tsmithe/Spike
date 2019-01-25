@@ -632,7 +632,7 @@ void RateModel::simulation_loop() {
         // FloatT next_test = -1;
         // if (!agent->test_times.empty()) next_test = agent->test_times.top();
         printf("\r                                                                                ");
-        printf("\r%.2f (%d; %d; %d) : %6.2f\t%6.2f\t%6.2f",
+        printf("\r%.2f (%lu; %lu; %lu) : %6.2f\t%6.2f\t%6.2f",
                t, timesteps(), agent->timesteps() - timesteps(), agent->choose_next_action_ts,
                agent->position(0), agent->position(1),
                (180/M_PI)*(agent->head_direction)); //, next_test);

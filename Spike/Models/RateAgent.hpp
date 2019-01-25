@@ -203,6 +203,7 @@ struct pair_greater {
 };
 
 struct AgentBase : public BetterTimer<FloatT> {
+  using BetterTimer<FloatT>::counter_t;
   // FloatT velocity_scaling = 1;
 
   int num_AHV_states = 0;
@@ -225,8 +226,8 @@ struct AgentBase : public BetterTimer<FloatT> {
 
   enum struct actions_t { AHV, FV, STAY };
   actions_t curr_action = actions_t::FV;
-  unsigned choose_next_action_ts = 0;
-  unsigned change_action_ts = 0;
+  counter_t choose_next_action_ts = 0;
+  counter_t change_action_ts = 0;
   EigenVector2D target_position;
   FloatT target_head_direction = 0;
 
@@ -236,8 +237,8 @@ struct AgentBase : public BetterTimer<FloatT> {
 
   std::priority_queue<FloatT, std::vector<FloatT>, std::greater<FloatT> > test_times;
 
-  unsigned agent_buffer_interval = 0;
-  unsigned agent_buffer_start = 0;
+  counter_t agent_buffer_interval = 0;
+  counter_t agent_buffer_start = 0;
   EigenBuffer agent_history;
   std::unique_ptr<BufferWriter> history_writer;
 
@@ -931,6 +932,7 @@ class QMazePolicy {
    * In future, want to replace action selection with circuits
    * - need a mechanism!
    */
+  using counter_t = unsigned long;
 
   std::default_random_engine rand_engine;
 
@@ -938,7 +940,7 @@ class QMazePolicy {
   std::uniform_real_distribution<FloatT> action_die;
 
   EigenMatrix Q;
-  unsigned buffer_Q_timesteps = 0;
+  counter_t buffer_Q_timesteps = 0;
 
   FloatT q0 = 10;                 // initial Q values: larger encourages exploration
   FloatT beta = 0.5;              // softmax inverse temperature
@@ -954,9 +956,9 @@ class QMazePolicy {
   unsigned curr_action = 0;
   int action_stage = 0;
 
-  unsigned t_episode_secs = 0;
+  counter_t t_episode_secs = 0;
   FloatT t_episode_frac = 0;
-  unsigned _timesteps = 0;
+  counter_t _timesteps = 0;
 
   EigenVector2D mean_pos;
   FloatT restart_tau = 1;
