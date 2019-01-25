@@ -10,8 +10,12 @@
  */
 
 void RandomWalkPolicy::prepare(AgentBase& a) {
-  FV_die = std::uniform_int_distribution<>(0, a.num_FV_states-1);
-  AHV_die = std::uniform_int_distribution<>(0, a.num_AHV_states-1);
+  unsigned FV_die_start = a.num_FV_states > 1 ? 1 : 0;
+  FV_die = std::uniform_int_distribution<>(FV_die_start, a.num_FV_states-1);
+
+  unsigned AHV_die_start = a.num_AHV_states > 1 ? 1 : 0;
+  AHV_die = std::uniform_int_distribution<>(AHV_die_start, a.num_AHV_states-1);
+
   prepared = true;
 }
 
@@ -82,6 +86,7 @@ void RandomWalkPolicy::choose_new_action(AgentBase& a, FloatT dt) {
       a.target_head_direction -= 2 * M_PI;
   }
   int timesteps_per_action = round(duration / dt);
+  // assert(timesteps_per_action >= 0);
   a.choose_next_action_ts = a.timesteps() + timesteps_per_action;
 }
 
