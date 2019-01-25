@@ -157,10 +157,10 @@ struct model_t {
     s.save_weights(output_path + std::string("/") + s.label + std::string(".bin"));
   };
 
-  template <typename NeuronsT>
-  RateSynapses connect_neurons(NeuronsT& pre, NeuronsT& post, std::string label,
-                            FloatT scaling, FloatT sparsity, FloatT delay,
-                            bool try_load = true) const {
+  template <typename NeuronsPreT, typename NeuronsPostT>
+  RateSynapses connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
+                               FloatT scaling, FloatT sparsity, FloatT delay,
+                               bool try_load = true) const {
     RateSynapses syns(ctx, &pre, &post, scaling, label);
     if (delay > 0) { syns.delay(ceil(delay / timestep));}
 
@@ -176,9 +176,10 @@ struct model_t {
     return syns;
   }
 
-  RateSynapses connect_neurons(auto& pre, auto& post, std::string label,
-                            FloatT scaling, EigenMatrix W,
-                            FloatT delay, bool is_sparse = false) const {
+  template <typename NeuronsPreT, typename NeuronsPostT>
+  RateSynapses connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
+                               FloatT scaling, EigenMatrix W,
+                               FloatT delay, bool is_sparse = false) const {
     RateSynapses syns(ctx, &pre, &post, scaling, label);
     if (delay > 0) { syns.delay(ceil(delay / timestep));}
 
@@ -271,12 +272,12 @@ struct model_t {
 
   void construct_synapses() {
     // HD -> A connectivity:   (NB: not saved/loaded to/from disk)
-    HD_A = connect_neurons(HD, A, "HD_A", HD_A_scaling, HD_A_sparsity, 0, false);
+    HD_A = connect_neurons(HD, A, "HD_A", HD_A_scaling, HD_A_sparsity, 0.0, false);
     plast_HD_A = PLASTICITY_TYPE(ctx, &HD_A);
     A.connect_input(&HD_A, &plast_HD_A);
 
     // A -> SA connectivity:   (NB: not saved/loaded to/from disk)
-    A_SA = connect_neurons(A, SA, "A_SA", A_SA_scaling, A_SA_sparsity, 0, false);
+    A_SA = connect_neurons(A, SA, "A_SA", A_SA_scaling, A_SA_sparsity, 0.0, false);
     plast_A_SA = PLASTICITY_TYPE(ctx, &A_SA);
     SA.connect_input(&A_SA, &plast_A_SA);
 
@@ -288,18 +289,18 @@ struct model_t {
 
     // SA -> SA connectivity:   (NB: not saved/loaded to/from disk)
     SA_SA_INH = connect_neurons(SA, SA, "SA_SA_INH", SA_inhibition,
-                                EigenMatrix::Ones(N_SA, N_SA), 0);
+                                EigenMatrix::Ones(N_SA, N_SA), 0.0);
     plast_SA_SA_INH = PLASTICITY_TYPE(ctx, &SA_SA_INH);
     SA.connect_input(&SA_SA_INH, &plast_SA_SA_INH);
 
     // VIS -> S connectivity:
-    VIS_S = connect_neurons(&VIS, &S, "VIS_S", VIS_S_scaling, VIS_S_sparsity, 0);
+    VIS_S = connect_neurons(VIS, S, "VIS_S", VIS_S_scaling, VIS_S_sparsity, 0.0);
     plast_VIS_S = PLASTICITY_TYPE(ctx, &VIS_S);
     S.connect_input(&VIS_S, &plast_VIS_S);
     weights_to_store.push_back(&VIS_S);
 
-    VIS_S_INH = connect_neurons(&VIS_INH, &S, "VIS_S_INH", VIS_S_INH_scaling,
-                                EigenMatrix::Ones(N_S, N_VIS), 0);
+    VIS_S_INH = connect_neurons(VIS_INH, S, "VIS_S_INH", VIS_S_INH_scaling,
+                                EigenMatrix::Ones(N_S, N_VIS), 0.0);
     plast_VIS_S_INH = PLASTICITY_TYPE(ctx, &VIS_S_INH);
     S.connect_input(&VIS_S_INH, &plast_VIS_S_INH);
 
@@ -307,11 +308,11 @@ struct model_t {
     SA_S = connect_neurons(SA, S, "SA_S", SA_S_scaling, SA_S_sparsity, axonal_delay);
     plast_SA_S = PLASTICITY_TYPE(ctx, &SA_S);
     S.connect_input(&SA_S, &plast_SA_S);
-    weihgts_to_store.push_back(&SA_S);
+    weights_to_store.push_back(&SA_S);
 
     // S -> S connectivity:
     S_S_INH = connect_neurons(S, S, "S_S_INH", S_inhibition,
-                              EigenMatrix::Ones(N_S, N_S), 0);
+                              EigenMatrix::Ones(N_S, N_S), 0.0);
     plast_S_S_INH = PLASTICITY_TYPE(ctx, &S_S_INH);
     S.connect_input(&S_S_INH, &plast_S_S_INH);
   }
@@ -418,7 +419,8 @@ struct model_t {
 
 
   model_t(std::string toml_path) {
-    config = toml::parse(std::ifstream(toml_path)).value;
+    std::ifstream toml_ifstream(toml_path);
+    config = toml::parse(toml_ifstream).value;
 
     output_path = config.get<std::string>("output_path");
 
@@ -428,14 +430,14 @@ struct model_t {
       read_weights = true;
     } catch (...) {
       std::cout << "Not reading weights from disk\n";
-      m.read_weights = false;
+      read_weights = false;
     }
 
-    m.ctx = model.context;
+    ctx = model.context;
 
     // Tell Spike to talk
-    m.ctx->verbose = true;
-    m.ctx->backend = "Eigen";
+    ctx->verbose = true;
+    ctx->backend = "Eigen";
 
     // Get simulation schedule from config:
     config_simulation_schedule();
