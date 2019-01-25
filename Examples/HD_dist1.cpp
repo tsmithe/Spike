@@ -10,7 +10,8 @@
 
 #define PLASTICITY_TYPE RatePlasticity
 
-struct model_t {
+class model_t {
+public:
   // Global data:
   toml::Value config;
 
@@ -22,6 +23,7 @@ struct model_t {
   RateModel model;
   Context* ctx;
 
+  Agent<RandomWalkPolicy, HDTestPolicy, OpenWorld> agent;
 
   // Basic parameters:
   FloatT timestep = pow(2, -10);
@@ -37,9 +39,7 @@ struct model_t {
   std::vector<FloatT> test_times; // No tests right now
 
 
-  // Agent:
-  Agent<RandomWalkPolicy, HDTestPolicy, OpenWorld> agent;
-
+  // Action parameters:
   FloatT fwd_move_dist = 0.8;
   FloatT rot_angle = M_PI / 8;
 
@@ -54,39 +54,38 @@ struct model_t {
   FloatT sigma_VIS = M_PI / 9;
   FloatT lambda_VIS = 1.0;
 
-  AgentVISRateNeurons VIS;
+  std::shared_ptr<AgentVISRateNeurons> VIS;
   int N_VIS; // this is set by construct_neurons()
 
   // VIS feedforward inhibition:
   EigenVector VIS_INH_on;
   EigenVector VIS_INH_off;
-  DummyRateNeurons VIS_INH;
+  std::shared_ptr<DummyRateNeurons> VIS_INH;
 
   // HD neurons:
   int N_HD = 180;
-  AgentHDRateNeurons HD;
+  std::shared_ptr<AgentHDRateNeurons> HD;
 
   // S neurons:
   int N_S = 400;
   FloatT alpha_S = 2.0;
   FloatT beta_S = 0.5;
   FloatT tau_S = 1e-2;
-  RateNeurons S;
+  std::shared_ptr<RateNeurons> S;
 
   // A neurons:
   int N_A = 400;
   FloatT alpha_A = 2.0;
   FloatT beta_A = 0.5;
   FloatT tau_A = 1e-2;
-  RateNeurons A;
+  std::shared_ptr<RateNeurons> A;
 
   // SA neurons:
   int N_SA = 800;
   FloatT alpha_SA = 2.0;
   FloatT beta_SA = 0.5;
   FloatT tau_SA = 1e-2;
-  RateNeurons SA;
-
+  std::shared_ptr<RateNeurons> SA;
 
   // Connectivity parameters:
   //
@@ -96,57 +95,43 @@ struct model_t {
   // HD -> A connectivity:
   FloatT HD_A_sparsity = 1.0;
   FloatT HD_A_scaling;
-  RateSynapses HD_A;
-  PLASTICITY_TYPE plast_HD_A;
 
   // A -> SA connectivity:
   FloatT A_SA_sparsity = 0.5;
   FloatT A_SA_scaling;
-  RateSynapses A_SA;
-  PLASTICITY_TYPE plast_A_SA;
   
   // S -> SA connectivity:
   FloatT S_SA_sparsity = 0.05;
   FloatT S_SA_scaling;
-  RateSynapses S_SA;
-  PLASTICITY_TYPE plast_S_SA;
 
   // SA -> SA connectivity:
   FloatT SA_inhibition;
-  RateSynapses SA_SA_INH;
-  PLASTICITY_TYPE plast_SA_SA_INH;
 
   // VIS -> S connectivity:
   FloatT VIS_S_sparsity = 0.05;
   FloatT VIS_S_scaling;
   FloatT VIS_S_INH_scaling;
   FloatT eps_VIS_S;
-  RateSynapses VIS_S;
-  PLASTICITY_TYPE plast_VIS_S;
-  RateSynapses VIS_S_INH;
-  PLASTICITY_TYPE plast_VIS_S_INH;
 
   // SA -> S connectivity:
   FloatT SA_S_sparsity = 1.0;
   FloatT SA_S_scaling;
-  RateSynapses SA_S;
-  PLASTICITY_TYPE plast_SA_S;
 
   // S -> S connectivity:
   FloatT S_inhibition;
-  RateSynapses S_S_INH;
-  PLASTICITY_TYPE plast_S_S_INH;
+
+
+  // Synapse data:
+  std::shared_ptr<RateSynapses> HD_A, A_SA, S_SA, SA_SA_INH, VIS_S, VIS_S_INH, SA_S, S_S_INH;
+  std::shared_ptr<PLASTICITY_TYPE> plast_HD_A, plast_A_SA, plast_S_SA, plast_SA_SA_INH,
+    plast_VIS_S, plast_VIS_S_INH, plast_SA_S, plast_S_S_INH;
 
   // Which weights to save after training?
-  std::vector<RateSynapses*> weights_to_store;
+  std::vector<std::shared_ptr<RateSynapses> > weights_to_store;
 
 
   // Electrodes:
-  RateElectrodes VIS_elecs;
-  RateElectrodes HD_elecs;
-  RateElectrodes A_elecs;
-  RateElectrodes SA_elecs;
-  RateElectrodes S_elecs;
+  std::shared_ptr<RateElectrodes> VIS_elecs, HD_elecs, A_elecs, SA_elecs, S_elecs;
 
 
   void load_weights(RateSynapses& s) const {
@@ -158,33 +143,35 @@ struct model_t {
   };
 
   template <typename NeuronsPreT, typename NeuronsPostT>
-  RateSynapses connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
-                               FloatT scaling, FloatT sparsity, FloatT delay,
-                               bool try_load = true) const {
-    RateSynapses syns(ctx, &pre, &post, scaling, label);
-    if (delay > 0) { syns.delay(ceil(delay / timestep));}
+  std::shared_ptr<RateSynapses>
+  connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
+                  FloatT scaling, FloatT sparsity, FloatT delay,
+                  bool try_load = true) const {
+    auto syns = std::make_shared<RateSynapses>(ctx, &pre, &post, scaling, label);
+    if (delay > 0) { syns->delay(ceil(delay / timestep));}
 
     if (try_load && read_weights) {
-      load_weights(syns);
+      load_weights(*syns);
     } else {
       // Create a uniform random weight matrix of given sparsity, with 1-normalized rows
-      syns.weights
+      syns->weights
         (Eigen::make_random_matrix(post.size, pre.size, 1.0, true, 1.0-sparsity, 0, false));
     }
-    if (sparsity < 1.0f) syns.make_sparse();
+    if (sparsity < 1.0f) syns->make_sparse();
 
     return syns;
   }
 
   template <typename NeuronsPreT, typename NeuronsPostT>
-  RateSynapses connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
-                               FloatT scaling, EigenMatrix W,
-                               FloatT delay, bool is_sparse = false) const {
-    RateSynapses syns(ctx, &pre, &post, scaling, label);
-    if (delay > 0) { syns.delay(ceil(delay / timestep));}
+  std::shared_ptr<RateSynapses>
+  connect_neurons(NeuronsPreT& pre, NeuronsPostT& post, std::string label,
+                  FloatT scaling, EigenMatrix W,
+                  FloatT delay, bool is_sparse = false) const {
+    auto syns = std::make_shared<RateSynapses>(ctx, &pre, &post, scaling, label);
+    if (delay > 0) { syns->delay(ceil(delay / timestep));}
 
-    syns.weights(W);
-    if (is_sparse) syns.make_sparse();
+    syns->weights(W);
+    if (is_sparse) syns->make_sparse();
 
     return syns;
   }
@@ -224,18 +211,19 @@ struct model_t {
 
 
   void construct_neurons() {
-    VIS = AgentVISRateNeurons(ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");
-    N_VIS = VIS.size;
+    VIS = std::make_shared<AgentVISRateNeurons>
+      (ctx, &agent, N_per_obj, sigma_VIS, lambda_VIS, "VIS");
+    N_VIS = VIS->size;
 
     VIS_INH_on = EigenVector::Ones(N_VIS);
     VIS_INH_off = EigenVector::Zero(N_VIS);
-    VIS_INH = DummyRateNeurons(ctx, N_VIS, "VIS_INH");
+    VIS_INH = std::make_shared<DummyRateNeurons>(ctx, N_VIS, "VIS_INH");
 
-    HD = AgentHDRateNeurons(ctx, &agent, N_HD, sigma_VIS, lambda_VIS, "HD");
+    HD = std::make_shared<AgentHDRateNeurons>(ctx, &agent, N_HD, sigma_VIS, lambda_VIS, "HD");
 
-    S = RateNeurons(ctx, N_S, "S", alpha_S, beta_S, tau_S);
-    A = RateNeurons(ctx, N_A, "A", alpha_A, beta_A, tau_A);
-    SA = RateNeurons(ctx, N_SA, "SA", alpha_SA, beta_SA, tau_SA);
+    S = std::make_shared<RateNeurons>(ctx, N_S, "S", alpha_S, beta_S, tau_S);
+    A = std::make_shared<RateNeurons>(ctx, N_A, "A", alpha_A, beta_A, tau_A);
+    SA = std::make_shared<RateNeurons>(ctx, N_SA, "SA", alpha_SA, beta_SA, tau_SA);
 
     //S.enable_homeostasis(0.02, 0.001, true);
     //A.enable_homeostasis(0.02, 0.001, true);
@@ -272,100 +260,100 @@ struct model_t {
 
   void construct_synapses() {
     // HD -> A connectivity:   (NB: not saved/loaded to/from disk)
-    HD_A = connect_neurons(HD, A, "HD_A", HD_A_scaling, HD_A_sparsity, 0.0, false);
-    plast_HD_A = PLASTICITY_TYPE(ctx, &HD_A);
-    A.connect_input(&HD_A, &plast_HD_A);
+    HD_A = connect_neurons(*HD, *A, "HD_A", HD_A_scaling, HD_A_sparsity, 0.0, false);
+    plast_HD_A = std::make_shared<PLASTICITY_TYPE>(ctx, HD_A.get());
+    A->connect_input(HD_A.get(), plast_HD_A.get());
 
     // A -> SA connectivity:   (NB: not saved/loaded to/from disk)
-    A_SA = connect_neurons(A, SA, "A_SA", A_SA_scaling, A_SA_sparsity, 0.0, false);
-    plast_A_SA = PLASTICITY_TYPE(ctx, &A_SA);
-    SA.connect_input(&A_SA, &plast_A_SA);
+    A_SA = connect_neurons(*A, *SA, "A_SA", A_SA_scaling, A_SA_sparsity, 0.0, false);
+    plast_A_SA = std::make_shared<PLASTICITY_TYPE>(ctx, A_SA.get());
+    SA->connect_input(A_SA.get(), plast_A_SA.get());
 
     // S -> SA connectivity:
-    S_SA = connect_neurons(S, SA, "S_SA", S_SA_scaling, S_SA_sparsity, axonal_delay);
-    plast_S_SA = PLASTICITY_TYPE(ctx, &S_SA);
-    SA.connect_input(&S_SA, &plast_S_SA);
-    weights_to_store.push_back(&S_SA);
+    S_SA = connect_neurons(*S, *SA, "S_SA", S_SA_scaling, S_SA_sparsity, axonal_delay);
+    plast_S_SA = std::make_shared<PLASTICITY_TYPE>(ctx, S_SA.get());
+    SA->connect_input(S_SA.get(), plast_S_SA.get());
+    weights_to_store.push_back(S_SA);
 
     // SA -> SA connectivity:   (NB: not saved/loaded to/from disk)
-    SA_SA_INH = connect_neurons(SA, SA, "SA_SA_INH", SA_inhibition,
+    SA_SA_INH = connect_neurons(*SA, *SA, "SA_SA_INH", SA_inhibition,
                                 EigenMatrix::Ones(N_SA, N_SA), 0.0);
-    plast_SA_SA_INH = PLASTICITY_TYPE(ctx, &SA_SA_INH);
-    SA.connect_input(&SA_SA_INH, &plast_SA_SA_INH);
+    plast_SA_SA_INH = std::make_shared<PLASTICITY_TYPE>(ctx, SA_SA_INH.get());
+    SA->connect_input(SA_SA_INH.get(), plast_SA_SA_INH.get());
 
     // VIS -> S connectivity:
-    VIS_S = connect_neurons(VIS, S, "VIS_S", VIS_S_scaling, VIS_S_sparsity, 0.0);
-    plast_VIS_S = PLASTICITY_TYPE(ctx, &VIS_S);
-    S.connect_input(&VIS_S, &plast_VIS_S);
-    weights_to_store.push_back(&VIS_S);
+    VIS_S = connect_neurons(*VIS, *S, "VIS_S", VIS_S_scaling, VIS_S_sparsity, 0.0);
+    plast_VIS_S = std::make_shared<PLASTICITY_TYPE>(ctx, VIS_S.get());
+    S->connect_input(VIS_S.get(), plast_VIS_S.get());
+    weights_to_store.push_back(VIS_S);
 
-    VIS_S_INH = connect_neurons(VIS_INH, S, "VIS_S_INH", VIS_S_INH_scaling,
+    VIS_S_INH = connect_neurons(*VIS_INH, *S, "VIS_S_INH", VIS_S_INH_scaling,
                                 EigenMatrix::Ones(N_S, N_VIS), 0.0);
-    plast_VIS_S_INH = PLASTICITY_TYPE(ctx, &VIS_S_INH);
-    S.connect_input(&VIS_S_INH, &plast_VIS_S_INH);
+    plast_VIS_S_INH = std::make_shared<PLASTICITY_TYPE>(ctx, VIS_S_INH.get());
+    S->connect_input(VIS_S_INH.get(), plast_VIS_S_INH.get());
 
     // SA -> S connectivity:
-    SA_S = connect_neurons(SA, S, "SA_S", SA_S_scaling, SA_S_sparsity, axonal_delay);
-    plast_SA_S = PLASTICITY_TYPE(ctx, &SA_S);
-    S.connect_input(&SA_S, &plast_SA_S);
-    weights_to_store.push_back(&SA_S);
+    SA_S = connect_neurons(*SA, *S, "SA_S", SA_S_scaling, SA_S_sparsity, axonal_delay);
+    plast_SA_S = std::make_shared<PLASTICITY_TYPE>(ctx, SA_S.get());
+    S->connect_input(SA_S.get(), plast_SA_S.get());
+    weights_to_store.push_back(SA_S);
 
     // S -> S connectivity:
-    S_S_INH = connect_neurons(S, S, "S_S_INH", S_inhibition,
+    S_S_INH = connect_neurons(*S, *S, "S_S_INH", S_inhibition,
                               EigenMatrix::Ones(N_S, N_S), 0.0);
-    plast_S_S_INH = PLASTICITY_TYPE(ctx, &S_S_INH);
-    S.connect_input(&S_S_INH, &plast_S_S_INH);
+    plast_S_S_INH = std::make_shared<PLASTICITY_TYPE>(ctx, S_S_INH.get());
+    S->connect_input(S_S_INH.get(), plast_S_S_INH.get());
   }
 
   void init_electrodes() {
-    VIS_elecs = RateElectrodes(output_path, &VIS);
-    HD_elecs = RateElectrodes(output_path, &HD);
-    A_elecs = RateElectrodes(output_path, &A);
-    SA_elecs = RateElectrodes(output_path, &SA);
-    S_elecs = RateElectrodes(output_path, &S);
+    VIS_elecs = std::make_shared<RateElectrodes>(output_path, VIS.get());
+    HD_elecs = std::make_shared<RateElectrodes>(output_path, HD.get());
+    A_elecs = std::make_shared<RateElectrodes>(output_path, A.get());
+    SA_elecs = std::make_shared<RateElectrodes>(output_path, SA.get());
+    S_elecs = std::make_shared<RateElectrodes>(output_path, S.get());
   }
 
   void construct_model() {
     model.add(&agent);
 
-    model.add(&VIS);
-    model.add(&VIS_INH);
+    model.add(VIS.get());
+    model.add(VIS_INH.get());
 
-    model.add(&HD);
-    model.add(&A);
-    model.add(&SA);
-    model.add(&S);
+    model.add(HD.get());
+    model.add(A.get());
+    model.add(SA.get());
+    model.add(S.get());
 
-    model.add(&VIS_elecs);
+    model.add(VIS_elecs.get());
 
-    model.add(&HD_elecs);
-    model.add(&A_elecs);
-    model.add(&SA_elecs);
-    model.add(&S_elecs);
+    model.add(HD_elecs.get());
+    model.add(A_elecs.get());
+    model.add(SA_elecs.get());
+    model.add(S_elecs.get());
   }
 
 
   void set_neuron_schedule() {
-    VIS.t_stop_after = train_time + test_on_time;
-    VIS_INH.add_schedule(VIS.t_stop_after, VIS_INH_on);
-    VIS_INH.add_schedule(infinity<FloatT>(), VIS_INH_off);
+    VIS->t_stop_after = train_time + test_on_time;
+    VIS_INH->add_schedule(VIS->t_stop_after, VIS_INH_on);
+    VIS_INH->add_schedule(infinity<FloatT>(), VIS_INH_off);
   }
 
   void set_plasticity_schedule() {
     // No inhibitory plasticity:
-    plast_SA_SA_INH.add_schedule(infinity<FloatT>(), 0);
-    plast_S_S_INH.add_schedule(infinity<FloatT>(), 0);
+    plast_SA_SA_INH->add_schedule(infinity<FloatT>(), 0);
+    plast_S_S_INH->add_schedule(infinity<FloatT>(), 0);
 
     // No plasticity on action inputs:
-    plast_HD_A.add_schedule(infinity<FloatT>(), 0);
-    plast_A_SA.add_schedule(infinity<FloatT>(), 0);
+    plast_HD_A->add_schedule(infinity<FloatT>(), 0);
+    plast_A_SA->add_schedule(infinity<FloatT>(), 0);
 
     // Rest have plasticity on only during training, with params above:
     auto add_plast_schedule = [&](FloatT dur, FloatT rate) {
-      plast_VIS_S.add_schedule(dur, rate);
-      plast_SA_S.add_schedule(dur, rate);
-      plast_S_SA.add_schedule(dur, rate);
-      // plast_A_SA.add_schedule(dur, rate);
+      plast_VIS_S->add_schedule(dur, rate);
+      plast_SA_S->add_schedule(dur, rate);
+      plast_S_SA->add_schedule(dur, rate);
+      // plast_A_SA->add_schedule(dur, rate);
     };
 
     FloatT total_time = 0;
@@ -477,7 +465,7 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   assert(argc > 1);
-  model_t m(std::string(argv[1]));
+  auto model = model_t(std::string(argv[1]));
 
-  m.run();
+  model.run();
 }
