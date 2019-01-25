@@ -39,6 +39,12 @@ public:
   std::vector<FloatT> test_times; // No tests right now
 
 
+  // RandomWalkPolicy parameters:
+  FloatT radius = 2;
+  FloatT bound_x = 2;
+  FloatT bound_y = bound_x;
+
+
   // Action parameters:
   FloatT fwd_move_dist = 0.8;
   FloatT rot_angle = M_PI / 8;
@@ -177,6 +183,16 @@ public:
   }
 
 
+  void config_agent_environment() {
+    agent.set_boundary(bound_x, bound_y);
+
+    agent.add_distal_object(0);
+    agent.add_distal_object(0.5 * M_PI);
+    agent.add_distal_object(M_PI);
+    agent.add_distal_object(1.5 * M_PI);
+  }
+
+
   void config_simulation_schedule() {
     train_time = config.get<double>("train_time");
     test_on_time = config.get<double>("test_on_time");
@@ -198,15 +214,12 @@ public:
 
 
   void add_actions() {
+    agent.p_fwd = 1.0/3.0;
+
     agent.add_AHV(rot_angle / angle_move_time, angle_move_time);
     agent.add_AHV(-rot_angle / angle_move_time, angle_move_time);
 
     agent.add_FV(fwd_move_dist / fwd_move_time, fwd_move_time);
-
-    agent.add_distal_object(0);
-    agent.add_distal_object(0.5 * M_PI);
-    agent.add_distal_object(M_PI);
-    agent.add_distal_object(1.5 * M_PI);
   }
 
 
@@ -429,6 +442,9 @@ public:
 
     // Get simulation schedule from config:
     config_simulation_schedule();
+
+    // Configure agent's environment:
+    config_agent_environment();
 
     // Give actions to agent:
     add_actions();
